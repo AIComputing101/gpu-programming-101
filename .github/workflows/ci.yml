@@ -1,0 +1,129 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Basic validation tests
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Validate project structure
+      run: |
+        echo "Checking project structure..."
+        [ -f "README.md" ] || exit 1
+        [ -f "Makefile" ] || exit 1
+        [ -d "modules" ] || exit 1
+        [ -d "docker" ] || exit 1
+        echo "✓ Project structure is valid"
+        
+    - name: Check for required files
+      run: |
+        echo "Checking required files..."
+        [ -f "LICENSE" ] || exit 1
+        [ -f "CONTRIBUTING.md" ] || exit 1
+        [ -f ".gitignore" ] || exit 1
+        echo "✓ Required files present"
+        
+    - name: Validate markdown files
+      uses: gaurav-nelson/github-action-markdown-link-check@v1
+      with:
+        config-file: '.github/workflows/markdown-link-check-config.json'
+
+  # Build and test with Docker (CUDA)
+  test-cuda-docker:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build CUDA Docker image
+      run: |
+        docker build -f docker/cuda/Dockerfile -t gpu-programming-101:cuda-ci .
+        
+    - name: Test CUDA build system
+      run: |
+        docker run --rm -v $PWD:/workspace gpu-programming-101:cuda-ci bash -c "
+          cd /workspace && 
+          make check-cuda || echo 'CUDA not available in CI - expected' &&
+          echo 'Testing Makefile syntax...' &&
+          make -n module1 module2 module3 module4 module5
+        "
+
+  # Build and test with Docker (ROCm) 
+  test-rocm-docker:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build ROCm Docker image
+      run: |
+        docker build -f docker/rocm/Dockerfile -t gpu-programming-101:rocm-ci .
+        
+    - name: Test ROCm build system  
+      run: |
+        docker run --rm -v $PWD:/workspace gpu-programming-101:rocm-ci bash -c "
+          cd /workspace && 
+          make check-hip || echo 'HIP not available in CI - expected' &&
+          echo 'Testing Makefile syntax...' &&
+          make -n module1 module2 module3 module4 module5
+        "
+
+  # Test documentation
+  test-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Check documentation completeness
+      run: |
+        echo "Checking module documentation..."
+        for i in {1..5}; do
+          [ -f "modules/module$i/README.md" ] || (echo "Missing README in module$i" && exit 1)
+          [ -f "modules/module$i/content.md" ] || (echo "Missing content.md in module$i" && exit 1)
+          echo "✓ Module $i documentation complete"
+        done
+        
+    - name: Validate module structure
+      run: |
+        echo "Checking module structure..."
+        for i in {1..5}; do
+          [ -d "modules/module$i/examples" ] || (echo "Missing examples in module$i" && exit 1)
+          [ -f "modules/module$i/examples/Makefile" ] || (echo "Missing Makefile in module$i" && exit 1)
+          echo "✓ Module $i structure complete"
+        done
+
+  # Security scanning
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'

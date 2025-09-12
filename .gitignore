@@ -1,0 +1,165 @@
+# GPU Programming 101 - .gitignore
+
+# Compiled executables
+*_cuda
+*_hip
+cross_platform
+07_cross_platform_comparison
+
+# Legacy executable names (for backward compatibility)
+vector_add*
+matrix_add*
+matrix_mult*
+device_info*
+performance*
+debug*
+
+# Object files
+*.o
+*.obj
+*.cubin
+*.ptx
+
+# Shared libraries
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# Static libraries
+*.a
+*.lib
+
+# CUDA compilation cache
+*.fatbin
+*.cubin
+*.ptx
+
+# ROCm/HIP compilation artifacts
+*.hsaco
+*.co
+
+# Profiling output
+*.nvprof
+*.prof
+*.qdrep
+*.qdstrm
+*.sqlite
+nvprof_*
+ncu_*
+rocprof_*
+
+# Log files
+*.log
+*.out
+
+# Core dumps
+core
+core.*
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.#*
+#*#
+
+# IDE/Editor files
+.vscode/
+.vs/
+*.swp
+*.swo
+*.vim
+.idea/
+*.iml
+*.vcxproj*
+*.sln
+*.suo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Build directories
+build/
+Build/
+bin/
+obj/
+debug/
+release/
+Debug/
+Release/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CMakeLists.txt.user
+*.cmake
+
+# Make
+.make/
+
+# Docker
+.dockerignore
+
+# Python (if using Python bindings)
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.env.local
+
+# Test output
+test_output/
+test_results/
+
+# Documentation build
+docs/_build/
+docs/build/
+
+# Coverage reports
+*.gcov
+*.gcno
+*.gcda
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Archive files (unless intentionally included)
+*.zip
+*.tar.gz
+*.tgz
+*.tar
+*.rar
+
+# NVIDIA Nsight files
+*.ncu-rep
+*.nsight-cuprof-report
+
+# AMD ROCm profiler files
+results.csv
+results.txt
+pmc_perf_*
+
+# Container runtime files
+*.pid
+
+# Memory dumps
+*.dmp

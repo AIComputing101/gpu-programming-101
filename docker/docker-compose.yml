@@ -1,0 +1,154 @@
+# GPU Programming 101 - Docker Compose Configuration
+# Supports both NVIDIA CUDA and AMD ROCm platforms
+# Updated for CUDA 12.9.1 and ROCm 6.4.3 (2025)
+
+services:
+  # NVIDIA CUDA Development Environment
+  cuda-dev:
+    build:
+      context: ../
+      dockerfile: docker/cuda/Dockerfile
+    image: gpu-programming-101:cuda
+    container_name: gpu101-cuda-dev
+    hostname: cuda-dev
+    
+    # GPU access for NVIDIA
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+    
+    # Volume mounts
+    volumes:
+      - ../:/workspace/gpu-programming-101:rw
+      - cuda-home:/root
+      - cuda-cache:/root/.cache
+      - cuda-jupyter:/root/.jupyter
+    
+    # Port mappings
+    ports:
+      - "8888:8888"  # Jupyter Lab
+      - "6006:6006"  # TensorBoard (if needed)
+    
+    # Interactive mode
+    stdin_open: true
+    tty: true
+    
+    # Working directory
+    working_dir: /workspace/gpu-programming-101
+    
+    # Network
+    networks:
+      - gpu-dev-network
+    
+    # Resource limits
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # AMD ROCm Development Environment  
+  rocm-dev:
+    build:
+      context: ../
+      dockerfile: docker/rocm/Dockerfile
+    image: gpu-programming-101:rocm
+    container_name: gpu101-rocm-dev
+    hostname: rocm-dev
+    
+    # GPU access for AMD
+    devices:
+      - "/dev/kfd:/dev/kfd"
+      - "/dev/dri:/dev/dri"
+    
+    # Security options for ROCm
+    security_opt:
+      - seccomp:unconfined
+    
+    # Volume mounts
+    volumes:
+      - ../:/workspace/gpu-programming-101:rw
+      - rocm-home:/root
+      - rocm-cache:/root/.cache
+      - rocm-jupyter:/root/.jupyter
+    
+    # Port mappings
+    ports:
+      - "8889:8888"  # Jupyter Lab (different port to avoid conflict)
+    
+    # Interactive mode
+    stdin_open: true
+    tty: true
+    
+    # Working directory
+    working_dir: /workspace/gpu-programming-101
+    
+    # Network
+    networks:
+      - gpu-dev-network
+    
+    # Environment variables
+    environment:
+      - HIP_VISIBLE_DEVICES=0
+      - HSA_OVERRIDE_GFX_VERSION=11.0.0
+      - ROCM_VERSION=6.4.3
+
+  # Development tools container (CPU-only for general development)
+  dev-tools:
+    build:
+      context: ../
+      dockerfile: docker/cuda/Dockerfile
+      target: dev-base
+    image: gpu-programming-101:dev-tools
+    container_name: gpu101-dev-tools
+    hostname: dev-tools
+    
+    # No GPU access - for documentation, build scripts, etc.
+    
+    # Volume mounts
+    volumes:
+      - ../:/workspace/gpu-programming-101:rw
+      - dev-home:/root
+    
+    # Port mappings
+    ports:
+      - "8890:8888"  # Jupyter Lab for documentation
+    
+    # Interactive mode
+    stdin_open: true
+    tty: true
+    
+    # Working directory
+    working_dir: /workspace/gpu-programming-101
+    
+    # Network
+    networks:
+      - gpu-dev-network
+
+# Named volumes for persistent data
+volumes:
+  cuda-home:
+    driver: local
+  cuda-cache:
+    driver: local
+  cuda-jupyter:
+    driver: local
+  rocm-home:
+    driver: local
+  rocm-cache:
+    driver: local
+  rocm-jupyter:
+    driver: local
+  dev-home:
+    driver: local
+
+# Custom network
+networks:
+  gpu-dev-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,350 +1,320 @@
 # GPU Programming 101 🚀
 
-A comprehensive hands-on course for learning GPU programming with CUDA and HIP, covering fundamental concepts through advanced optimization techniques.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CUDA](https://img.shields.io/badge/CUDA-12.0%2B-76B900?logo=nvidia)](https://developer.nvidia.com/cuda-toolkit)
+[![ROCm](https://img.shields.io/badge/ROCm-5.0%2B-red?logo=amd)](https://rocmdocs.amd.com/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
+[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=github-actions)](https://github.com/features/actions)
 
-## 🎯 Course Overview
+**A comprehensive, hands-on educational project for mastering GPU programming with CUDA and HIP**
 
-This course provides practical, hands-on experience with GPU programming, covering everything from basic parallel computing concepts to advanced optimization techniques. Each module contains theory, working code examples, and exercises.
+*From beginner fundamentals to production-ready optimization techniques*
 
-## 📚 Course Structure
+**Quick Navigation:** [🚀 Quick Start](#-quick-start) • [📚 Modules](#-modules) • [🐳 Docker Setup](#-docker-development) • [📖 Documentation](SUMMARY.md) • [🤝 Contributing](CONTRIBUTING.md)
 
-### Module 1: Foundations of GPU Computing ✅
-**Status**: Complete  
-**Duration**: 4-6 hours  
-**Level**: Beginner  
+---
 
-**Topics Covered**:
-- GPU architecture and SIMT execution model
-- CUDA and HIP programming fundamentals
-- Memory management and data transfers
-- Basic parallel execution patterns
-- Debugging and optimization basics
+## 📋 Project Overview
 
-**[📁 Go to Module 1](modules/module1/)**
+**GPU Programming 101** is a complete educational resource for learning modern GPU programming. This project provides:
 
-### Module 2: Multi-Dimensional Data Processing ✅
-**Status**: Complete  
-**Duration**: 6-8 hours  
-**Level**: Beginner-Intermediate  
+- **9 comprehensive modules** covering beginner to expert topics
+- **70+ working code examples** in both CUDA and HIP
+- **Cross-platform support** for NVIDIA and AMD GPUs  
+- **Production-ready development environment** with Docker
+- **Professional tooling** including profilers, debuggers, and CI/CD
 
-**Topics Covered**:
-- Multidimensional grid organization
-- Thread mapping to data structures
-- Image processing kernels
-- Matrix multiplication algorithms
-- Advanced memory management
+Perfect for students, researchers, and developers looking to master GPU computing.
 
-**[📁 Go to Module 2](modules/module2/)**
+## ✨ Key Features
 
-### Module 3: GPU Architecture and Execution Models ✅
-**Status**: Complete  
-**Duration**: 6-8 hours  
-**Level**: Intermediate  
-
-**Topics Covered**:
-- GPU architecture deep dive
-- Warp scheduling and SIMD hardware
-- Control divergence and optimization
-- Resource partitioning and occupancy
-- Advanced parallel patterns
-
-**[📁 Go to Module 3](modules/module3/)**
-
-### Module 4: Advanced GPU Programming Techniques ✅
-**Status**: Complete  
-**Duration**: 8-10 hours  
-**Level**: Intermediate-Advanced  
-
-**Topics Covered**:
-- Multi-GPU programming and scalability
-- Asynchronous execution with streams
-- Dynamic parallelism techniques
-- Advanced memory optimization
-- Cross-platform development strategies
-
-**[📁 Go to Module 4](modules/module4/)**
-
-### Module 5: Performance Engineering and Optimization ✅
-**Status**: Complete  
-**Duration**: 6-8 hours  
-**Level**: Advanced  
-
-**Topics Covered**:
-- Performance profiling and analysis
-- Memory bandwidth optimization
-- Kernel optimization strategies
-- Bottleneck identification and resolution
-- Production performance engineering
-
-**[📁 Go to Module 5](modules/module5/)**
-
-### Module 6: Fundamental Parallel Algorithms 🚧
-**Status**: Planned  
-**Duration**: 8-10 hours  
-**Level**: Intermediate-Advanced  
-
-**Topics**:
-- Convolution and filtering algorithms
-- Stencil computations
-- Histogram and atomic operations
-- Reduction patterns and optimizations
-- Prefix sum (scan) algorithms
-
-### Module 7: Advanced Algorithmic Patterns 🚧
-**Status**: Planned  
-**Duration**: 8-10 hours  
-**Level**: Advanced  
-
-**Topics**:
-- Merge and sorting algorithms
-- Sparse matrix computations
-- Graph traversal algorithms
-- Dynamic programming on GPU
-- Load balancing techniques
-
-### Module 8: Domain-Specific Applications 🚧
-**Status**: Planned  
-**Duration**: 10-12 hours  
-**Level**: Advanced  
-
-**Topics**:
-- Deep learning inference kernels
-- Scientific computing applications
-- Image and signal processing
-- Monte Carlo simulations
-- Numerical methods optimization
-
-### Module 9: Production GPU Programming 🚧
-**Status**: Planned  
-**Duration**: 6-8 hours  
-**Level**: Expert  
-
-**Topics**:
-- Cluster computing with MPI
-- Dynamic parallelism patterns
-- Performance regression testing
-- Cross-platform deployment
-- Future GPU architectures
-
-## 🛠️ Prerequisites
-
-### Hardware Requirements
-- **NVIDIA GPU**: GeForce GTX 1060 or better, or Tesla/Quadro equivalent
-- **OR AMD GPU**: RX 580 or better, with ROCm support
-- **Memory**: 8GB+ system RAM, 4GB+ GPU memory recommended
-
-### Software Requirements
-- **Operating System**: Linux (recommended), Windows 10/11, or macOS
-- **CUDA Toolkit**: 11.0+ for NVIDIA GPUs
-- **ROCm**: 4.0+ for AMD GPUs
-- **Compiler**: GCC 7+, Clang 8+, or MSVC 2019+
-- **Build Tools**: Make, CMake (optional)
-
-### Programming Knowledge
-- **C/C++**: Intermediate level (pointers, memory management, basic OOP)
-- **Command Line**: Basic terminal/shell usage
-- **Math**: Linear algebra basics helpful but not required
+| Feature | Description |
+|---------|-------------|
+| 🎯 **Complete Curriculum** | 9 progressive modules from basics to advanced topics |
+| 💻 **Cross-Platform** | Full CUDA and HIP support for NVIDIA and AMD GPUs |
+| 🐳 **Docker Ready** | Complete containerized development environment |
+| 🔧 **Production Quality** | Professional build systems, testing, and profiling |
+| 📊 **Performance Focus** | Optimization techniques and benchmarking throughout |
+| 🌐 **Community Driven** | Open source with comprehensive contribution guidelines |
 
 ## 🚀 Quick Start
 
 ### Option 1: Docker (Recommended)
-Perfect for getting started without installing CUDA/ROCm on your host system.
+Get started immediately without installing CUDA/ROCm on your host system:
 
 ```bash
-git clone https://github.com/yourusername/gpu-programming-101.git
+# Clone the repository
+git clone https://github.com/AIComputing101/gpu-programming-101.git
 cd gpu-programming-101
 
-# Test your Docker setup
-./docker/scripts/test.sh
-
-# Build development container  
-./docker/scripts/build.sh --all
-
-# Auto-detect GPU and start appropriate container
+# Auto-detect your GPU and start development environment
 ./docker/scripts/run.sh --auto
 
-# Inside container - test your GPU
+# Inside container: verify GPU access and start learning
 /workspace/test-gpu.sh
-
-# Start learning!
-cd modules/module1 && cat README.md
+cd modules/module1 && make && ./01_vector_addition_cuda
 ```
 
 ### Option 2: Native Installation
+For direct system installation:
 
 ```bash
-git clone https://github.com/yourusername/gpu-programming-101.git
+# Prerequisites: CUDA 11.0+ or ROCm 5.0+, GCC 7+, Make
+
+# Clone and build
+git clone https://github.com/AIComputing101/gpu-programming-101.git
 cd gpu-programming-101
 
-# Check system requirements
-# For NVIDIA systems
-nvidia-smi && nvcc --version
+# Verify your setup
+make check-system
 
-# For AMD systems  
-rocm-smi && hipcc --version
-
-# Start with Module 1
-cd modules/module1
-cat README.md  # Read module overview
-cd examples
-make           # Build examples
-./04_device_info_cuda  # Check your GPU
+# Build and run first example
+make module1
+cd modules/module1/examples
+./01_vector_addition_cuda
 ```
 
-### 🐳 Docker Benefits
-- **No host setup required**: Complete development environment in containers
-- **Multi-platform**: Test both CUDA and HIP code easily  
-- **Consistent environment**: Same setup across different systems
-- **Integrated tools**: Profilers, debuggers, and Jupyter Lab included
-- **Easy cleanup**: Remove containers when done
+### 🎯 What You'll Learn
 
-**[📖 Full Docker Guide](docker/README.md)**
+**👶 Beginner Track** - Start here if you're new to GPU programming
+- GPU architecture fundamentals
+- Writing your first CUDA/HIP kernels  
+- Memory management between CPU and GPU
+- Basic parallel algorithms
+- Debugging and profiling basics
 
-### 4. Follow Learning Path
-Each module contains:
-- **README.md** - Module overview and learning objectives
-- **content.md** - Comprehensive theory and explanations  
-- **examples/** - Working code examples with build system
-- **exercises/** - Additional practice problems (when available)
+**🔥 Intermediate Track** - For developers with some parallel programming experience
+- Advanced memory optimization techniques
+- Multi-dimensional data processing
+- GPU architecture deep dive
+- Performance engineering
+- Multi-GPU programming
 
-## 📁 Project Structure
+**🚀 Advanced Track** - For experts seeking production-level skills
+- Fundamental parallel algorithms (reduction, scan, convolution)
+- Advanced algorithmic patterns (sorting, sparse matrices)
+- Domain-specific applications (ML, scientific computing)
+- Production deployment and optimization
+- Next-generation GPU architectures
 
+## 📚 Modules
+
+| Module | Level | Duration | Topics | Examples |
+|--------|-------|----------|--------|----------|
+| [**Module 1**](modules/module1/) | Beginner | 4-6h | GPU Fundamentals, CUDA/HIP Basics | 13 |
+| [**Module 2**](modules/module2/) | Beginner-Intermediate | 6-8h | Multi-Dimensional Data Processing | 10 |
+| [**Module 3**](modules/module3/) | Intermediate | 6-8h | GPU Architecture & Execution Models | 12 |
+| [**Module 4**](modules/module4/) | Intermediate-Advanced | 8-10h | Advanced GPU Programming | 9 |
+| [**Module 5**](modules/module5/) | Advanced | 6-8h | Performance Engineering | 5 |
+| [**Module 6**](modules/module6/) | Intermediate-Advanced | 8-10h | Fundamental Parallel Algorithms | 10 |
+| [**Module 7**](modules/module7/) | Advanced | 8-10h | Advanced Algorithmic Patterns | 4 |
+| [**Module 8**](modules/module8/) | Advanced | 10-12h | Domain-Specific Applications | 4 |
+| [**Module 9**](modules/module9/) | Expert | 6-8h | Production GPU Programming | 4 |
+
+**📈 Progressive Learning Path: 70+ Examples • 50+ Hours • Beginner to Expert**
+
+**[📖 View Detailed Curriculum →](SUMMARY.md)**
+
+## 🛠️ Prerequisites
+
+### Hardware Requirements
+- **GPU**: NVIDIA GTX 1060+ or AMD RX 580+ (4GB+ VRAM recommended)
+- **System**: 8GB+ RAM (16GB+ recommended for advanced modules)
+
+### Software Requirements
+- **OS**: Linux (recommended), Windows 10/11, or macOS
+- **CUDA**: 11.0+ for NVIDIA GPUs
+- **ROCm**: 5.0+ for AMD GPUs  
+- **Compiler**: GCC 7+, Clang 8+, or MSVC 2019+
+- **Docker**: For containerized development (recommended)
+
+### Programming Knowledge
+- **C/C++**: Intermediate level (pointers, memory management)
+- **Command Line**: Basic terminal/shell usage
+- **Math**: Linear algebra basics helpful but not required
+
+## 🐳 Docker Development
+
+Experience the full development environment with zero setup:
+
+```bash
+# Build development containers
+./docker/scripts/build.sh --all
+
+# Start interactive development
+./docker/scripts/run.sh cuda    # For NVIDIA GPUs
+./docker/scripts/run.sh rocm    # For AMD GPUs
+./docker/scripts/run.sh --auto  # Auto-detect GPU type
 ```
-gpu-programming-101/
-├── README.md                    # This file
-├── SUMMARY.md                   # Detailed curriculum overview
-├── Makefile                     # Project-wide build system
-└── modules/
-    ├── module1/                 # Heterogeneous Data Parallel Computing
-    │   ├── README.md           # Module overview
-    │   ├── content.md          # Theory and explanations
-    │   └── examples/           # Working code examples
-    │       ├── Makefile
-    │       ├── README.md
-    │       └── *.cu, *.cpp     # Source files
-    ├── module2/                 # Multidimensional Grids and Data
-    │   └── [Coming Soon]
-    ├── module3/                 # Compute Architecture and Scheduling  
-    │   └── [Coming Soon]
-    └── [Additional Modules]
-```
 
-## 🎓 Learning Path Recommendations
+**Docker Benefits:**
+- 🎯 Zero host configuration required
+- 🔧 Complete development environment (compilers, debuggers, profilers)
+- 🌐 Cross-platform testing (test your code on both CUDA and HIP)
+- 📦 Isolated and reproducible builds
+- 🧹 Easy cleanup when done
 
-### For Complete Beginners
-1. **Start with Module 1** - Focus on understanding basic concepts
-2. **Practice extensively** - Modify examples and experiment
-3. **Use debugging tools** - Learn proper error handling
-4. **Progress gradually** - Master each concept before moving on
-
-### For Experienced Programmers
-1. **Skim Module 1 theory** - Focus on GPU-specific concepts
-2. **Run all examples** - Understand performance characteristics
-3. **Jump to specific topics** - Use course as reference material
-4. **Contribute improvements** - Help expand the course content
-
-### For Researchers/Scientists
-1. **Focus on relevant modules** - Skip graphics-specific content
-2. **Emphasize performance** - Pay special attention to optimization
-3. **Explore libraries** - Learn cuBLAS, cuFFT, Thrust, etc.
-4. **Real-world applications** - Adapt examples to your domain
+**[📖 Complete Docker Guide →](docker/README.md)**
 
 ## 🔧 Build System
 
-### Project-wide Build
+### Project-Wide Commands
 ```bash
-# Build all available modules
-make all
-
-# Build specific module
-make module1
-
-# Clean all builds
-make clean
-
-# Run tests
-make test
+make all           # Build all modules
+make test          # Run comprehensive tests  
+make clean         # Clean all artifacts
+make check-system  # Verify GPU setup
+make status        # Show module completion status
 ```
 
-### Module-specific Build
+### Module-Specific Commands
 ```bash
 cd modules/module1/examples
-make          # Build all examples
-make vector_add_cuda  # Build specific example
-make test     # Run module tests
+make               # Build all examples in module
+make test          # Run module tests
+make profile       # Performance profiling
+make debug         # Debug builds with extra checks
 ```
+
+## 🚦 Getting Started Guide
+
+### 1. Choose Your Path
+- **🐳 Docker**: No setup required, works everywhere → [Docker Guide](docker/README.md)  
+- **💻 Native**: Direct system installation → [Installation Guide](#option-2-native-installation)
+
+### 2. Start Learning
+```bash
+# Begin with Module 1
+cd modules/module1
+cat README.md        # Read learning objectives  
+cd examples && make  # Build examples
+./01_vector_addition_cuda  # Run your first GPU program!
+```
+
+### 3. Progress Through Modules
+- Each module builds on previous concepts
+- Complete examples and exercises in order
+- Use profiling tools to understand performance
+- Experiment with different optimizations
+
+### 4. Advanced Topics
+- Modules 6-9 cover production-level techniques
+- Focus on algorithms and applications relevant to your domain
+- Contribute back with improvements and new examples
+
+## 📊 Performance Expectations
+
+| Module Level | Typical GPU Speedup | Memory Efficiency | Code Quality |
+|--------------|-------------------|------------------|--------------|
+| **Beginner** | 10-100x | 60-80% | Educational |
+| **Intermediate** | 50-500x | 80-95% | Optimized |
+| **Advanced** | 100-1000x | 85-95% | Production |
+| **Expert** | 500-5000x | 95%+ | Library-Quality |
 
 ## 🐛 Troubleshooting
 
-### Common Setup Issues
+### Common Issues & Solutions
 
-**"nvcc: command not found"**
+**GPU Not Detected**
 ```bash
+# NVIDIA
+nvidia-smi  # Should show your GPU
 export PATH=/usr/local/cuda/bin:$PATH
-export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-```
 
-**"No CUDA-capable device found"**
-- Check `nvidia-smi` shows your GPU
-- Verify driver installation
-- Ensure GPU is not in exclusive/prohibited mode
-
-**"HIP compilation failed"**
-```bash
-# For AMD GPUs
+# AMD  
+rocm-smi   # Should show your GPU
 export HIP_PLATFORM=amd
-
-# For NVIDIA GPUs with HIP
-export HIP_PLATFORM=nvidia
 ```
 
-### Getting Help
-- **Module Issues**: Check module-specific README files
-- **Code Problems**: Look at debugging examples in Module 1
-- **Performance**: Use profiling tools covered in later modules
-- **Community**: Create an issue in the repository for help
+**Compilation Errors**
+```bash
+# Check CUDA installation
+nvcc --version
+make check-cuda
 
-## 📖 Additional Resources
+# Check HIP installation  
+hipcc --version
+make check-hip
+```
 
-### Official Documentation
-- [CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/)
-- [HIP Programming Guide](https://rocmdocs.amd.com/en/latest/Programming_Guides/HIP-GUIDE.html)
-- [ROCm Documentation](https://rocmdocs.amd.com/)
+**Docker Issues**
+```bash
+# Test Docker GPU access
+./docker/scripts/test.sh
 
-### Books
-- "CUDA by Example" - Sanders, Kandrot
-- "Professional CUDA C Programming" - Cheng, Grossman, McKercher
-- "GPU Computing Gems" - NVIDIA Corporation
+# Rebuild containers
+./docker/scripts/build.sh --clean --all
+```
 
-### Online Resources
-- [NVIDIA Developer Zone](https://developer.nvidia.com/)
-- [AMD Developer Central](https://developer.amd.com/)
-- [GPU Computing Community](https://forums.developer.nvidia.com/)
+**[📖 Full Troubleshooting Guide →](docs/troubleshooting.md)**
+
+## 📖 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [**SUMMARY.md**](SUMMARY.md) | Complete curriculum overview and learning paths |
+| [**CONTRIBUTING.md**](CONTRIBUTING.md) | How to contribute to the project |
+| [**Docker Guide**](docker/README.md) | Complete Docker setup and usage |
+| [**Module READMEs**](modules/) | Individual module documentation |
 
 ## 🤝 Contributing
 
-We welcome contributions! Please follow standard open source contribution practices.
+We welcome contributions from the community! This project thrives on:
 
-### Ways to Contribute
-- **Add examples** for existing modules
-- **Create new modules** following the established structure
-- **Improve documentation** and fix typos
-- **Add exercises** and solutions
-- **Port examples** between CUDA and HIP
-- **Performance optimizations** and benchmarks
+- 📝 **New Examples**: Implementing additional GPU algorithms
+- 🐛 **Bug Fixes**: Improving existing code and documentation  
+- 📚 **Documentation**: Enhancing explanations and tutorials
+- 🔧 **Optimizations**: Performance improvements and best practices
+- 🌐 **Platform Support**: Cross-platform compatibility improvements
 
-## 📝 License
+**[📖 Contributing Guidelines →](CONTRIBUTING.md)** • **[🐛 Report Issues →](../../issues)** • **[💡 Request Features →](../../issues/new?template=feature_request.md)**
 
-This course is released under an open source license. Feel free to use, modify, and distribute for educational purposes.
+## 🏆 Community & Support
 
-## 🏆 Acknowledgments
+- 🌟 **Star this project** if you find it helpful!
+- 🐛 **Report bugs** using our [issue templates](../../issues/new/choose)
+- 💬 **Join discussions** in [GitHub Discussions](../../discussions)
+- 📧 **Get help** from the community and maintainers
 
-- Thanks to the CUDA and ROCm development communities
-- Inspired by hands-on learning approaches in parallel computing education
-- Built with contributions from GPU programming educators and practitioners
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+**TL;DR**: ✅ Commercial use ✅ Modification ✅ Distribution ✅ Private use
+
+## 📚 Citation
+
+If you use this project in your research, education, or publications, please cite it as:
+
+### BibTeX
+```bibtex
+@misc{gpu-programming-101,
+  title={GPU Programming 101: A Comprehensive Educational Project for CUDA and HIP},
+  author={{Stephen Shao}},
+  year={2025},
+  howpublished={\url{https://github.com/AIComputing101/gpu-programming-101}},
+  note={A complete GPU programming educational resource with 70+ production-ready examples covering fundamentals through advanced optimization techniques for NVIDIA CUDA and AMD HIP platforms}
+}
+```
+
+### IEEE Format
+Stephen Shao, "GPU Programming 101: A Comprehensive Educational Project for CUDA and HIP," GitHub, 2025. [Online]. Available: https://github.com/AIComputing101/gpu-programming-101
+
+## 🙏 Acknowledgments
+
+- 🎯 **NVIDIA** and **AMD** for excellent GPU computing ecosystems
+- 📚 **GPU computing community** for sharing knowledge and best practices  
+- 🏫 **Educational institutions** advancing parallel computing education
+- 👥 **Contributors** who make this project better every day
 
 ---
 
-**Happy GPU Programming!** 🚀⚡️
+**Ready to unlock the power of GPU computing?**
 
-*Last Updated: September 2025*
+**[🚀 Get Started Now](#-quick-start)** • **[📚 View Curriculum](SUMMARY.md)** • **[🐳 Try Docker](docker/README.md)**
+
+---
+
+**⭐ Star this project • 🍴 Fork and contribute • 📢 Share with others**
+
+*Built with ❤️ for the AI Computing 101*

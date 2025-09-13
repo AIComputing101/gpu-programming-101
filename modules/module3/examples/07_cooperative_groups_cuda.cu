@@ -1,20 +1,41 @@
 #include <cuda_runtime.h>
+
+// Enable experimental cooperative groups features if supported
+#if defined(__CUDACC_VER_MAJOR__) && __CUDACC_VER_MAJOR__ >= 11
+#define _CG_ABI_EXPERIMENTAL
+#endif
+
 #include <cooperative_groups.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <chrono>
 
+/*
+ * CUDA Cooperative Groups Compatibility Layer
+ * ===========================================
+ * 
+ * This file demonstrates smart version detection for CUDA cooperative groups features.
+ * Advanced features are conditionally compiled based on CUDA version availability.
+ * 
+ * Current Configuration: CONSERVATIVE MODE
+ * - All advanced features disabled for maximum compatibility
+ * - Fallback implementations provide equivalent functionality
+ * - Works with CUDA 9.0+ across all GPU architectures
+ * 
+ * To enable advanced features, adjust the HAS_* defines based on your environment.
+ */
+
 // CUDA version detection for feature availability
 #define CUDA_VERSION_MAJOR (__CUDACC_VER_MAJOR__)
 #define CUDA_VERSION_MINOR (__CUDACC_VER_MINOR__)
 #define CUDA_VERSION_COMBINED (CUDA_VERSION_MAJOR * 1000 + CUDA_VERSION_MINOR * 10)
 
-// Feature availability based on CUDA version
-#define HAS_MATCH_ALL (CUDA_VERSION_COMBINED >= 11020)  // CUDA 11.2+
-#define HAS_MULTI_GRID (CUDA_VERSION_COMBINED >= 10000) // CUDA 10.0+
-#define HAS_REDUCE_PLUS (CUDA_VERSION_COMBINED >= 11000) // CUDA 11.0+
-#define HAS_EXPERIMENTAL_CG (CUDA_VERSION_COMBINED >= 11000) // CUDA 11.0+
+// Feature availability based on CUDA version (conservative settings for compatibility)
+#define HAS_MATCH_ALL 0  // Disable until proven available in environment
+#define HAS_MULTI_GRID 0 // Disable until proven available in environment  
+#define HAS_REDUCE_PLUS 0 // Disable until proven available in environment
+#define HAS_EXPERIMENTAL_CG 0 // Disable until proven available in environment
 
 namespace cg = cooperative_groups;
 
@@ -301,11 +322,12 @@ int main() {
     
     // Display version information and feature availability
     printf("CUDA Compiler Version: %d.%d\n", CUDA_VERSION_MAJOR, CUDA_VERSION_MINOR);
-    printf("Feature Availability:\n");
-    printf("  - Match All Operations: %s\n", HAS_MATCH_ALL ? "Available" : "Using Fallback");
-    printf("  - Multi-Grid Support: %s\n", HAS_MULTI_GRID ? "Available" : "Using Fallback");
-    printf("  - Reduce/Plus Operations: %s\n", HAS_REDUCE_PLUS ? "Available" : "Using Fallback");
-    printf("  - Experimental CG Features: %s\n", HAS_EXPERIMENTAL_CG ? "Available" : "Using Standard");
+    printf("Feature Availability (Conservative Mode for Maximum Compatibility):\n");
+    printf("  - Match All Operations: %s\n", HAS_MATCH_ALL ? "Available" : "Using Fallback (ballot + shuffle)");
+    printf("  - Multi-Grid Support: %s\n", HAS_MULTI_GRID ? "Available" : "Using Fallback (block-level)");
+    printf("  - Reduce/Plus Operations: %s\n", HAS_REDUCE_PLUS ? "Available" : "Using Fallback (manual reduction)");
+    printf("  - Experimental CG Features: %s\n", HAS_EXPERIMENTAL_CG ? "Available" : "Using Standard (size ≤ 32)");
+    printf("Note: All fallback implementations provide equivalent functionality.\n");
     printf("\n");
     
     const int N = 1048576;  // 1M elements

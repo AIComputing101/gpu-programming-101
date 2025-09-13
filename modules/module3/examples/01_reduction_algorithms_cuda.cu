@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <chrono>
 #include <algorithm>
+#include <float.h>
 
 namespace cg = cooperative_groups;
 
@@ -191,6 +192,14 @@ __global__ void segmentedReduction(float *input, int *segment_flags,
     // Write results for segment heads
     if (tid == 0 || flags[tid] == 1) {
         output[blockIdx.x * blockDim.x + tid] = sdata[tid];
+    }
+}
+
+// Simple initialization kernel
+__global__ void initializeData(float *data, size_t n) {
+    size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n) {
+        data[idx] = 1.0f; // Each element contributes 1.0
     }
 }
 
@@ -414,22 +423,9 @@ void demonstrateMultiPassReduction() {
     const int init_threads = 256;
     const int init_blocks = (large_n + init_threads - 1) / init_threads;
     
-    // Simple initialization kernel
-    auto init_kernel = [] __device__ (float *data, size_t n) {
-        size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx < n) {
-            data[idx] = 1.0f; // Each element contributes 1.0
-        }
-    };
-    
-    // Initialize data (all 1.0, so sum should be large_n)
-    float *h_temp = new float[large_n];
-    for (size_t i = 0; i < large_n; i++) {
-        h_temp[i] = 1.0f;
-    }
-    CUDA_CHECK(cudaMemcpy(d_large_data, h_temp, large_n * sizeof(float), 
-                         cudaMemcpyHostToDevice));
-    delete[] h_temp;
+    // Initialize data using GPU kernel (more efficient than host copy)
+    initializeData<<<init_blocks, init_threads>>>(d_large_data, large_n);
+    CUDA_CHECK(cudaDeviceSynchronize());
     
     MultiPassReduction reducer(large_n);
     

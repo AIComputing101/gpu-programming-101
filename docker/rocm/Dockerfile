@@ -13,9 +13,9 @@ LABEL ubuntu.version="22.04"
 # Avoid interactive prompts during package installation
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Update and install essential development tools
+# Install essential development tools for GPU programming
 RUN apt-get update && apt-get install -y \
-    # Basic development tools
+    # Core development tools
     build-essential \
     cmake \
     git \
@@ -25,17 +25,13 @@ RUN apt-get update && apt-get install -y \
     nano \
     htop \
     tree \
-    # Python development
+    # Minimal Python for basic scripting (not data science)
     python3 \
     python3-pip \
     python3-dev \
     # Additional utilities
     pkg-config \
     software-properties-common \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    lsb-release \
     # Debugging and profiling tools
     gdb \
     valgrind \
@@ -45,35 +41,21 @@ RUN apt-get update && apt-get install -y \
     iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 
-# Install ROCm development packages
+# Install core ROCm development packages (keep minimal)
 RUN apt-get update && apt-get install -y \
-    # Core ROCm packages
-    rocm-dev \
-    rocm-libs \
+    # Core ROCm packages for GPU programming
     hip-dev \
     hip-samples \
     hipblas-dev \
-    hipfft-dev \
-    hipsparse-dev \
-    # ROCm profiling and debugging tools
+    # ROCm profiling tools (essential for performance work)
     rocprofiler-dev \
     roctracer-dev \
-    roctx \
-    # Additional ROCm libraries
-    rocrand-dev \
-    rocthrust-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python packages for data analysis and visualization
+# Install minimal Python packages for basic development (no heavy data science libs)
 RUN pip3 install --no-cache-dir \
     numpy \
-    matplotlib \
-    seaborn \
-    pandas \
-    jupyter \
-    jupyterlab \
-    plotly \
-    scipy
+    matplotlib
 
 # Set up ROCm environment variables
 ENV ROCM_PATH=/opt/rocm
@@ -84,11 +66,8 @@ ENV HIP_PLATFORM=amd
 ENV HSA_OVERRIDE_GFX_VERSION=11.0.0
 ENV ROCM_VERSION=6.4.3
 
-# Add ROCm binaries to PATH
-ENV PATH=/opt/rocm/bin:/opt/rocm/hip/bin:${PATH}
-
-# Verify ROCm installation
-RUN hipcc --version && rocminfo > /dev/null 2>&1 || echo "ROCm info check completed (may fail without GPU)"
+# Verify HIP compiler installation (skip rocminfo as no GPU during build)
+RUN hipcc --version
 
 # Create development workspace
 WORKDIR /workspace
@@ -107,127 +86,80 @@ RUN echo 'alias ll="ls -alF"' >> /root/.bashrc && \
     echo 'alias rocm-info="rocminfo"' >> /root/.bashrc && \
     echo 'export PS1="\[\e[1;34m\][ROCm-DEV]\[\e[0m\] \w $ "' >> /root/.bashrc
 
-# Create a comprehensive GPU test script
-RUN cat > /workspace/test-gpu.sh << 'EOF'
-#!/bin/bash
-echo "=== GPU Programming 101 - ROCm Environment Test ==="
-echo "Date: $(date)"
-echo ""
-
-echo "=== HIP Compiler ==="
-hipcc --version
-echo ""
-
-echo "=== ROCm Version ==="
-if command -v rocminfo > /dev/null 2>&1; then
-    rocminfo | head -20
-else
-    echo "rocminfo command not available"
-fi
-echo ""
-
-echo "=== GPU Information ==="
-if command -v rocm-smi > /dev/null 2>&1; then
-    rocm-smi --showproductname --showmeminfo vram || echo "No AMD GPU detected or accessible"
-else
-    echo "rocm-smi not available"
-fi
-echo ""
-
-echo "=== Environment Variables ==="
-echo "ROCM_PATH: $ROCM_PATH"
-echo "HIP_PATH: $HIP_PATH"
-echo "HIP_PLATFORM: $HIP_PLATFORM"
-echo "PATH: $PATH"
-echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
-echo ""
-
-echo "=== HIP Platform Detection ==="
-cat > /tmp/platform_test.cpp << 'HIP_EOF'
-#include <hip/hip_runtime.h>
-#include <iostream>
-
-int main() {
-    int deviceCount;
-    hipError_t error = hipGetDeviceCount(&deviceCount);
-    
-    if (error != hipSuccess) {
-        std::cout << "HIP Error: " << hipGetErrorString(error) << std::endl;
-        std::cout << "This may be normal if no GPU is available" << std::endl;
-    } else {
-        std::cout << "Number of HIP devices: " << deviceCount << std::endl;
-        
-        for (int i = 0; i < deviceCount; i++) {
-            hipDeviceProp_t props;
-            hipGetDeviceProperties(&props, i);
-            std::cout << "Device " << i << ": " << props.name << std::endl;
-        }
-    }
-    
-    return 0;
-}
-HIP_EOF
-
-echo "Compiling platform detection test..."
-if hipcc -o /tmp/platform_test /tmp/platform_test.cpp; then
-    echo "✓ Compilation successful"
-    echo "Running platform test:"
-    /tmp/platform_test
-else
-    echo "✗ Platform test compilation failed"
-fi
-
-echo ""
-echo "=== Build Test ==="
-cd /tmp
-cat > test.hip.cpp << 'HIP_EOF'
-#include <hip/hip_runtime.h>
-#include <stdio.h>
-
-__global__ void hello() {
-    printf("Hello from HIP thread %d!\n", hipThreadIdx_x);
-}
-
-int main() {
-    printf("HIP Test Program\n");
-    
-    // Check for HIP devices
-    int deviceCount;
-    hipError_t error = hipGetDeviceCount(&deviceCount);
-    
-    if (error == hipSuccess && deviceCount > 0) {
-        printf("Found %d HIP device(s)\n", deviceCount);
-        hello<<<1, 5>>>();
-        hipDeviceSynchronize();
-        printf("GPU kernel completed!\n");
-    } else {
-        printf("No HIP devices found or error: %s\n", hipGetErrorString(error));
-        printf("This is normal when running without GPU access\n");
-    }
-    
-    return 0;
-}
-HIP_EOF
-
-echo "Compiling test HIP program..."
-if hipcc -o test test.hip.cpp; then
-    echo "✓ Compilation successful"
-    echo "Running test program:"
-    ./test
-    echo "✓ HIP environment is working correctly!"
-else
-    echo "✗ Compilation failed"
-    exit 1
-fi
-
-rm -f test test.hip.cpp platform_test platform_test.cpp
-echo ""
-echo "=== All tests completed ==="
-EOF
+# Create a simple GPU test script
+RUN printf '#!/bin/bash\n\
+echo "=== GPU Programming 101 - ROCm Environment Test ==="\n\
+echo "Date: $(date)"\n\
+echo ""\n\
+\n\
+echo "=== HIP Compiler ==="\n\
+hipcc --version\n\
+echo ""\n\
+\n\
+echo "=== GPU Information ==="\n\
+if rocm-smi --showproductname --showmeminfo vram 2>/dev/null; then\n\
+    echo "AMD GPU detected successfully"\n\
+else\n\
+    echo "No AMD GPU detected or rocm-smi not available"\n\
+fi\n\
+echo ""\n\
+\n\
+echo "=== Environment Variables ==="\n\
+echo "ROCM_PATH: $ROCM_PATH"\n\
+echo "HIP_PATH: $HIP_PATH"\n\
+echo "HIP_PLATFORM: $HIP_PLATFORM"\n\
+echo "PATH: $PATH"\n\
+echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"\n\
+echo ""\n\
+\n\
+echo "=== Build Test ==="\n\
+cd /tmp\n\
+cat > test.hip.cpp << '"'"'HIP_EOF'"'"'\n\
+#include <hip/hip_runtime.h>\n\
+#include <stdio.h>\n\
+\n\
+__global__ void hello() {\n\
+    printf("Hello from HIP thread %%d!\\n", hipThreadIdx_x);\n\
+}\n\
+\n\
+int main() {\n\
+    printf("HIP Test Program\\n");\n\
+    \n\
+    int deviceCount;\n\
+    hipError_t error = hipGetDeviceCount(&deviceCount);\n\
+    \n\
+    if (error != hipSuccess) {\n\
+        printf("HIP Error: %%s\\n", hipGetErrorString(error));\n\
+        printf("No HIP-capable devices found\\n");\n\
+        return 0;\n\
+    }\n\
+    \n\
+    printf("Found %%d HIP device(s)\\n", deviceCount);\n\
+    hello<<<1, 5>>>();\n\
+    hipDeviceSynchronize();\n\
+    printf("GPU kernel completed!\\n");\n\
+    return 0;\n\
+}\n\
+HIP_EOF\n\
+\n\
+echo "Compiling test HIP program..."\n\
+if hipcc -o test test.hip.cpp; then\n\
+    echo "✓ Compilation successful"\n\
+    echo "Running test program:"\n\
+    ./test\n\
+    echo "✓ HIP environment is working correctly!"\n\
+else\n\
+    echo "✗ Compilation failed"\n\
+    exit 1\n\
+fi\n\
+\n\
+rm -f test test.hip.cpp\n\
+echo ""\n\
+echo "=== All tests completed ==="\n' > /workspace/test-gpu.sh
 
 RUN chmod +x /workspace/test-gpu.sh
 
-# Install HIP samples
+# Install HIP samples for learning and reference
 RUN cd /workspace && \
     if [ -d "/opt/rocm/hip/samples" ]; then \
         cp -r /opt/rocm/hip/samples ./hip-samples; \
@@ -235,36 +167,9 @@ RUN cd /workspace && \
         git clone https://github.com/ROCm-Developer-Tools/HIP-Examples.git hip-examples; \
     fi
 
-# Create jupyter kernel for HIP (for notebooks)
-RUN python3 -m ipykernel install --name hip-kernel --display-name "HIP Python"
-
-# Set up HIP for both AMD and NVIDIA compatibility
-RUN cat > /workspace/setup-hip-nvidia.sh << 'EOF'
-#!/bin/bash
-# Switch HIP to NVIDIA backend (for systems with NVIDIA GPUs)
-export HIP_PLATFORM=nvidia
-export HIP_COMPILER=nvcc
-echo "HIP configured for NVIDIA backend"
-echo "HIP_PLATFORM=$HIP_PLATFORM"
-EOF
-
-RUN cat > /workspace/setup-hip-amd.sh << 'EOF'  
-#!/bin/bash
-# Switch HIP to AMD backend (default)
-export HIP_PLATFORM=amd
-unset HIP_COMPILER
-echo "HIP configured for AMD backend"  
-echo "HIP_PLATFORM=$HIP_PLATFORM"
-EOF
-
-RUN chmod +x /workspace/setup-hip-*.sh
-
-# Expose Jupyter port
-EXPOSE 8888
-
 # Default command
 CMD ["/bin/bash"]
 
-# Health check to verify ROCm access
+# Health check to verify HIP compiler access (will only work when GPU is available)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD rocminfo > /dev/null 2>&1 || hipcc --version > /dev/null 2>&1 || exit 1
+    CMD hipcc --version > /dev/null 2>&1 || exit 1

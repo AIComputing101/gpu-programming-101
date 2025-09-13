@@ -274,15 +274,15 @@ run_rocm() {
     "${cmd[@]}"
 }
 
-# Run with docker-compose
+# Run with docker compose (v2) or docker-compose (v1)
 run_compose() {
     local service=$1
     shift
     
-    log "Starting $service using docker-compose..."
+    log "Starting $service using docker compose..."
     cd "$DOCKER_DIR"
     
-    # Parse arguments for docker-compose
+    # Parse arguments for docker compose
     local compose_args=()
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -297,7 +297,15 @@ run_compose() {
         esac
     done
     
-    docker-compose up "${compose_args[@]}" "$service"
+    # Try docker compose (v2) first, then fall back to docker-compose (v1)
+    if docker compose up "${compose_args[@]}" "$service" 2>/dev/null; then
+        log "Started $service using docker compose (v2)"
+    elif docker-compose up "${compose_args[@]}" "$service" 2>/dev/null; then
+        log "Started $service using docker-compose (v1)"
+    else
+        error "Failed to start $service using docker compose"
+        return 1
+    fi
 }
 
 # Show usage
@@ -310,7 +318,7 @@ Usage: $0 [PLATFORM] [OPTIONS]
 Platforms:
     cuda                Run NVIDIA CUDA container
     rocm                Run AMD ROCm container
-    compose SERVICE     Run using docker-compose
+    compose SERVICE     Run using docker compose
 
 Options:
     -h, --help          Show this help message
@@ -326,7 +334,7 @@ Examples:
     $0 cuda --detach    Run CUDA container in background
     $0 rocm --no-gpu    Run ROCm container in CPU-only mode
     $0 --auto           Auto-detect GPU type and run appropriate container
-    $0 compose cuda-dev Run using docker-compose
+    $0 compose cuda-dev Run using docker compose
 
 Container Management:
     List containers:    docker ps -a
@@ -339,6 +347,7 @@ GPU Programming Setup:
     Inside container:   /workspace/test-gpu.sh    # Test GPU environment
     Build examples:     cd modules/module1/examples && make
     CUDA samples:       cd /workspace/cuda-samples
+    HIP samples:        cd /workspace/hip-examples
 
 EOF
 }

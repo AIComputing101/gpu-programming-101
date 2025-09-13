@@ -300,11 +300,19 @@ void demonstrateMemoryPool() {
     cudaDeviceProp prop;
     CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
     
-    if (!prop.memoryPoolsSupported) {
-        printf("Memory pools not supported on this device.\n");
+    // Check if device supports memory pools (CUDA 11.2+)
+    // Use runtime version check instead of compile-time property
+    int runtimeVersion;
+    CUDA_CHECK(cudaRuntimeGetVersion(&runtimeVersion));
+    
+    if (runtimeVersion < 11020) {  // CUDA 11.2 = 11020
+        printf("Memory pools require CUDA 11.2 or later. Current version: %d\n", runtimeVersion);
+        printf("Memory pool demonstration skipped.\n");
         return;
     }
     
+    // For older CUDA versions, we'll skip this feature
+    #if CUDA_VERSION >= 11020
     // Create memory pool
     cudaMemPool_t mempool;
     cudaMemPoolProps poolProps = {};
@@ -316,6 +324,10 @@ void demonstrateMemoryPool() {
     CUDA_CHECK(cudaMemPoolCreate(&mempool, &poolProps));
     
     printf("Created memory pool for efficient allocation/deallocation.\n");
+    
+    // Create a CUDA stream for async operations
+    cudaStream_t stream;
+    CUDA_CHECK(cudaStreamCreate(&stream));
     
     // Allocate multiple arrays from pool
     std::vector<float*> arrays;
@@ -331,7 +343,7 @@ void demonstrateMemoryPool() {
     
     for (int i = 0; i < num_arrays; i++) {
         float *ptr;
-        CUDA_CHECK(cudaMallocFromPoolAsync(&ptr, array_size, mempool));
+        CUDA_CHECK(cudaMallocFromPoolAsync((void**)&ptr, array_size, mempool, stream));
         arrays.push_back(ptr);
     }
     
@@ -345,7 +357,7 @@ void demonstrateMemoryPool() {
     CUDA_CHECK(cudaEventRecord(start));
     
     for (float *ptr : arrays) {
-        CUDA_CHECK(cudaFreeAsync(ptr, 0));
+        CUDA_CHECK(cudaFreeAsync(ptr, stream));
     }
     
     CUDA_CHECK(cudaEventRecord(stop));
@@ -393,8 +405,12 @@ void demonstrateMemoryPool() {
     printf("Pool deallocation speedup: %.2fx\n", regular_free_time / pool_free_time);
     
     CUDA_CHECK(cudaMemPoolDestroy(mempool));
+    CUDA_CHECK(cudaStreamDestroy(stream));
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
+    #else
+    printf("Memory pool features require CUDA 11.2 or later. Skipping demonstration.\n");
+    #endif
 }
 
 int main() {

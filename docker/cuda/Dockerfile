@@ -13,9 +13,9 @@ LABEL ubuntu.version="22.04"
 # Avoid interactive prompts during package installation
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Install essential development tools
+# Install essential development tools for GPU programming
 RUN apt-get update && apt-get install -y \
-    # Basic development tools
+    # Core development tools
     build-essential \
     cmake \
     git \
@@ -25,49 +25,33 @@ RUN apt-get update && apt-get install -y \
     nano \
     htop \
     tree \
-    # Python development
+    # Minimal Python for basic scripting (not data science)
     python3 \
     python3-pip \
     python3-dev \
     # Additional utilities
     pkg-config \
     software-properties-common \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    lsb-release \
-    # GPU monitoring tools
+    # GPU monitoring tools (installed but won't work during build)
     nvidia-utils-535 \
     # Debugging and profiling tools
     gdb \
     valgrind \
     strace \
-    # Network tools for downloading samples
+    # Network tools
     net-tools \
     iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 
-# Install NVIDIA profiling tools (Nsight Systems, Compute) - Latest 2025 versions
-RUN apt-get update && apt-get install -y \
-    nsight-systems-2025.1.1 \
-    nsight-compute-2025.1.1 \
-    && rm -rf /var/lib/apt/lists/* || \
-    # Fallback to 2024 versions if 2025 not available yet
-    (apt-get update && apt-get install -y \
-    nsight-systems-2024.6.1 \
-    nsight-compute-2024.3.1 \
-    && rm -rf /var/lib/apt/lists/*)
+# Install optional CUDA tools if available
+RUN apt-get update && \
+    (apt-get install -y cuda-tools-12-9 || apt-get install -y cuda-tools || true) && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install Python packages for data analysis and visualization
+# Install minimal Python packages for basic development (no heavy data science libs)
 RUN pip3 install --no-cache-dir \
     numpy \
-    matplotlib \
-    seaborn \
-    pandas \
-    jupyter \
-    jupyterlab \
-    plotly \
-    scipy
+    matplotlib
 
 # Set up CUDA environment variables
 ENV PATH=/usr/local/cuda/bin:${PATH}
@@ -78,8 +62,8 @@ ENV CUDA_VERSION=12.9.1
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
-# Verify CUDA installation
-RUN nvcc --version && nvidia-smi
+# Verify CUDA compiler installation (skip nvidia-smi as no GPU during build)
+RUN nvcc --version
 
 # Create development workspace
 WORKDIR /workspace
@@ -98,85 +82,85 @@ RUN echo 'alias ll="ls -alF"' >> /root/.bashrc && \
     echo 'export PS1="\[\e[1;32m\][CUDA-DEV]\[\e[0m\] \w $ "' >> /root/.bashrc
 
 # Create a simple GPU test script
-RUN cat > /workspace/test-gpu.sh << 'EOF'
-#!/bin/bash
-echo "=== GPU Programming 101 - CUDA Environment Test ==="
-echo "Date: $(date)"
-echo ""
-
-echo "=== CUDA Compiler ==="
-nvcc --version
-echo ""
-
-echo "=== GPU Information ==="
-nvidia-smi --query-gpu=name,memory.total,compute_cap,driver_version --format=csv
-echo ""
-
-echo "=== CUDA Samples Test ==="
-if [ -d "/usr/local/cuda/samples" ]; then
-    echo "CUDA samples directory found"
-else
-    echo "CUDA samples not found - this is normal for newer CUDA versions"
-fi
-
-echo "=== Environment Variables ==="
-echo "CUDA_HOME: $CUDA_HOME"
-echo "PATH: $PATH"
-echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
-echo ""
-
-echo "=== Build Test ==="
-cd /tmp
-cat > test.cu << 'CUDA_EOF'
-#include <cuda_runtime.h>
-#include <stdio.h>
-
-__global__ void hello() {
-    printf("Hello from GPU thread %d!\n", threadIdx.x);
-}
-
-int main() {
-    printf("CUDA Test Program\n");
-    hello<<<1, 5>>>();
-    cudaDeviceSynchronize();
-    printf("GPU kernel completed!\n");
-    return 0;
-}
-CUDA_EOF
-
-echo "Compiling test CUDA program..."
-if nvcc -o test test.cu; then
-    echo "✓ Compilation successful"
-    echo "Running test program:"
-    ./test
-    echo "✓ CUDA environment is working correctly!"
-else
-    echo "✗ Compilation failed"
-    exit 1
-fi
-
-rm -f test test.cu
-echo ""
-echo "=== All tests completed ==="
-EOF
+RUN printf '#!/bin/bash\n\
+echo "=== GPU Programming 101 - CUDA Environment Test ==="\n\
+echo "Date: $(date)"\n\
+echo ""\n\
+\n\
+echo "=== CUDA Compiler ==="\n\
+nvcc --version\n\
+echo ""\n\
+\n\
+echo "=== GPU Information ==="\n\
+if nvidia-smi --query-gpu=name,memory.total,compute_cap,driver_version --format=csv 2>/dev/null; then\n\
+    echo "GPU detected successfully"\n\
+else\n\
+    echo "No GPU detected or nvidia-smi not available"\n\
+fi\n\
+echo ""\n\
+\n\
+echo "=== Environment Variables ==="\n\
+echo "CUDA_HOME: $CUDA_HOME"\n\
+echo "PATH: $PATH"\n\
+echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"\n\
+echo ""\n\
+\n\
+echo "=== Build Test ==="\n\
+cd /tmp\n\
+cat > test.cu << '"'"'CUDA_EOF'"'"'\n\
+#include <cuda_runtime.h>\n\
+#include <stdio.h>\n\
+\n\
+__global__ void hello() {\n\
+    printf("Hello from GPU thread %%d!\\n", threadIdx.x);\n\
+}\n\
+\n\
+int main() {\n\
+    printf("CUDA Test Program\\n");\n\
+    \n\
+    int deviceCount;\n\
+    cudaError_t error = cudaGetDeviceCount(&deviceCount);\n\
+    \n\
+    if (error != cudaSuccess) {\n\
+        printf("CUDA Error: %%s\\n", cudaGetErrorString(error));\n\
+        printf("No CUDA-capable devices found\\n");\n\
+        return 0;\n\
+    }\n\
+    \n\
+    printf("Found %%d CUDA device(s)\\n", deviceCount);\n\
+    hello<<<1, 5>>>();\n\
+    cudaDeviceSynchronize();\n\
+    printf("GPU kernel completed!\\n");\n\
+    return 0;\n\
+}\n\
+CUDA_EOF\n\
+\n\
+echo "Compiling test CUDA program..."\n\
+if nvcc -o test test.cu; then\n\
+    echo "✓ Compilation successful"\n\
+    echo "Running test program:"\n\
+    ./test\n\
+    echo "✓ CUDA environment is working correctly!"\n\
+else\n\
+    echo "✗ Compilation failed"\n\
+    exit 1\n\
+fi\n\
+\n\
+rm -f test test.cu\n\
+echo ""\n\
+echo "=== All tests completed ==="\n' > /workspace/test-gpu.sh
 
 RUN chmod +x /workspace/test-gpu.sh
 
-# Install additional CUDA samples and utilities
+# Install CUDA samples for learning and reference
 RUN cd /workspace && \
     git clone https://github.com/NVIDIA/cuda-samples.git && \
     cd cuda-samples && \
     git checkout v12.9
 
-# Create jupyter kernel for CUDA (for notebooks)
-RUN python3 -m ipykernel install --name cuda-kernel --display-name "CUDA Python"
-
-# Expose Jupyter port
-EXPOSE 8888
-
 # Default command
 CMD ["/bin/bash"]
 
-# Health check to verify GPU access
+# Health check to verify GPU access (will only work when GPU is available)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD nvidia-smi > /dev/null 2>&1 || exit 1
+    CMD nvcc --version > /dev/null 2>&1 || exit 1

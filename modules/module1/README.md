@@ -110,7 +110,7 @@ After completing this module:
 
 ## Additional Resources
 - [CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/)
-- [HIP Programming Guide](https://rocmdocs.amd.com/en/latest/Programming_Guides/HIP-GUIDE.html)
+- [HIP Programming Guide](https://rocmdocs.amd.com/projects/HIP/en/latest/)
 - [GPU Performance Best Practices](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/)
 
 ---

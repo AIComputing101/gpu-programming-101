@@ -153,7 +153,6 @@ __global__ void cooperativeGroupsScan(float *input, float *output, int n) {
     __shared__ float warp_sums[32];
     
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int tid = threadIdx.x;
     
     // Load data
     float value = (idx < n) ? input[idx] : 0.0f;
@@ -544,7 +543,7 @@ int main() {
     int num_sizes = sizeof(test_sizes) / sizeof(test_sizes[0]);
     
     for (int i = 0; i < num_sizes; i++) {
-        printf("\n" + std::string(50, '=') + "\n");
+        printf("%s", ("\n" + std::string(50, '=') + "\n").c_str());
         ScanBenchmark benchmark(test_sizes[i]);
         benchmark.runBasicScans();
         benchmark.testSegmentedScan();

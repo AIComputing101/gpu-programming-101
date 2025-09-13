@@ -42,7 +42,8 @@ check_requirements() {
         exit 1
     fi
     
-    if ! command -v docker-compose &> /dev/null; then
+    # Check for Docker Compose (v2 with 'docker compose' or legacy v1 with 'docker-compose')
+    if ! docker compose version &> /dev/null && ! command -v docker-compose &> /dev/null; then
         error "Docker Compose is not installed. Please install Docker Compose first."
         exit 1
     fi
@@ -77,18 +78,19 @@ build_platform() {
     fi
 }
 
-# Build using docker-compose
+# Build using docker compose (v2) or docker-compose (v1)
 build_compose() {
     local service=$1
-    log "Building $service using docker-compose..."
+    log "Building $service using docker compose..."
     
     cd "$DOCKER_DIR"
     
-    if docker-compose build "$service"; then
-        success "$service built successfully using docker-compose"
+    # Try docker compose (v2) first, then fall back to docker-compose (v1)
+    if docker compose build "$service" 2>/dev/null || docker-compose build "$service" 2>/dev/null; then
+        success "$service built successfully using docker compose"
         return 0
     else
-        error "Failed to build $service using docker-compose"
+        error "Failed to build $service using docker compose"
         return 1
     fi
 }
@@ -103,7 +105,7 @@ Usage: $0 [OPTIONS] [PLATFORM]
 Options:
     -h, --help          Show this help message
     -a, --all           Build all platforms (CUDA + ROCm)
-    -c, --compose       Use docker-compose for building
+    -c, --compose       Use docker compose for building
     --clean             Clean existing images before building
     --no-cache          Build without using Docker cache
     --pull              Pull base images before building
@@ -116,7 +118,7 @@ Examples:
     $0 cuda             Build CUDA container only
     $0 rocm             Build ROCm container only  
     $0 --all            Build both CUDA and ROCm containers
-    $0 --compose cuda   Build using docker-compose
+    $0 --compose cuda   Build using docker compose
     $0 --clean --all    Clean and rebuild all containers
 
 EOF
@@ -246,7 +248,7 @@ main() {
         log "Next steps:"
         log "  - Run: ./docker/scripts/run.sh cuda    (for NVIDIA GPUs)"
         log "  - Run: ./docker/scripts/run.sh rocm    (for AMD GPUs)"
-        log "  - Or use: docker-compose -f docker/docker-compose.yml up cuda-dev"
+        log "  - Or use: docker compose -f docker/docker-compose.yml up cuda-dev"
     else
         warning "Some builds failed. Check the logs above for details."
         exit 1

@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <chrono>
+#include <ratio>
 
 #define TILE_SIZE 32
 
@@ -153,7 +155,7 @@ int main() {
     auto cpu_start = std::chrono::high_resolution_clock::now();
     matrixTransposeCPU(h_input, h_output_cpu, width, height);
     auto cpu_end = std::chrono::high_resolution_clock::now();
-    double cpuTime = std::chrono::duration<double, std::milli>(cpu_end - cpu_start).count();
+    double cpuTime = std::chrono::duration<double, std::ratio<1, 1000>>(cpu_end - cpu_start).count();
     
     // Verify results
     bool naive_correct = true, shared_correct = true;

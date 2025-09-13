@@ -23,12 +23,6 @@ services:
       - ../:/workspace/gpu-programming-101:rw
       - cuda-home:/root
       - cuda-cache:/root/.cache
-      - cuda-jupyter:/root/.jupyter
-    
-    # Port mappings
-    ports:
-      - "8888:8888"  # Jupyter Lab
-      - "6006:6006"  # TensorBoard (if needed)
     
     # Interactive mode
     stdin_open: true
@@ -73,11 +67,6 @@ services:
       - ../:/workspace/gpu-programming-101:rw
       - rocm-home:/root
       - rocm-cache:/root/.cache
-      - rocm-jupyter:/root/.jupyter
-    
-    # Port mappings
-    ports:
-      - "8889:8888"  # Jupyter Lab (different port to avoid conflict)
     
     # Interactive mode
     stdin_open: true
@@ -113,10 +102,6 @@ services:
       - ../:/workspace/gpu-programming-101:rw
       - dev-home:/root
     
-    # Port mappings
-    ports:
-      - "8890:8888"  # Jupyter Lab for documentation
-    
     # Interactive mode
     stdin_open: true
     tty: true
@@ -134,13 +119,9 @@ volumes:
     driver: local
   cuda-cache:
     driver: local
-  cuda-jupyter:
-    driver: local
   rocm-home:
     driver: local
   rocm-cache:
-    driver: local
-  rocm-jupyter:
     driver: local
   dev-home:
     driver: local

@@ -37,9 +37,6 @@ This directory contains Docker configurations for comprehensive GPU programming 
 # Or specify platform
 ./docker/scripts/run.sh cuda    # For NVIDIA GPUs
 ./docker/scripts/run.sh rocm    # For AMD GPUs
-
-# Start with Jupyter Lab
-./docker/scripts/run.sh cuda --jupyter
 ```
 
 ## 📁 Directory Structure
@@ -104,16 +101,6 @@ docker/
 [CUDA-DEV] /workspace/gpu-programming-101 $ cd modules/module1/examples
 [CUDA-DEV] /workspace/gpu-programming-101/modules/module1/examples $ make
 [CUDA-DEV] /workspace/gpu-programming-101/modules/module1/examples $ ./01_vector_addition_cuda
-```
-
-### Jupyter Lab Development
-```bash
-# Start with Jupyter Lab
-./docker/scripts/run.sh cuda --jupyter
-
-# Access Jupyter at:
-# http://localhost:8888 (CUDA)
-# http://localhost:8889 (ROCm)
 ```
 
 ### Background Services
@@ -236,14 +223,6 @@ nsys profile -t cuda ./05_performance_comparison
 # ROCm performance analysis
 rocprof --hip-trace --stats ./02_vector_addition_hip
 ```
-
-## 🌐 Port Mappings
-
-| Service | Host Port | Container Port | Purpose |
-|---------|-----------|----------------|---------|
-| CUDA Jupyter | 8888 | 8888 | Jupyter Lab |
-| ROCm Jupyter | 8889 | 8888 | Jupyter Lab |
-| Development Tools | 8890 | 8888 | Documentation |
 
 ## 💾 Volume Mounts
 
@@ -369,7 +348,7 @@ docker stats gpu101-cuda-dev
 5. **Practice**: `cd examples && make && ./01_vector_addition_cuda`
 
 ### Development Workflow  
-1. **Background**: `./docker/scripts/run.sh cuda --jupyter`
+1. **Background**: `./docker/scripts/run.sh cuda --detach`
 2. **Code**: Edit files in your host IDE
 3. **Test**: Compile and run in container
 4. **Debug**: Use integrated debugging tools

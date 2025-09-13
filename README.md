@@ -11,7 +11,22 @@
 
 *From beginner fundamentals to production-ready optimization techniques*
 
-**Quick Navigation:** [🚀 Quick Start](#-quick-start) • [📚 Modules](#-modules) • [🐳 Docker Setup](#-docker-development) • [🤝 Contributing](CONTRIBUTING.md)
+## 📑 Table of Contents
+
+- [📋 Project Overview](#-project-overview)
+- [🏗️ GPU Programming Architecture](#️-gpu-programming-architecture)
+- [✨ Key Features](#-key-features)
+- [🚀 Quick Start](#-quick-start)
+- [🎯 Learning Path](#-learning-path)
+- [📚 Modules](#-modules)
+- [🛠️ Prerequisites](#️-prerequisites)
+- [🐳 Docker Development](#-docker-development)
+- [🔧 Build System](#-build-system)
+- [📊 Performance Expectations](#-performance-expectations)
+- [🐛 Troubleshooting](#-troubleshooting)
+- [📖 Documentation](#-documentation)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
 ---
 
@@ -26,6 +41,155 @@
 - **Professional tooling** including profilers, debuggers, and CI/CD
 
 Perfect for students, researchers, and developers looking to master GPU computing.
+
+## 🏗️ GPU Programming Architecture
+
+Understanding how GPU programming works from high-level code to hardware execution is crucial for effective GPU development. This section provides a comprehensive overview of the CUDA and HIP ROCm software-hardware stack.
+
+### Architecture Overview Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                                APPLICATION LAYER                                    │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│  High-Level Code (C++/CUDA/HIP)                                                   │
+│  ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐    │
+│  │   CUDA C++ Code     │    │    HIP C++ Code     │    │   OpenCL/SYCL       │    │
+│  │   (.cu files)       │    │   (.hip files)      │    │   (Cross-platform)   │    │
+│  │                     │    │                     │    │                     │    │
+│  │ __global__ kernels  │    │ __global__ kernels  │    │ kernel functions    │    │
+│  │ cudaMalloc()        │    │ hipMalloc()         │    │ clCreateBuffer()    │    │
+│  │ cudaMemcpy()        │    │ hipMemcpy()         │    │ clEnqueueNDRange()  │    │
+│  └─────────────────────┘    └─────────────────────┘    └─────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                              COMPILATION LAYER                                     │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│  Compiler Frontend                                                                 │
+│  ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐    │
+│  │      NVCC           │    │      HIP Clang      │    │    LLVM/Clang       │    │
+│  │  (NVIDIA Compiler)  │    │   (AMD Compiler)    │    │   (Open Standard)   │    │
+│  │                     │    │                     │    │                     │    │
+│  │ • Parse CUDA syntax │    │ • Parse HIP syntax  │    │ • Parse OpenCL/SYCL │    │
+│  │ • Host/Device split │    │ • Host/Device split │    │ • Generate SPIR-V   │    │
+│  │ • Generate PTX      │    │ • Generate GCN ASM  │    │ • Target backends   │    │
+│  └─────────────────────┘    └─────────────────────┘    └─────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                           INTERMEDIATE REPRESENTATION                               │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐    │
+│  │        PTX          │    │      GCN ASM        │    │      SPIR-V         │    │
+│  │ (Parallel Thread    │    │  (Graphics Core     │    │  (Standard Portable │    │
+│  │  Execution)         │    │   Next Assembly)    │    │   IR - Vulkan)      │    │
+│  │                     │    │                     │    │                     │    │
+│  │ • Virtual ISA       │    │ • AMD GPU ISA       │    │ • Cross-platform    │    │
+│  │ • Device agnostic   │    │ • RDNA/CDNA arch    │    │ • Vendor neutral    │    │
+│  │ • JIT compilation   │    │ • Direct execution  │    │ • Multiple targets  │    │
+│  └─────────────────────┘    └─────────────────────┘    └─────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                               DRIVER LAYER                                         │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐    │
+│  │    CUDA Driver      │    │     ROCm Driver     │    │   OpenCL Driver     │    │
+│  │                     │    │                     │    │                     │    │
+│  │ • PTX → SASS JIT    │    │ • GCN → Machine     │    │ • SPIR-V → Native   │    │
+│  │ • Memory management │    │ • Memory management │    │ • Memory management │    │
+│  │ • Kernel launch     │    │ • Kernel launch     │    │ • Kernel launch     │    │
+│  │ • Context mgmt      │    │ • Context mgmt      │    │ • Context mgmt      │    │
+│  └─────────────────────┘    └─────────────────────┘    └─────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                              HARDWARE LAYER                                        │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────┐    ┌─────────────────────┐                               │
+│  │    NVIDIA GPU       │    │      AMD GPU        │                               │
+│  │                     │    │                     │                               │
+│  │ ┌─────────────────┐ │    │ ┌─────────────────┐ │    ┌─────────────────────┐    │
+│  │ │   SM (Cores)    │ │    │ │   CU (Cores)    │ │    │   Intel Xe Cores    │    │
+│  │ │ ┌─────────────┐ │ │    │ │ ┌─────────────┐ │ │    │ ┌─────────────────┐ │    │
+│  │ │ │FP32 | INT32 │ │ │    │ │ │FP32 | INT32 │ │ │    │ │  Vector Engines │ │    │
+│  │ │ │FP64 | BF16  │ │ │    │ │ │FP64 | BF16  │ │ │    │ │  Matrix Engines │ │    │
+│  │ │ │Tensor Cores │ │ │    │ │ │Matrix Cores │ │ │    │ │  Ray Tracing    │ │    │
+│  │ │ └─────────────┘ │ │    │ │ └─────────────┘ │ │    │ └─────────────────┘ │    │
+│  │ └─────────────────┘ │    │ └─────────────────┘ │    └─────────────────────┘    │
+│  │                     │    │                     │                               │
+│  │ Memory Hierarchy:   │    │ Memory Hierarchy:   │    Memory Hierarchy:          │
+│  │ • L1 Cache (KB)     │    │ • L1 Cache (KB)     │    • L1 Cache                 │
+│  │ • L2 Cache (MB)     │    │ • L2 Cache (MB)     │    • L2 Cache                 │
+│  │ • Global Mem (GB)   │    │ • Global Mem (GB)   │    • Global Memory            │
+│  │ • Shared Memory     │    │ • LDS (Local Data   │    • Shared Local Memory      │
+│  │ • Constant Memory   │    │   Store)            │    • Constant Memory          │
+│  │ • Texture Memory    │    │ • Constant Memory   │                               │
+│  └─────────────────────┘    └─────────────────────┘                               │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Compilation Pipeline Deep Dive
+
+#### 1. **Source Code → Frontend Parsing**
+- **CUDA**: NVCC separates host (CPU) and device (GPU) code, parses CUDA extensions
+- **HIP**: Clang-based compiler with HIP runtime API that maps to either CUDA or ROCm
+- **OpenCL/SYCL**: LLVM-based compilation with cross-platform intermediate representation
+
+#### 2. **Frontend → Intermediate Representation**
+```
+High-Level Code                    Intermediate Form
+─────────────────                 ───────────────────
+__global__ void kernel()    →     PTX (NVIDIA)
+{                                 GCN Assembly (AMD)  
+    int id = threadIdx.x;         SPIR-V (OpenCL/Vulkan)
+    output[id] = input[id] * 2;   LLVM IR (SYCL)
+}
+```
+
+#### 3. **Runtime Compilation & Optimization**
+- **NVIDIA**: PTX → SASS (GPU-specific machine code) via JIT compilation
+- **AMD**: GCN Assembly → GPU microcode via ROCm runtime
+- **Optimizations**: Register allocation, memory coalescing, instruction scheduling
+
+#### 4. **Hardware Execution Model**
+
+| Abstraction Level | NVIDIA Term | AMD Term | Description |
+|------------------|-------------|----------|-------------|
+| **Thread** | Thread | Work-item | Single execution unit |
+| **Thread Group** | Warp (32 threads) | Wavefront (64 threads) | SIMD execution group |
+| **Thread Block** | Block | Work-group | Shared memory + synchronization |
+| **Grid** | Grid | NDRange | Collection of all thread blocks |
+
+#### 5. **Memory Architecture Mapping**
+
+```
+Programming Model              Hardware Implementation
+─────────────────              ─────────────────────────
+Global Memory        →         GPU DRAM (HBM/GDDR)
+Shared Memory        →         On-chip SRAM (48-164KB per SM/CU)
+Local Memory         →         GPU DRAM (spilled registers)
+Constant Memory      →         Cached read-only GPU DRAM
+Texture Memory       →         Cached GPU DRAM with interpolation
+Registers            →         On-chip register file (32K-64K per SM/CU)
+```
+
+### Performance Implications
+
+Understanding this architecture helps optimize GPU code:
+
+1. **Memory Coalescing**: Access patterns that align with hardware memory buses
+2. **Occupancy**: Balancing registers, shared memory, and thread blocks per SM/CU
+3. **Divergence**: Minimizing different execution paths within warps/wavefronts
+4. **Latency Hiding**: Using enough threads to hide memory access latency
+5. **Memory Hierarchy**: Optimal use of each memory type based on access patterns
+
+This architectural knowledge is essential for writing efficient GPU code and is covered progressively throughout our modules.
 
 ## ✨ Key Features
 
@@ -75,46 +239,49 @@ cd modules/module1/examples
 ./01_vector_addition_cuda
 ```
 
-### 🎯 What You'll Learn
+## 🎯 Learning Path
 
-**👶 Beginner Track** - Start here if you're new to GPU programming
-- GPU architecture fundamentals
-- Writing your first CUDA/HIP kernels  
-- Memory management between CPU and GPU
-- Basic parallel algorithms
-- Debugging and profiling basics
+Choose your track based on your experience level:
 
-**🔥 Intermediate Track** - For developers with some parallel programming experience
-- Advanced memory optimization techniques
-- Multi-dimensional data processing
-- GPU architecture deep dive
-- Performance engineering
-- Multi-GPU programming
+**👶 Beginner Track** (Modules 1-3) - GPU fundamentals, memory management, first kernels
+**🔥 Intermediate Track** (Modules 4-5) - Advanced programming, performance optimization  
+**🚀 Advanced Track** (Modules 6-9) - Parallel algorithms, domain applications, production deployment
 
-**🚀 Advanced Track** - For experts seeking production-level skills
-- Fundamental parallel algorithms (reduction, scan, convolution)
-- Advanced algorithmic patterns (sorting, sparse matrices)
-- Domain-specific applications (ML, scientific computing)
-- Production deployment and optimization
-- Next-generation GPU architectures
+*Each track builds on the previous one, so start with the appropriate level for your background.*
 
 ## 📚 Modules
 
-| Module | Level | Duration | Topics | Examples |
-|--------|-------|----------|--------|----------|
-| [**Module 1**](modules/module1/) | Beginner | 4-6h | GPU Fundamentals, CUDA/HIP Basics | 13 |
-| [**Module 2**](modules/module2/) | Beginner-Intermediate | 6-8h | Multi-Dimensional Data Processing | 10 |
-| [**Module 3**](modules/module3/) | Intermediate | 6-8h | GPU Architecture & Execution Models | 12 |
-| [**Module 4**](modules/module4/) | Intermediate-Advanced | 8-10h | Advanced GPU Programming | 9 |
-| [**Module 5**](modules/module5/) | Advanced | 6-8h | Performance Engineering | 5 |
-| [**Module 6**](modules/module6/) | Intermediate-Advanced | 8-10h | Fundamental Parallel Algorithms | 10 |
-| [**Module 7**](modules/module7/) | Advanced | 8-10h | Advanced Algorithmic Patterns | 4 |
-| [**Module 8**](modules/module8/) | Advanced | 10-12h | Domain-Specific Applications | 4 |
-| [**Module 9**](modules/module9/) | Expert | 6-8h | Production GPU Programming | 4 |
+Our comprehensive curriculum progresses from fundamental concepts to production-ready optimization techniques:
+
+| Module | Level | Duration | Focus Area | Key Topics | Examples |
+|--------|-------|----------|------------|------------|----------|
+| [**Module 1**](modules/module1/) | 👶 Beginner | 4-6h | **GPU Fundamentals** | Architecture, Memory, First Kernels | 13 |
+| [**Module 2**](modules/module2/) | 👶→🔥 | 6-8h | **Memory Optimization** | Coalescing, Shared Memory, Texture | 10 |
+| [**Module 3**](modules/module3/) | 🔥 Intermediate | 6-8h | **Execution Models** | Warps, Occupancy, Synchronization | 12 |
+| [**Module 4**](modules/module4/) | 🔥→🚀 | 8-10h | **Advanced Programming** | Streams, Multi-GPU, Unified Memory | 9 |
+| [**Module 5**](modules/module5/) | 🚀 Advanced | 6-8h | **Performance Engineering** | Profiling, Bottleneck Analysis | 5 |
+| [**Module 6**](modules/module6/) | 🚀 Advanced | 8-10h | **Parallel Algorithms** | Reduction, Scan, Convolution | 10 |
+| [**Module 7**](modules/module7/) | 🚀 Expert | 8-10h | **Algorithmic Patterns** | Sorting, Graph Algorithms | 4 |
+| [**Module 8**](modules/module8/) | 🚀 Expert | 10-12h | **Domain Applications** | ML, Scientific Computing | 4 |
+| [**Module 9**](modules/module9/) | 🚀 Expert | 6-8h | **Production Deployment** | Libraries, Integration, Scaling | 4 |
 
 **📈 Progressive Learning Path: 70+ Examples • 50+ Hours • Beginner to Expert**
 
-**[� View Learning Modules →](modules/)**
+### Learning Progression
+
+```
+Module 1: Hello GPU World          Module 6: Parallel Algorithms
+    ↓                                 ↓
+Module 2: Memory Mastery          Module 7: Advanced Patterns  
+    ↓                                 ↓
+Module 3: Execution Deep Dive     Module 8: Real Applications
+    ↓                                 ↓
+Module 4: Advanced Features       Module 9: Production Ready
+    ↓                             
+Module 5: Performance Tuning     
+```
+
+**[📚 View All Modules →](modules/)**
 
 ## 🛠️ Prerequisites
 
@@ -236,33 +403,7 @@ make profile       # Performance profiling
 make debug         # Debug builds with extra checks
 ```
 
-## 🚦 Getting Started Guide
-
-### 1. Choose Your Path
-- **🐳 Docker**: No setup required, works everywhere → [Docker Guide](docker/README.md)  
-- **💻 Native**: Direct system installation → [Installation Guide](#option-2-native-installation)
-
-### 2. Start Learning
-```bash
-# Begin with Module 1
-cd modules/module1
-cat README.md        # Read learning objectives  
-cd examples && make  # Build examples
-./01_vector_addition_cuda  # Run your first GPU program!
-```
-
-### 3. Progress Through Modules
-- Each module builds on previous concepts
-- Complete examples and exercises in order
-- Use profiling tools to understand performance
-- Experiment with different optimizations
-
-### 4. Advanced Topics
-- Modules 6-9 cover production-level techniques
-- Focus on algorithms and applications relevant to your domain
-- Contribute back with improvements and new examples
-
-## 📊 Performance Expectations
+##  Performance Expectations
 
 | Module Level | Typical GPU Speedup | Memory Efficiency | Code Quality |
 |--------------|-------------------|------------------|--------------|
@@ -305,8 +446,6 @@ make check-hip
 # Rebuild containers
 ./docker/scripts/build.sh --clean --all
 ```
-
-**[� Need Help? Check Common Issues →](README.md#-troubleshooting)**
 
 ## 📖 Documentation
 

@@ -5,6 +5,17 @@
 #include <math.h>
 #include <chrono>
 
+// CUDA version detection for feature availability
+#define CUDA_VERSION_MAJOR (__CUDACC_VER_MAJOR__)
+#define CUDA_VERSION_MINOR (__CUDACC_VER_MINOR__)
+#define CUDA_VERSION_COMBINED (CUDA_VERSION_MAJOR * 1000 + CUDA_VERSION_MINOR * 10)
+
+// Feature availability based on CUDA version
+#define HAS_MATCH_ALL (CUDA_VERSION_COMBINED >= 11020)  // CUDA 11.2+
+#define HAS_MULTI_GRID (CUDA_VERSION_COMBINED >= 10000) // CUDA 10.0+
+#define HAS_REDUCE_PLUS (CUDA_VERSION_COMBINED >= 11000) // CUDA 11.0+
+#define HAS_EXPERIMENTAL_CG (CUDA_VERSION_COMBINED >= 11000) // CUDA 11.0+
+
 namespace cg = cooperative_groups;
 
 // Modern reduction using cooperative groups
@@ -53,7 +64,13 @@ __global__ void cooperativeReduction(float *input, float *output, int n) {
 // Matrix multiplication using thread block tiles
 __global__ void cooperativeMatMul(float *A, float *B, float *C, int N) {
     auto block = cg::this_thread_block();
-    auto tile = cg::tiled_partition<256>(block); // 16x16 tile
+    
+    // Use larger tiles if experimental features are available, otherwise use warp-sized tiles
+    #if HAS_EXPERIMENTAL_CG
+        auto tile = cg::experimental::tiled_partition<256>(block); // 16x16 tile for newer CUDA
+    #else
+        auto tile = cg::tiled_partition<32>(block); // Warp-sized tile for compatibility
+    #endif
     
     int row = blockIdx.y * 16 + (threadIdx.x / 16);
     int col = blockIdx.x * 16 + (threadIdx.x % 16);
@@ -146,36 +163,75 @@ __global__ void warpPrimitivesDemo(int *input, int *output, int n) {
     bool any_true = warp.any(predicate);        // Any thread satisfies condition
     unsigned int ballot = warp.ballot(predicate); // Bitmask of threads satisfying condition
     
-    // 3. Matching operations (if supported)
-    unsigned int match_mask = warp.match_all(value);  // Threads with same value
+    // 3. Matching operations (version-aware)
+    unsigned int match_result;
+    #if HAS_MATCH_ALL
+        unsigned int match_mask = warp.match_all(value);  // Use native match_all if available
+        match_result = __popc(match_mask);
+    #else
+        // Fallback implementation for older CUDA versions
+        match_result = __popc(warp.ballot(value == warp.shfl(value, 0)));
+    #endif
     
     if (tid < n) {
         // Store various results for demonstration
         output[tid] = next_value + prev_value + (all_true ? 1000 : 0) + 
-                     (any_true ? 100 : 0) + __popc(ballot);
+                     (any_true ? 100 : 0) + __popc(ballot) + match_result;
     }
 }
 
-// Multi-GPU cooperative kernel (requires special launch)
+// Multi-GPU cooperative kernel (version-aware)
 __global__ void multiGPUReduction(float *input, float *output, int n, int gpu_id) {
-    auto grid = cg::this_multi_grid();
-    auto block = cg::this_thread_block();
-    
-    int tid = blockIdx.x * blockDim.x + threadIdx.x + gpu_id * (n / grid.num_grids());
-    
-    float sum = 0.0f;
-    
-    // Local reduction
-    if (tid < n) {
-        sum = input[tid];
-    }
-    
-    // Grid-level reduction using cooperative groups
-    sum = cg::reduce(grid, sum, cg::plus<float>());
-    
-    if (grid.thread_rank() == 0) {
-        atomicAdd(output, sum);
-    }
+    #if HAS_MULTI_GRID && HAS_REDUCE_PLUS
+        // Advanced multi-grid implementation for newer CUDA versions
+        auto grid = cg::this_multi_grid();
+        auto block = cg::this_thread_block();
+        
+        int tid = blockIdx.x * blockDim.x + threadIdx.x + gpu_id * (n / grid.num_grids());
+        
+        float sum = 0.0f;
+        
+        // Local reduction
+        if (tid < n) {
+            sum = input[tid];
+        }
+        
+        // Grid-level reduction using cooperative groups
+        sum = cg::reduce(grid, sum, cg::plus<float>());
+        
+        if (grid.thread_rank() == 0) {
+            atomicAdd(output, sum);
+        }
+    #else
+        // Fallback implementation for older CUDA versions
+        auto block = cg::this_thread_block();
+        
+        int tid = blockIdx.x * blockDim.x + threadIdx.x;
+        
+        float sum = 0.0f;
+        
+        // Local reduction
+        if (tid < n) {
+            sum = input[tid];
+        }
+        
+        // Block-level reduction using shared memory
+        __shared__ float shared_sum[256];
+        shared_sum[threadIdx.x] = sum;
+        __syncthreads();
+        
+        // Manual reduction in shared memory
+        for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
+            if (threadIdx.x < stride) {
+                shared_sum[threadIdx.x] += shared_sum[threadIdx.x + stride];
+            }
+            __syncthreads();
+        }
+        
+        if (threadIdx.x == 0) {
+            atomicAdd(output, shared_sum[0]);
+        }
+    #endif
 }
 
 // Parallel scan using cooperative groups
@@ -241,7 +297,16 @@ __global__ void cooperativeScan(float *input, float *output, int n) {
 
 int main() {
     printf("CUDA Cooperative Groups Examples\n");
-    printf("================================\n\n");
+    printf("================================\n");
+    
+    // Display version information and feature availability
+    printf("CUDA Compiler Version: %d.%d\n", CUDA_VERSION_MAJOR, CUDA_VERSION_MINOR);
+    printf("Feature Availability:\n");
+    printf("  - Match All Operations: %s\n", HAS_MATCH_ALL ? "Available" : "Using Fallback");
+    printf("  - Multi-Grid Support: %s\n", HAS_MULTI_GRID ? "Available" : "Using Fallback");
+    printf("  - Reduce/Plus Operations: %s\n", HAS_REDUCE_PLUS ? "Available" : "Using Fallback");
+    printf("  - Experimental CG Features: %s\n", HAS_EXPERIMENTAL_CG ? "Available" : "Using Standard");
+    printf("\n");
     
     const int N = 1048576;  // 1M elements
     const int bytes = N * sizeof(float);

@@ -337,7 +337,7 @@ export HIP_PLATFORM=nvidia
 ## Additional Resources
 
 - [CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/)
-- [HIP Programming Guide](https://rocmdocs.amd.com/en/latest/Programming_Guides/HIP-GUIDE.html)
+- [HIP Programming Guide](https://rocmdocs.amd.com/en/latest/Programming_Guides/HIP/index.html)
 - [GPU Performance Guidelines](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/)
 
 ## Exercises

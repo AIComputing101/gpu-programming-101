@@ -7,10 +7,17 @@
       "pattern": "^https://github.com/yourusername/"
     }
   ],
-  "aliveStatusCodes": [200, 206, 999],
-  "timeout": "10s",
+  "httpHeaders": [
+    {
+      "urls": ["https://rocmdocs.amd.com/"],
+      "headers": {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
+    }
+  ],
+  "timeout": "15s",
   "retryOn429": true,
-  "retryCount": 5,
+  "retryCount": 3,
   "fallbackRetryDelay": "30s",
-  "aliveStatusCodes": [200, 206]
+  "aliveStatusCodes": [200, 206, 999]
 }

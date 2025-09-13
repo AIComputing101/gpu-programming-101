@@ -11,7 +11,7 @@
 
 *From beginner fundamentals to production-ready optimization techniques*
 
-**Quick Navigation:** [🚀 Quick Start](#-quick-start) • [📚 Modules](#-modules) • [🐳 Docker Setup](#-docker-development) • [📖 Documentation](SUMMARY.md) • [🤝 Contributing](CONTRIBUTING.md)
+**Quick Navigation:** [🚀 Quick Start](#-quick-start) • [📚 Modules](#-modules) • [🐳 Docker Setup](#-docker-development) • [🤝 Contributing](CONTRIBUTING.md)
 
 ---
 
@@ -114,7 +114,7 @@ cd modules/module1/examples
 
 **📈 Progressive Learning Path: 70+ Examples • 50+ Hours • Beginner to Expert**
 
-**[📖 View Detailed Curriculum →](SUMMARY.md)**
+**[� View Learning Modules →](modules/)**
 
 ## 🛠️ Prerequisites
 
@@ -306,13 +306,13 @@ make check-hip
 ./docker/scripts/build.sh --clean --all
 ```
 
-**[📖 Full Troubleshooting Guide →](docs/troubleshooting.md)**
+**[� Need Help? Check Common Issues →](README.md#-troubleshooting)**
 
 ## 📖 Documentation
 
 | Document | Description |
 |----------|-------------|
-| [**SUMMARY.md**](SUMMARY.md) | Complete curriculum overview and learning paths |
+| **README.md** | Main project documentation and getting started guide |
 | [**CONTRIBUTING.md**](CONTRIBUTING.md) | How to contribute to the project |
 | [**Docker Guide**](docker/README.md) | Complete Docker setup and usage |
 | [**Module READMEs**](modules/) | Individual module documentation |
@@ -327,13 +327,13 @@ We welcome contributions from the community! This project thrives on:
 - 🔧 **Optimizations**: Performance improvements and best practices
 - 🌐 **Platform Support**: Cross-platform compatibility improvements
 
-**[📖 Contributing Guidelines →](CONTRIBUTING.md)** • **[🐛 Report Issues →](../../issues)** • **[💡 Request Features →](../../issues/new?template=feature_request.md)**
+**[📖 Contributing Guidelines →](CONTRIBUTING.md)** • **[🐛 Report Issues →](https://github.com/AIComputing101/gpu-programming-101/issues)** • **[💡 Request Features →](https://github.com/AIComputing101/gpu-programming-101/issues/new?template=feature_request.md)**
 
 ## 🏆 Community & Support
 
 - 🌟 **Star this project** if you find it helpful!
-- 🐛 **Report bugs** using our [issue templates](../../issues/new/choose)
-- 💬 **Join discussions** in [GitHub Discussions](../../discussions)
+- 🐛 **Report bugs** using our [issue templates](https://github.com/AIComputing101/gpu-programming-101/issues/new/choose)
+- 💬 **Join discussions** in [GitHub Discussions](https://github.com/AIComputing101/gpu-programming-101/discussions)
 - 📧 **Get help** from the community and maintainers
 
 ## 📄 License
@@ -371,7 +371,7 @@ Stephen Shao, "GPU Programming 101: A Comprehensive Educational Project for CUDA
 
 **Ready to unlock the power of GPU computing?**
 
-**[🚀 Get Started Now](#-quick-start)** • **[📚 View Curriculum](SUMMARY.md)** • **[🐳 Try Docker](docker/README.md)**
+**[🚀 Get Started Now](#-quick-start)** • **[📚 View Modules](modules/)** • **[🐳 Try Docker](docker/README.md)**
 
 ---
 

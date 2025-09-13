@@ -36,7 +36,7 @@ warning() {
 # Check if image exists
 check_image() {
     local image_name=$1
-    if ! docker images "$image_name" | grep -q "$image_name"; then
+    if ! docker image inspect "$image_name" >/dev/null 2>&1; then
         error "Image $image_name not found. Please build it first using:"
         error "  ./docker/scripts/build.sh"
         return 1
@@ -48,20 +48,26 @@ check_image() {
 detect_gpu() {
     local gpu_type="none"
     
-    # Check for NVIDIA
-    if command -v nvidia-smi &> /dev/null && nvidia-smi &> /dev/null; then
+    # Check for NVIDIA GPU presence (multiple methods)
+    if command -v nvidia-smi &> /dev/null; then
         gpu_type="nvidia"
-        log "NVIDIA GPU detected"
+        log "NVIDIA GPU tools detected (nvidia-smi found)" >&2
+    elif [ -c /dev/nvidia0 ] || [ -c /dev/nvidiactl ]; then
+        gpu_type="nvidia"
+        log "NVIDIA GPU devices detected (/dev/nvidia*)" >&2
+    elif lspci 2>/dev/null | grep -i nvidia &> /dev/null; then
+        gpu_type="nvidia"
+        log "NVIDIA GPU detected via lspci" >&2
     # Check for AMD
     elif command -v rocm-smi &> /dev/null && rocm-smi &> /dev/null; then
         gpu_type="amd"  
-        log "AMD GPU detected"
+        log "AMD GPU detected" >&2
     elif [ -c /dev/kfd ] && [ -c /dev/dri/renderD128 ]; then
         gpu_type="amd"
-        log "AMD GPU devices detected"
+        log "AMD GPU devices detected" >&2
     else
-        warning "No GPU detected or GPU tools not available"
-        warning "Container will run in CPU-only mode"
+        warning "No GPU detected or GPU tools not available" >&2
+        warning "Container will run in CPU-only mode" >&2
     fi
     
     echo "$gpu_type"
@@ -74,10 +80,15 @@ run_cuda() {
     local gpu_args=""
     local ports_args="-p 8888:8888"
     local extra_args=()
+    local no_gpu_requested=false
     
     # Parse additional arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
             --name)
                 container_name="$2"
                 shift 2
@@ -87,17 +98,11 @@ run_cuda() {
                 shift 2
                 ;;
             --no-gpu)
-                gpu_args=""
+                no_gpu_requested=true
                 shift
                 ;;
             --detach|-d)
                 extra_args+=("--detach")
-                shift
-                ;;
-            --jupyter)
-                extra_args+=("--detach")
-                ports_args="-p 8888:8888"
-                log "Starting Jupyter Lab on http://localhost:8888"
                 shift
                 ;;
             *)
@@ -112,8 +117,17 @@ run_cuda() {
     fi
     
     # Set up GPU access for NVIDIA
-    if [ "$(detect_gpu)" = "nvidia" ] && [ -z "${gpu_args+x}" ]; then
+    local detected_gpu=$(detect_gpu)
+    log "Detected GPU type: $detected_gpu"
+    log "No GPU requested: $no_gpu_requested"
+    
+    if [ "$detected_gpu" = "nvidia" ] && [ "$no_gpu_requested" = false ]; then
         gpu_args="--gpus all"
+        log "Enabling NVIDIA GPU access"
+    elif [ "$no_gpu_requested" = true ]; then
+        log "GPU access explicitly disabled with --no-gpu"
+    else
+        log "GPU access disabled (no NVIDIA GPU detected or other reason)"
     fi
     
     # Remove existing container if it exists
@@ -133,11 +147,13 @@ run_cuda() {
         --name "$container_name"
         --hostname "cuda-dev"
         -it
-        "$ports_args"
         -v "$PROJECT_ROOT:/workspace/gpu-programming-101:rw"
         -v "gpu101-cuda-home:/root"
         -w "/workspace/gpu-programming-101"
     )
+    
+    # Add port mapping
+    cmd+=($ports_args)
     
     # Add GPU args if available
     if [ -n "$gpu_args" ]; then
@@ -166,10 +182,15 @@ run_rocm() {
     local gpu_args=""
     local ports_args="-p 8889:8888"
     local extra_args=()
+    local no_gpu_requested=false
     
     # Parse additional arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
             --name)
                 container_name="$2"
                 shift 2
@@ -179,17 +200,11 @@ run_rocm() {
                 shift 2
                 ;;
             --no-gpu)
-                gpu_args=""
+                no_gpu_requested=true
                 shift
                 ;;
             --detach|-d)
                 extra_args+=("--detach")
-                shift
-                ;;
-            --jupyter)
-                extra_args+=("--detach")
-                ports_args="-p 8889:8888"
-                log "Starting Jupyter Lab on http://localhost:8889"
                 shift
                 ;;
             *)
@@ -204,8 +219,12 @@ run_rocm() {
     fi
     
     # Set up GPU access for AMD
-    if [ "$(detect_gpu)" = "amd" ] && [ -z "${gpu_args+x}" ]; then
+    local detected_gpu=$(detect_gpu)
+    if [ "$detected_gpu" = "amd" ] && [ "$no_gpu_requested" = false ]; then
         gpu_args="--device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined"
+        log "Enabling AMD GPU access"
+    elif [ "$no_gpu_requested" = true ]; then
+        log "GPU access explicitly disabled with --no-gpu"
     fi
     
     # Remove existing container if it exists
@@ -225,13 +244,15 @@ run_rocm() {
         --name "$container_name"
         --hostname "rocm-dev"
         -it
-        "$ports_args"
         -v "$PROJECT_ROOT:/workspace/gpu-programming-101:rw"
         -v "gpu101-rocm-home:/root"
         -w "/workspace/gpu-programming-101"
         -e HIP_VISIBLE_DEVICES=0
         -e HSA_OVERRIDE_GFX_VERSION=10.3.0
     )
+    
+    # Add port mapping
+    cmd+=($ports_args)
     
     # Add GPU args if available
     if [ -n "$gpu_args" ]; then
@@ -294,29 +315,30 @@ Platforms:
 Options:
     -h, --help          Show this help message
     --name NAME         Set custom container name
-    --port PORT         Map Jupyter to custom port (default: 8888 for CUDA, 8889 for ROCm)
+    --port PORT         Map port to host (default: 8888 for CUDA, 8889 for ROCm)
     --no-gpu            Disable GPU access (CPU-only mode)
     --detach, -d        Run in background (detached mode)
-    --jupyter           Start in detached mode with Jupyter Lab
     --auto              Auto-detect GPU and run appropriate container
 
 Examples:
     $0 cuda             Run CUDA container interactively
     $0 rocm             Run ROCm container interactively
-    $0 cuda --jupyter   Start CUDA container with Jupyter Lab
-    $0 rocm --detach    Run ROCm container in background
+    $0 cuda --detach    Run CUDA container in background
+    $0 rocm --no-gpu    Run ROCm container in CPU-only mode
     $0 --auto           Auto-detect GPU type and run appropriate container
     $0 compose cuda-dev Run using docker-compose
-
-Jupyter Access:
-    CUDA container:     http://localhost:8888
-    ROCm container:     http://localhost:8889
 
 Container Management:
     List containers:    docker ps -a
     Stop container:     docker stop gpu101-cuda-dev
     Remove container:   docker rm gpu101-cuda-dev
     Container logs:     docker logs gpu101-cuda-dev
+    Enter container:    docker exec -it gpu101-cuda-dev bash
+
+GPU Programming Setup:
+    Inside container:   /workspace/test-gpu.sh    # Test GPU environment
+    Build examples:     cd modules/module1/examples && make
+    CUDA samples:       cd /workspace/cuda-samples
 
 EOF
 }

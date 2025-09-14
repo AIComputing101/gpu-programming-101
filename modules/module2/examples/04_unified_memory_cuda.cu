@@ -331,7 +331,7 @@ void demonstrateMemoryPool() {
     
     for (int i = 0; i < num_arrays; i++) {
         float *ptr;
-        CUDA_CHECK(cudaMallocFromPoolAsync(&ptr, array_size, mempool));
+        CUDA_CHECK(cudaMallocFromPoolAsync(&ptr, array_size, mempool, 0));
         arrays.push_back(ptr);
     }
     

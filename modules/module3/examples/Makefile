@@ -4,7 +4,7 @@
 # Compiler settings
 NVCC = nvcc
 HIPCC = hipcc
-NVCC_FLAGS = -O2 -std=c++11 -arch=sm_50 -lcuda
+NVCC_FLAGS = -O2 -std=c++11 -arch=sm_75 -lcuda -diag-suppress 177
 HIPCC_FLAGS = -O2 -std=c++11
 
 # Source files (following consistent naming pattern)

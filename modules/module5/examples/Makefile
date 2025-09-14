@@ -6,6 +6,9 @@ NVCC = nvcc
 HIPCC = hipcc
 CXX = g++
 
+# Check for HIP availability
+HIP_AVAILABLE := $(shell command -v hipcc > /dev/null 2>&1 && echo 1 || echo 0)
+
 # Compiler flags
 CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo
 CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70
@@ -25,9 +28,14 @@ PROFILE_DIR = profiles
 CUDA_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_cuda.cu)
 CUDA_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cu,$(EXAMPLES_DIR)/%,$(CUDA_SOURCES))
 
-# HIP Examples  
+# HIP Examples (only if HIP is available)
+ifeq ($(HIP_AVAILABLE),1)
 HIP_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_hip.cpp)
 HIP_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(EXAMPLES_DIR)/%,$(HIP_SOURCES))
+else
+HIP_SOURCES = 
+HIP_TARGETS = 
+endif
 
 # All targets
 ALL_TARGETS = $(CUDA_TARGETS) $(HIP_TARGETS)
@@ -40,16 +48,23 @@ all: setup $(ALL_TARGETS)
 .PHONY: setup
 setup:
 	@mkdir -p $(PROFILE_DIR)
+ifeq ($(HIP_AVAILABLE),1)
+	@echo "✓ HIP compiler found - will build HIP examples"
+else
+	@echo "ℹ HIP compiler not found - skipping HIP examples (CUDA-only build)"
+endif
 
 # CUDA compilation rules
 $(EXAMPLES_DIR)/%_cuda: $(EXAMPLES_DIR)/%_cuda.cu
 	@echo "Building CUDA example: $@"
 	$(NVCC) $(CUDA_FLAGS) $< -o $@
 
-# HIP compilation rules
+# HIP compilation rules (only if HIP is available)
+ifeq ($(HIP_AVAILABLE),1)
 $(EXAMPLES_DIR)/%_hip: $(EXAMPLES_DIR)/%_hip.cpp
 	@echo "Building HIP example: $@"
 	$(HIPCC) $(HIP_FLAGS) $< -o $@
+endif
 
 # Debug builds
 .PHONY: debug
@@ -89,7 +104,8 @@ profile-cuda: $(CUDA_TARGETS)
 	done
 
 .PHONY: profile-hip  
-profile-hip: $(HIP_TARGETS)
+profile-hip: 
+ifeq ($(HIP_AVAILABLE),1)
 	@echo "Profiling HIP examples with rocprof..."
 	@for target in $(HIP_TARGETS); do \
 		if [ -f $$target ]; then \
@@ -98,6 +114,9 @@ profile-hip: $(HIP_TARGETS)
 			mv results.csv $(PROFILE_DIR)/$$(basename $$target).csv 2>/dev/null || true; \
 		fi; \
 	done
+else
+	@echo "ℹ HIP not available - skipping HIP profiling"
+endif
 
 # Comprehensive profiling with Nsight Compute (CUDA)
 .PHONY: profile-detailed-cuda

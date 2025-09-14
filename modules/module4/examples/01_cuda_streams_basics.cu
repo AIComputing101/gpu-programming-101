@@ -300,7 +300,7 @@ void demonstrateStreamCallbacks() {
     
     // Add callback
     char *message = (char*)"Kernel execution completed";
-    CUDA_CHECK(cudaLaunchHostFunc(stream, streamCallback, message));
+    CUDA_CHECK(cudaStreamAddCallback(stream, streamCallback, message, 0));
     
     CUDA_CHECK(cudaStreamSynchronize(stream));
     

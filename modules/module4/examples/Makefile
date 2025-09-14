@@ -4,7 +4,7 @@
 # Compiler settings
 NVCC = nvcc
 NVCC_FLAGS = -O2 -std=c++11 -arch=sm_75 -rdc=true -lcudart -lcuda
-NVCC_DP_FLAGS = -O2 -std=c++11 -arch=sm_35 -rdc=true -lcudadevrt -lcudart -lcuda
+NVCC_DP_FLAGS = -O2 -std=c++11 -arch=sm_75 -rdc=true -lcudadevrt -lcudart -lcuda
 
 # HIP compiler settings
 HIPCC = hipcc

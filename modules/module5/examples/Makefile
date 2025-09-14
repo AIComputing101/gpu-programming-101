@@ -19,16 +19,15 @@ ROCPROF_FLAGS = --hip-trace --stats --output-file %s.csv
 
 # Directories
 EXAMPLES_DIR = .
-BUILD_DIR = build
 PROFILE_DIR = profiles
 
 # CUDA Examples
 CUDA_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_cuda.cu)
-CUDA_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cu,$(BUILD_DIR)/%,$(CUDA_SOURCES))
+CUDA_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cu,$(EXAMPLES_DIR)/%,$(CUDA_SOURCES))
 
 # HIP Examples  
 HIP_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_hip.cpp)
-HIP_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(BUILD_DIR)/%,$(HIP_SOURCES))
+HIP_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(EXAMPLES_DIR)/%,$(HIP_SOURCES))
 
 # All targets
 ALL_TARGETS = $(CUDA_TARGETS) $(HIP_TARGETS)
@@ -40,16 +39,15 @@ all: setup $(ALL_TARGETS)
 # Setup directories
 .PHONY: setup
 setup:
-	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(PROFILE_DIR)
 
 # CUDA compilation rules
-$(BUILD_DIR)/%_cuda: $(EXAMPLES_DIR)/%_cuda.cu
+$(EXAMPLES_DIR)/%_cuda: $(EXAMPLES_DIR)/%_cuda.cu
 	@echo "Building CUDA example: $@"
 	$(NVCC) $(CUDA_FLAGS) $< -o $@
 
 # HIP compilation rules
-$(BUILD_DIR)/%_hip: $(EXAMPLES_DIR)/%_hip.cpp
+$(EXAMPLES_DIR)/%_hip: $(EXAMPLES_DIR)/%_hip.cpp
 	@echo "Building HIP example: $@"
 	$(HIPCC) $(HIP_FLAGS) $< -o $@
 
@@ -63,8 +61,9 @@ debug: all
 .PHONY: clean
 clean:
 	@echo "Cleaning build artifacts..."
-	rm -rf $(BUILD_DIR)
 	rm -rf $(PROFILE_DIR)
+	@echo "Cleaning executables..."
+	rm -f $(EXAMPLES_DIR)/*_cuda $(EXAMPLES_DIR)/*_hip
 
 # Run all examples
 .PHONY: run
@@ -259,18 +258,18 @@ help:
 
 # Additional individual example targets
 .PHONY: profiling
-profiling: $(BUILD_DIR)/01_gpu_profiling_cuda $(BUILD_DIR)/01_hip_profiling
+profiling: 01_gpu_profiling_cuda 01_hip_profiling
 
 .PHONY: memory-opt
-memory-opt: $(BUILD_DIR)/02_memory_optimization_cuda
+memory-opt: 02_memory_optimization_cuda
 
 .PHONY: kernel-opt  
-kernel-opt: $(BUILD_DIR)/03_kernel_optimization_cuda
+kernel-opt: 03_kernel_optimization_cuda
 
 # Quick test target for development
 .PHONY: test
 test: all
 	@echo "Quick test run..."
-	@$(BUILD_DIR)/01_gpu_profiling_cuda || echo "CUDA profiling test completed"
-	@$(BUILD_DIR)/02_memory_optimization_cuda || echo "Memory optimization test completed"
-	@$(BUILD_DIR)/03_kernel_optimization_cuda || echo "Kernel optimization test completed"
+	@./01_gpu_profiling_cuda || echo "CUDA profiling test completed"
+	@./02_memory_optimization_cuda || echo "Memory optimization test completed"
+	@./03_kernel_optimization_cuda || echo "Kernel optimization test completed"

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <chrono>
+#include <vector>
 #include <cooperative_groups.h>
 
 namespace cg = cooperative_groups;

@@ -228,59 +228,59 @@ build_containers: production
 .PHONY: k8s_manifests
 k8s_manifests: production
 	@echo "Generating Kubernetes deployment manifests..."
-	@cat > $(DEPLOY_DIR)/gpu-service-deployment.yaml << 'EOF'
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: gpu-production-service
-  namespace: production
-spec:
-  replicas: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-  selector:
-    matchLabels:
-      app: gpu-production-service
-  template:
-    metadata:
-      labels:
-        app: gpu-production-service
-    spec:
-      containers:
-      - name: gpu-service
-        image: gpu-production:latest
-        ports:
-        - containerPort: 8080
-        resources:
-          requests:
-            nvidia.com/gpu: 1
-            memory: 8Gi
-            cpu: 2
-          limits:
-            nvidia.com/gpu: 1
-            memory: 16Gi
-            cpu: 4
-        readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: 8080
-          initialDelaySeconds: 30
-        livenessProbe:
-          httpGet:
-            path: /health/live
-            port: 8080
-          initialDelaySeconds: 60
-EOF
+	@{ \
+		echo "apiVersion: apps/v1"; \
+		echo "kind: Deployment"; \
+		echo "metadata:"; \
+		echo "  name: gpu-production-service"; \
+		echo "  namespace: production"; \
+		echo "spec:"; \
+		echo "  replicas: 3"; \
+		echo "  strategy:"; \
+		echo "    type: RollingUpdate"; \
+		echo "    rollingUpdate:"; \
+		echo "      maxSurge: 1"; \
+		echo "      maxUnavailable: 0"; \
+		echo "  selector:"; \
+		echo "    matchLabels:"; \
+		echo "      app: gpu-production-service"; \
+		echo "  template:"; \
+		echo "    metadata:"; \
+		echo "      labels:"; \
+		echo "        app: gpu-production-service"; \
+		echo "    spec:"; \
+		echo "      containers:"; \
+		echo "      - name: gpu-service"; \
+		echo "        image: gpu-production:latest"; \
+		echo "        ports:"; \
+		echo "        - containerPort: 8080"; \
+		echo "        resources:"; \
+		echo "          requests:"; \
+		echo "            nvidia.com/gpu: 1"; \
+		echo "            memory: 8Gi"; \
+		echo "            cpu: 2"; \
+		echo "          limits:"; \
+		echo "            nvidia.com/gpu: 1"; \
+		echo "            memory: 16Gi"; \
+		echo "            cpu: 4"; \
+		echo "        readinessProbe:"; \
+		echo "          httpGet:"; \
+		echo "            path: /health/ready"; \
+		echo "            port: 8080"; \
+		echo "          initialDelaySeconds: 30"; \
+		echo "        livenessProbe:"; \
+		echo "          httpGet:"; \
+		echo "            path: /health/live"; \
+		echo "            port: 8080"; \
+		echo "          initialDelaySeconds: 60"; \
+	} > $(DEPLOY_DIR)/gpu-service-deployment.yaml
 	@echo "Kubernetes manifests generated in $(DEPLOY_DIR)/"
 
 # Production monitoring setup
 .PHONY: deploy_monitoring
 deploy_monitoring: production
 	@echo "Setting up production monitoring..."
-	@cat > $(DEPLOY_DIR)/prometheus.yml << 'EOF'
+	@cat > $(DEPLOY_DIR)/prometheus.yml <<'EOF'
 global:
   scrape_interval: 15s
 
@@ -291,7 +291,7 @@ scrape_configs:
     metrics_path: /metrics
     scrape_interval: 10s
 EOF
-	@cat > $(DEPLOY_DIR)/grafana-dashboard.json << 'EOF'
+	@cat > $(DEPLOY_DIR)/grafana-dashboard.json <<'EOF'
 {
   "dashboard": {
     "title": "GPU Production Applications",
@@ -434,7 +434,7 @@ production_check:
 .PHONY: deployment_docs
 deployment_docs: production
 	@echo "Generating deployment documentation..."
-	@cat > $(DEPLOY_DIR)/DEPLOYMENT.md << 'EOF'
+	@cat > $(DEPLOY_DIR)/DEPLOYMENT.md <<'EOF'
 # Production GPU Application Deployment Guide
 
 ## Prerequisites

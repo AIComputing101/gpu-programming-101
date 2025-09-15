@@ -209,8 +209,8 @@ __global__ void reduction_cooperative_groups(float* input, float* output, int n)
         sum += input[i];
     }
     
-    // Tile-level (warp-level) reduction
-    sum = cg::reduce(tile, sum, cg::plus<float>());
+    // Tile-level (warp-level) reduction using manual implementation
+    sum = warp_reduce_sum(sum);
     
     // Shared memory for storing tile results
     __shared__ float tile_results[32];
@@ -226,7 +226,7 @@ __global__ void reduction_cooperative_groups(float* input, float* output, int n)
     if (tile.meta_group_rank() == 0) {
         float block_sum = (tile.thread_rank() < (blockDim.x / tile.size())) ? 
                          tile_results[tile.thread_rank()] : 0.0f;
-        block_sum = cg::reduce(tile, block_sum, cg::plus<float>());
+        block_sum = warp_reduce_sum(block_sum);
         
         if (tile.thread_rank() == 0) {
             output[blockIdx.x] = block_sum;

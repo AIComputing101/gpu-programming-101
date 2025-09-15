@@ -6,12 +6,28 @@ NVCC = nvcc
 HIPCC = hipcc
 CXX = g++
 
-# Check for HIP availability
-HIP_AVAILABLE := $(shell command -v hipcc > /dev/null 2>&1 && echo 1 || echo 0)
+# GPU vendor detection
+NVIDIA_GPU := $(shell nvidia-smi > /dev/null 2>&1 && echo 1 || echo 0)
+AMD_GPU := $(shell rocm-smi > /dev/null 2>&1 && echo 1 || echo 0)
+
+# Determine build target based on GPU vendor
+ifeq ($(NVIDIA_GPU),1)
+BUILD_CUDA = 1
+BUILD_HIP = 0
+GPU_VENDOR = NVIDIA
+else ifeq ($(AMD_GPU),1)
+BUILD_CUDA = 0
+BUILD_HIP = 1
+GPU_VENDOR = AMD
+else
+BUILD_CUDA = 0
+BUILD_HIP = 0
+GPU_VENDOR = NONE
+endif
 
 # Compiler flags
-CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo
-CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70
+CUDA_FLAGS = -std=c++17 -O3 -arch=sm_90 -lineinfo
+CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_90
 HIP_FLAGS = -std=c++17 -O3
 HIP_DEBUG_FLAGS = -std=c++17 -g
 CXX_FLAGS = -std=c++17 -O3 -fopenmp
@@ -22,23 +38,30 @@ ROCPROF_FLAGS = --hip-trace --stats --output-file %s.csv
 
 # Directories
 EXAMPLES_DIR = .
+BUILD_DIR = build
 PROFILE_DIR = profiles
 
 # CUDA Examples
 CUDA_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_cuda.cu)
-CUDA_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cu,$(EXAMPLES_DIR)/%,$(CUDA_SOURCES))
+CUDA_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cu,$(BUILD_DIR)/%,$(CUDA_SOURCES))
 
-# HIP Examples (only if HIP is available)
-ifeq ($(HIP_AVAILABLE),1)
+# HIP Examples (only if AMD GPU detected)
+ifeq ($(BUILD_HIP),1)
 HIP_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_hip.cpp)
-HIP_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(EXAMPLES_DIR)/%,$(HIP_SOURCES))
+HIP_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(BUILD_DIR)/%,$(HIP_SOURCES))
 else
 HIP_SOURCES = 
 HIP_TARGETS = 
 endif
 
-# All targets
-ALL_TARGETS = $(CUDA_TARGETS) $(HIP_TARGETS)
+# Active targets based on detected GPU vendor
+ifeq ($(BUILD_CUDA),1)
+ALL_TARGETS = $(CUDA_TARGETS)
+else ifeq ($(BUILD_HIP),1)
+ALL_TARGETS = $(HIP_TARGETS)
+else
+ALL_TARGETS = 
+endif
 
 # Default target
 .PHONY: all
@@ -47,21 +70,24 @@ all: setup $(ALL_TARGETS)
 # Setup directories
 .PHONY: setup
 setup:
+	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(PROFILE_DIR)
-ifeq ($(HIP_AVAILABLE),1)
-	@echo "✓ HIP compiler found - will build HIP examples"
+ifeq ($(GPU_VENDOR),NVIDIA)
+	@echo "✓ NVIDIA GPU detected - building CUDA examples"
+else ifeq ($(GPU_VENDOR),AMD)
+	@echo "✓ AMD GPU detected - building HIP examples"
 else
-	@echo "ℹ HIP compiler not found - skipping HIP examples (CUDA-only build)"
+	@echo "⚠ No compatible GPU detected - no examples will be built"
 endif
 
 # CUDA compilation rules
-$(EXAMPLES_DIR)/%_cuda: $(EXAMPLES_DIR)/%_cuda.cu
+$(BUILD_DIR)/%_cuda: $(EXAMPLES_DIR)/%_cuda.cu
 	@echo "Building CUDA example: $@"
 	$(NVCC) $(CUDA_FLAGS) $< -o $@
 
-# HIP compilation rules (only if HIP is available)
-ifeq ($(HIP_AVAILABLE),1)
-$(EXAMPLES_DIR)/%_hip: $(EXAMPLES_DIR)/%_hip.cpp
+# HIP compilation rules (only if AMD GPU detected)
+ifeq ($(BUILD_HIP),1)
+$(BUILD_DIR)/%_hip: $(EXAMPLES_DIR)/%_hip.cpp
 	@echo "Building HIP example: $@"
 	$(HIPCC) $(HIP_FLAGS) $< -o $@
 endif
@@ -76,9 +102,8 @@ debug: all
 .PHONY: clean
 clean:
 	@echo "Cleaning build artifacts..."
+	rm -rf $(BUILD_DIR)
 	rm -rf $(PROFILE_DIR)
-	@echo "Cleaning executables..."
-	rm -f $(EXAMPLES_DIR)/*_cuda $(EXAMPLES_DIR)/*_hip
 
 # Run all examples
 .PHONY: run
@@ -277,18 +302,18 @@ help:
 
 # Additional individual example targets
 .PHONY: profiling
-profiling: 01_gpu_profiling_cuda 01_hip_profiling
+profiling: $(BUILD_DIR)/01_gpu_profiling_cuda 01_hip_profiling
 
 .PHONY: memory-opt
-memory-opt: 02_memory_optimization_cuda
+memory-opt: $(BUILD_DIR)/02_memory_optimization_cuda
 
 .PHONY: kernel-opt  
-kernel-opt: 03_kernel_optimization_cuda
+kernel-opt: $(BUILD_DIR)/03_kernel_optimization_cuda
 
 # Quick test target for development
 .PHONY: test
 test: all
 	@echo "Quick test run..."
-	@./01_gpu_profiling_cuda || echo "CUDA profiling test completed"
-	@./02_memory_optimization_cuda || echo "Memory optimization test completed"
-	@./03_kernel_optimization_cuda || echo "Kernel optimization test completed"
+	@if [ -f $(BUILD_DIR)/01_gpu_profiling_cuda ]; then $(BUILD_DIR)/01_gpu_profiling_cuda || echo "CUDA profiling test completed"; fi
+	@if [ -f $(BUILD_DIR)/02_memory_optimization_cuda ]; then $(BUILD_DIR)/02_memory_optimization_cuda || echo "Memory optimization test completed"; fi
+	@if [ -f $(BUILD_DIR)/03_kernel_optimization_cuda ]; then $(BUILD_DIR)/03_kernel_optimization_cuda || echo "Kernel optimization test completed"; fi

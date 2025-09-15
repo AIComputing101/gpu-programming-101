@@ -292,16 +292,18 @@ void initialize_gaussian_data(unsigned char *data, int n, float mean = 128.0f, f
 }
 
 void initialize_skewed_data(unsigned char *data, int n) {
+    // Create a power-law distribution (more low values)
     for (int i = 0; i < n; i++) {
-        float r = (float)rand() / RAND_MAX;
-        if (r < 0.7f) {
-            data[i] = rand() % 64; // 70% in first quarter
-        } else if (r < 0.9f) {
-            data[i] = 64 + rand() % 64; // 20% in second quarter
-        } else {
-            data[i] = 128 + rand() % 128; // 10% in second half
-        }
+        float u = (float)rand() / RAND_MAX;
+        // Power law with exponent -2 (heavily skewed towards low values)
+        float val = 255.0f * (1.0f - pow(u, 0.3f));
+        data[i] = (unsigned char)fmax(0, fmin(255, val));
     }
+}
+
+// Wrapper functions for benchmark compatibility
+void initialize_gaussian_data_default(unsigned char *data, int n) {
+    initialize_gaussian_data(data, n); // Use default parameters
 }
 
 /**
@@ -503,7 +505,7 @@ int main() {
     
     // Run benchmarks with different data distributions
     benchmark_histogram("Uniform", initialize_uniform_data);
-    benchmark_histogram("Gaussian", initialize_gaussian_data);
+    benchmark_histogram("Gaussian", initialize_gaussian_data_default);
     benchmark_histogram("Skewed", initialize_skewed_data);
     
     printf("Histogram operation benchmarks completed successfully!\n");

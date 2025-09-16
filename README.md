@@ -243,9 +243,9 @@ cd modules/module1/examples
 
 Choose your track based on your experience level:
 
-**👶 Beginner Track** (Modules 1-3) - GPU fundamentals, memory management, first kernels
-**🔥 Intermediate Track** (Modules 4-5) - Advanced programming, performance optimization  
-**🚀 Advanced Track** (Modules 6-9) - Parallel algorithms, domain applications, production deployment
+- **👶 Beginner Track** (Modules 1-3) - GPU fundamentals, memory management, first kernels
+- **🔥 Intermediate Track** (Modules 4-5) - Advanced programming, performance optimization  
+- **🚀 Advanced Track** (Modules 6-9) - Parallel algorithms, domain applications, production deployment
 
 *Each track builds on the previous one, so start with the appropriate level for your background.*
 
@@ -479,8 +479,6 @@ We welcome contributions from the community! This project thrives on:
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
-**TL;DR**: ✅ Commercial use ✅ Modification ✅ Distribution ✅ Private use
-
 ## 📚 Citation
 
 If you use this project in your research, education, or publications, please cite it as:
@@ -503,7 +501,6 @@ Stephen Shao, "GPU Programming 101: A Comprehensive Educational Project for CUDA
 
 - 🎯 **NVIDIA** and **AMD** for excellent GPU computing ecosystems
 - 📚 **GPU computing community** for sharing knowledge and best practices  
-- 🏫 **Educational institutions** advancing parallel computing education
 - 👥 **Contributors** who make this project better every day
 
 ---

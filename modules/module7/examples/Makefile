@@ -5,6 +5,25 @@
 NVCC = nvcc
 HIPCC = hipcc
 
+# GPU vendor detection
+NVIDIA_GPU := $(shell nvidia-smi > /dev/null 2>&1 && echo 1 || echo 0)
+AMD_GPU := $(shell rocm-smi > /dev/null 2>&1 && echo 1 || echo 0)
+
+# Determine build target based on GPU vendor
+ifeq ($(NVIDIA_GPU),1)
+BUILD_CUDA = 1
+BUILD_HIP = 0
+GPU_VENDOR = NVIDIA
+else ifeq ($(AMD_GPU),1)
+BUILD_CUDA = 0
+BUILD_HIP = 1
+GPU_VENDOR = AMD
+else
+BUILD_CUDA = 0
+BUILD_HIP = 0
+GPU_VENDOR = NONE
+endif
+
 # Compiler flags
 CUDA_FLAGS = -std=c++17 -O3 -arch=sm_75 -lineinfo
 CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_75
@@ -19,29 +38,75 @@ PROFILE_DIR = profiles
 CUDA_SOURCES = $(wildcard *_cuda.cu)
 HIP_SOURCES = $(wildcard *_hip.cpp)
 
-# Target executables
+# Target executables based on GPU vendor
+ifeq ($(BUILD_CUDA),1)
+ACTIVE_TARGETS = $(CUDA_SOURCES:%.cu=$(BUILD_DIR)/%)
+ACTIVE_SOURCES = $(CUDA_SOURCES)
+COMPILER = $(NVCC)
+COMPILE_FLAGS = $(CUDA_FLAGS)
+else ifeq ($(BUILD_HIP),1)
+ACTIVE_TARGETS = $(HIP_SOURCES:%.cpp=$(BUILD_DIR)/%)
+ACTIVE_SOURCES = $(HIP_SOURCES)
+COMPILER = $(HIPCC)
+COMPILE_FLAGS = $(HIP_FLAGS)
+else
+ACTIVE_TARGETS = 
+ACTIVE_SOURCES = 
+endif
+
+# Legacy target definitions (for compatibility)
 CUDA_TARGETS = $(CUDA_SOURCES:%.cu=$(BUILD_DIR)/%)
 HIP_TARGETS = $(HIP_SOURCES:%.cpp=$(BUILD_DIR)/%)
 
 # Default target
 .PHONY: all
-all: setup cuda hip
+all: setup $(ACTIVE_TARGETS)
 
 # Setup directories
 .PHONY: setup
 setup:
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(PROFILE_DIR)
+ifeq ($(GPU_VENDOR),NVIDIA)
+	@echo "✓ NVIDIA GPU detected - building CUDA examples"
+else ifeq ($(GPU_VENDOR),AMD)
+	@echo "✓ AMD GPU detected - building HIP examples"
+else
+	@echo "⚠ No compatible GPU detected - no examples will be built"
+endif
 
-# Build CUDA examples
+# Build CUDA examples (if NVIDIA GPU detected)
 .PHONY: cuda
+ifeq ($(BUILD_CUDA),1)
 cuda: setup $(CUDA_TARGETS)
+else
+cuda: setup
+	@echo "⚠ CUDA build requested but no NVIDIA GPU detected"
+endif
 
-# Build HIP examples
+# Build HIP examples (if AMD GPU detected)  
 .PHONY: hip
+ifeq ($(BUILD_HIP),1)
 hip: setup $(HIP_TARGETS)
+else
+hip: setup
+	@echo "⚠ HIP build requested but no AMD GPU detected"
+endif
 
-# Individual CUDA compilation
+# Vendor-specific compilation rules
+ifeq ($(BUILD_CUDA),1)
+$(BUILD_DIR)/%_cuda: %_cuda.cu
+	@echo "Building CUDA example: $@"
+	$(NVCC) $(CUDA_FLAGS) $< -o $@
+endif
+
+ifeq ($(BUILD_HIP),1)
+$(BUILD_DIR)/%_hip: %_hip.cpp
+	@echo "Building HIP example: $@"
+	$(HIPCC) $(HIP_FLAGS) $< -o $@
+endif
+
+# Legacy compilation rules (for compatibility with explicit targets)
 $(BUILD_DIR)/%_cuda: %_cuda.cu
 	@echo "Building CUDA example: $@"
 	$(NVCC) $(CUDA_FLAGS) $< -o $@
@@ -51,8 +116,10 @@ $(BUILD_DIR)/02_sparse_matrix_cuda: 02_sparse_matrix_cuda.cu
 	@echo "Building CUDA example: $@"
 	$(NVCC) $(CUDA_FLAGS) -lcusparse $< -o $@
 
-# Individual HIP compilation
+# Legacy HIP compilation rule (for compatibility with explicit targets)
 $(BUILD_DIR)/%_hip: %_hip.cpp
+	@echo "Building HIP example: $@"
+	$(HIPCC) $(HIP_FLAGS) $< -o $@
 	@echo "Building HIP example: $@"
 	$(HIPCC) $(HIP_FLAGS) $< -o $@
 
@@ -65,33 +132,57 @@ debug: all
 # Algorithm-specific targets
 .PHONY: sorting
 sorting: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 01_sorting_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 01_sorting_cuda.cu -o $(BUILD_DIR)/01_sorting_cuda; fi
+endif
+ifeq ($(BUILD_HIP),1)
 	@if [ -f 01_sorting_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 01_sorting_hip.cpp -o $(BUILD_DIR)/01_sorting_hip; fi
+endif
 
 .PHONY: sparse_matrix
 sparse_matrix: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 02_sparse_matrix_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) -lcusparse 02_sparse_matrix_cuda.cu -o $(BUILD_DIR)/02_sparse_matrix_cuda; fi
+endif
+ifeq ($(BUILD_HIP),1)
 	@if [ -f 02_sparse_matrix_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 02_sparse_matrix_hip.cpp -o $(BUILD_DIR)/02_sparse_matrix_hip; fi
+endif
 
 .PHONY: graph_algorithms
 graph_algorithms: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 03_graph_algorithms_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 03_graph_algorithms_cuda.cu -o $(BUILD_DIR)/03_graph_algorithms_cuda; fi
+endif
+ifeq ($(BUILD_HIP),1)
 	@if [ -f 03_graph_algorithms_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 03_graph_algorithms_hip.cpp -o $(BUILD_DIR)/03_graph_algorithms_hip; fi
+endif
 
 .PHONY: dynamic_programming
 dynamic_programming: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 04_dynamic_programming_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 04_dynamic_programming_cuda.cu -o $(BUILD_DIR)/04_dynamic_programming_cuda; fi
+endif
+ifeq ($(BUILD_HIP),1)
 	@if [ -f 04_dynamic_programming_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 04_dynamic_programming_hip.cpp -o $(BUILD_DIR)/04_dynamic_programming_hip; fi
+endif
 
 .PHONY: load_balancing
 load_balancing: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 05_load_balancing_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 05_load_balancing_cuda.cu -o $(BUILD_DIR)/05_load_balancing_cuda; fi
+endif
+ifeq ($(BUILD_HIP),1)
 	@if [ -f 05_load_balancing_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 05_load_balancing_hip.cpp -o $(BUILD_DIR)/05_load_balancing_hip; fi
+endif
 
 .PHONY: memory_compute
 memory_compute: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 06_memory_compute_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 06_memory_compute_cuda.cu -o $(BUILD_DIR)/06_memory_compute_cuda; fi
+endif
+ifeq ($(BUILD_HIP),1)
 	@if [ -f 06_memory_compute_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 06_memory_compute_hip.cpp -o $(BUILD_DIR)/06_memory_compute_hip; fi
+endif
 
 # Testing targets
 .PHONY: test
@@ -117,6 +208,7 @@ test_cuda: cuda
 	done
 
 .PHONY: test_hip
+ifeq ($(BUILD_HIP),1)
 test_hip: hip
 	@echo "Running HIP Advanced Algorithm Tests..."
 	@for target in $(HIP_TARGETS); do \
@@ -126,6 +218,10 @@ test_hip: hip
 			echo ""; \
 		fi; \
 	done
+else
+test_hip: 
+	@echo "ℹ HIP not available - skipping HIP tests"
+endif
 
 # Algorithm-specific tests
 .PHONY: test_sorting
@@ -334,10 +430,20 @@ help:
 	@echo "Module 7: Advanced Algorithmic Patterns - Build System"
 	@echo "====================================================="
 	@echo ""
+	@echo "GPU Detection:"
+	@echo "  Current GPU: $(GPU_VENDOR)"
+ifeq ($(GPU_VENDOR),NVIDIA)
+	@echo "  Building: CUDA examples only"
+else ifeq ($(GPU_VENDOR),AMD)
+	@echo "  Building: HIP examples only"
+else
+	@echo "  Building: No compatible GPU detected"
+endif
+	@echo ""
 	@echo "Build Targets:"
-	@echo "  all              - Build all CUDA and HIP examples"
-	@echo "  cuda             - Build CUDA examples only"
-	@echo "  hip              - Build HIP examples only"
+	@echo "  all              - Build examples for detected GPU vendor"
+	@echo "  cuda             - Build CUDA examples (NVIDIA GPU required)"
+	@echo "  hip              - Build HIP examples (AMD GPU required)"
 	@echo "  debug            - Build with debug flags"
 	@echo "  clean            - Remove build artifacts"
 	@echo ""

@@ -12,7 +12,7 @@ HIP_FLAGS = -std=c++17 -O3 --fast-math
 HIP_DEBUG_FLAGS = -std=c++17 -g
 
 # Library flags for domain-specific libraries
-CUDA_LIBS = -lcublas -lcurand -lcufft -lcudnn
+CUDA_LIBS = -lcublas -lcurand -lcufft
 HIP_LIBS = -lrocblas -lrocrand -lrocfft -lMIOpen
 
 # Directories

@@ -65,7 +65,7 @@ __device__ __forceinline__ float warp_reduce_min(float val) {
 
 // Naive reduction - global memory only
 __global__ void reduction_naive(float* input, float* output, int n) {
-    int tid = threadIdx.x;
+    // int tid = threadIdx.x; // Unused, commented out
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     
     // Each thread processes multiple elements

@@ -280,40 +280,36 @@ k8s_manifests: production
 .PHONY: deploy_monitoring
 deploy_monitoring: production
 	@echo "Setting up production monitoring..."
-	@cat > $(DEPLOY_DIR)/prometheus.yml <<'EOF'
-global:
-  scrape_interval: 15s
-
-scrape_configs:
-  - job_name: 'gpu-applications'
-    static_configs:
-      - targets: ['localhost:9090']
-    metrics_path: /metrics
-    scrape_interval: 10s
-EOF
-	@cat > $(DEPLOY_DIR)/grafana-dashboard.json <<'EOF'
-{
-  "dashboard": {
-    "title": "GPU Production Applications",
-    "panels": [
-      {
-        "title": "GPU Utilization",
-        "type": "graph",
-        "targets": [
-          {"expr": "gpu_utilization_percent"}
-        ]
-      },
-      {
-        "title": "Application Throughput",
-        "type": "graph", 
-        "targets": [
-          {"expr": "application_requests_per_second"}
-        ]
-      }
-    ]
-  }
-}
-EOF
+	@echo "global:" > $(DEPLOY_DIR)/prometheus.yml
+	@echo "  scrape_interval: 15s" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "scrape_configs:" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "  - job_name: 'gpu-applications'" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "    static_configs:" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "      - targets: ['localhost:9090']" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "    metrics_path: /metrics" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "    scrape_interval: 10s" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "{" > $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "  \"dashboard\": {" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "    \"title\": \"GPU Production Applications\"," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "    \"panels\": [" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "      {" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"title\": \"GPU Utilization\"," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"type\": \"graph\"," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"targets\": [" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "          {\"expr\": \"gpu_utilization_percent\"}" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        ]" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "      }," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "      {" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"title\": \"Application Throughput\"," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"type\": \"graph\"," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"targets\": [" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "          {\"expr\": \"application_requests_per_second\"}" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        ]" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "      }" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "    ]" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "  }" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "}" >> $(DEPLOY_DIR)/grafana-dashboard.json
 	@echo "Monitoring configuration generated in $(DEPLOY_DIR)/"
 
 # Performance profiling for production
@@ -434,59 +430,57 @@ production_check:
 .PHONY: deployment_docs
 deployment_docs: production
 	@echo "Generating deployment documentation..."
-	@cat > $(DEPLOY_DIR)/DEPLOYMENT.md <<'EOF'
-# Production GPU Application Deployment Guide
-
-## Prerequisites
-
-- CUDA Toolkit 11.8+ or ROCm 5.4+
-- Docker with GPU runtime support
-- Kubernetes cluster with GPU nodes
-- Monitoring stack (Prometheus + Grafana)
-
-## Deployment Steps
-
-1. **Build Applications:**
-   ```bash
-   make production
-   ```
-
-2. **Run Tests:**
-   ```bash
-   make test_production
-   make load_test
-   make security_test
-   ```
-
-3. **Package for Deployment:**
-   ```bash
-   make package_production
-   make build_containers
-   ```
-
-4. **Deploy to Kubernetes:**
-   ```bash
-   kubectl apply -f gpu-service-deployment.yaml
-   ```
-
-5. **Setup Monitoring:**
-   ```bash
-   make deploy_monitoring
-   ```
-
-## Production Checklist
-
-- [ ] All tests passing
-- [ ] Security scan completed
-- [ ] Performance benchmarks meet SLA
-- [ ] Monitoring configured
-- [ ] Backup and recovery procedures tested
-- [ ] Documentation updated
-
-## Support
-
-For production support, contact the GPU Operations team.
-EOF
+	@echo "# Production GPU Application Deployment Guide" > $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "## Prerequisites" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- CUDA Toolkit 11.8+ or ROCm 5.4+" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- Docker with GPU runtime support" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- Kubernetes cluster with GPU nodes" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- Monitoring stack (Prometheus + Grafana)" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "## Deployment Steps" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "1. **Build Applications:**" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`bash" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make production" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "2. **Run Tests:**" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`bash" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make test_production" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make load_test" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make security_test" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "3. **Package for Deployment:**" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`bash" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make package_production" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make build_containers" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "4. **Deploy to Kubernetes:**" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`bash" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   kubectl apply -f gpu-service-deployment.yaml" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "5. **Setup Monitoring:**" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`bash" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make deploy_monitoring" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "## Production Checklist" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] All tests passing" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] Security scan completed" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] Performance benchmarks meet SLA" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] Monitoring configured" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] Backup and recovery procedures tested" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] Documentation updated" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "## Support" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "For production support, contact the GPU Operations team." >> $(DEPLOY_DIR)/DEPLOYMENT.md
 	@echo "Deployment documentation generated: $(DEPLOY_DIR)/DEPLOYMENT.md"
 
 # System information for production

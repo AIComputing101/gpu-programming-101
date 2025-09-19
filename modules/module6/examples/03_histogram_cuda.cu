@@ -136,7 +136,7 @@ __global__ void histogram_warp_aggregated(unsigned char *input, int *histogram, 
     int tid = threadIdx.x;
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     int lane_id = threadIdx.x % 32;
-    int warp_id = threadIdx.x / 32;
+    // int warp_id = threadIdx.x / 32; // Unused, commented out
     
     // Initialize private histogram
     for (int bin = tid; bin < NUM_BINS; bin += blockDim.x) {

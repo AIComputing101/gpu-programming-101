@@ -6,8 +6,8 @@ NVCC = nvcc
 HIPCC = hipcc
 
 # Compiler flags
-CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo
-CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70
+CUDA_FLAGS = -std=c++17 -O3 -arch=sm_75 -lineinfo
+CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_75
 HIP_FLAGS = -std=c++17 -O3
 HIP_DEBUG_FLAGS = -std=c++17 -g
 
@@ -46,6 +46,11 @@ $(BUILD_DIR)/%_cuda: %_cuda.cu
 	@echo "Building CUDA example: $@"
 	$(NVCC) $(CUDA_FLAGS) $< -o $@
 
+# Special rule for sparse matrix example that needs cuSPARSE
+$(BUILD_DIR)/02_sparse_matrix_cuda: 02_sparse_matrix_cuda.cu
+	@echo "Building CUDA example: $@"
+	$(NVCC) $(CUDA_FLAGS) -lcusparse $< -o $@
+
 # Individual HIP compilation
 $(BUILD_DIR)/%_hip: %_hip.cpp
 	@echo "Building HIP example: $@"
@@ -65,7 +70,7 @@ sorting: setup
 
 .PHONY: sparse_matrix
 sparse_matrix: setup
-	@if [ -f 02_sparse_matrix_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 02_sparse_matrix_cuda.cu -o $(BUILD_DIR)/02_sparse_matrix_cuda; fi
+	@if [ -f 02_sparse_matrix_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) -lcusparse 02_sparse_matrix_cuda.cu -o $(BUILD_DIR)/02_sparse_matrix_cuda; fi
 	@if [ -f 02_sparse_matrix_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 02_sparse_matrix_hip.cpp -o $(BUILD_DIR)/02_sparse_matrix_hip; fi
 
 .PHONY: graph_algorithms

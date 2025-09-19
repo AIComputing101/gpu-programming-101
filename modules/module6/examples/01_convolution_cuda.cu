@@ -32,7 +32,7 @@
 // Constants
 const int BLOCK_SIZE = 16;
 const int TILE_SIZE = 16;
-const int MAX_KERNEL_SIZE = 31;
+// const int MAX_KERNEL_SIZE = 31; // Unused, commented out
 
 // Performance measurement utility
 class Timer {

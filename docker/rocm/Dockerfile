@@ -1,7 +1,7 @@
 # GPU Programming 101 - ROCm Development Container
-# Based on AMD's official ROCm 7.0 development image (latest stable as of 2025)
+# Based on AMD's official ROCm 7.0 complete development image
 
-FROM rocm/dev-ubuntu-22.04:7.0
+FROM rocm/dev-ubuntu-22.04:7.0-complete
 
 # Metadata
 LABEL maintainer="GPU Programming 101"

@@ -1,31 +1,148 @@
-# GPU Programming Module 4 Examples Makefile
-# Advanced GPU Programming - Multi-GPU, Streams, and Scalability
+# Module 4: Advanced Multi-GPU Programming
+# Makefile for comprehensive build and testing
 
 # Compiler settings
 NVCC = nvcc
-NVCC_FLAGS = -O2 -std=c++11 -arch=sm_75 -rdc=true -lcudart -lcuda
-NVCC_DP_FLAGS = -O2 -std=c++11 -arch=sm_75 -rdc=true -lcudadevrt -lcudart -lcuda
-
-# HIP compiler settings
 HIPCC = hipcc
-HIP_FLAGS = -O2 -std=c++11 -fopenmp
+CXX = g++
+
+# GPU vendor detection
+NVIDIA_GPU := $(shell nvidia-smi > /dev/null 2>&1 && echo 1 || echo 0)
+AMD_GPU := $(shell rocm-smi > /dev/null 2>&1 && echo 1 || echo 0)
+
+# Determine build target based on GPU vendor
+ifeq ($(NVIDIA_GPU),1)
+BUILD_CUDA = 1
+BUILD_HIP = 0
+GPU_VENDOR = NVIDIA
+else ifeq ($(AMD_GPU),1)
+BUILD_CUDA = 0
+BUILD_HIP = 1
+GPU_VENDOR = AMD
+else
+BUILD_CUDA = 0
+BUILD_HIP = 0
+GPU_VENDOR = NONE
+endif
+
+# Compiler flags
+CUDA_FLAGS = -std=c++17 -O2 -arch=sm_75 -rdc=true -lcudart -lcuda
+CUDA_DP_FLAGS = -std=c++17 -O2 -arch=sm_75 -rdc=true -lcudadevrt -lcudart -lcuda
+CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_75 -rdc=true -lcudart -lcuda
+HIP_FLAGS = -std=c++17 -O2 -fopenmp
+HIP_DEBUG_FLAGS = -std=c++17 -g -fopenmp
+CXX_FLAGS = -std=c++17 -O2
 
 # OpenMP support for multi-GPU examples
 OMP_FLAGS = -Xcompiler -fopenmp -lgomp
 
-# Source files
-CUDA_SOURCES = $(wildcard *.cu)
-HIP_SOURCES = $(wildcard *hip*.cpp)
-CUDA_EXECUTABLES = $(CUDA_SOURCES:.cu=)
-HIP_EXECUTABLES = $(HIP_SOURCES:.cpp=)
+# Directories
+EXAMPLES_DIR = .
+BUILD_DIR = build
+PROFILE_DIR = profiles
+
+# CUDA Examples
+CUDA_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_cuda.cu $(EXAMPLES_DIR)/0*.cu)
+CUDA_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cu,$(BUILD_DIR)/%,$(CUDA_SOURCES))
+
+# HIP Examples
+HIP_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_hip.cpp)
+HIP_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(BUILD_DIR)/%,$(HIP_SOURCES))
+
+# Check for hipcc availability
+HIPCC_AVAILABLE := $(shell command -v hipcc >/dev/null 2>&1 && echo 1 || echo 0)
+
+# Active targets based on detected GPU vendor and compiler availability
+ifeq ($(BUILD_CUDA),1)
+  ALL_TARGETS = $(CUDA_TARGETS)
+else ifeq ($(BUILD_HIP),1)
+  ALL_TARGETS = $(HIP_TARGETS)
+else
+  ALL_TARGETS = 
+endif
 
 # Default target
-all: cuda
+.PHONY: all
+all: setup $(ALL_TARGETS)
 
-# Build targets
-cuda: $(CUDA_EXECUTABLES)
-hip: $(HIP_EXECUTABLES)
-both: cuda hip
+# Setup directories
+.PHONY: setup
+setup:
+	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(PROFILE_DIR)
+ifeq ($(GPU_VENDOR),NVIDIA)
+	@echo "✓ NVIDIA GPU detected - building CUDA examples"
+else ifeq ($(GPU_VENDOR),AMD)
+	@echo "✓ AMD GPU detected - building HIP examples"
+else
+	@echo "⚠ No compatible GPU detected"
+endif
+
+# CUDA compilation rules
+.PHONY: cuda
+ifeq ($(BUILD_CUDA),1)
+cuda: setup $(CUDA_TARGETS)
+else
+cuda: setup
+	@echo "⚠ CUDA build requested but no NVIDIA GPU detected"
+endif
+
+# Special rule for dynamic parallelism examples
+$(BUILD_DIR)/%dynamic_parallelism: $(EXAMPLES_DIR)/%dynamic_parallelism.cu
+	@echo "Building CUDA dynamic parallelism example: $@"
+	$(NVCC) $(CUDA_DP_FLAGS) $< -o $@
+
+$(BUILD_DIR)/%_cuda: $(EXAMPLES_DIR)/%_cuda.cu
+	@echo "Building CUDA example: $@"
+	$(NVCC) $(CUDA_FLAGS) $(OMP_FLAGS) $< -o $@
+
+# Pattern for numbered CUDA examples
+$(BUILD_DIR)/0%: $(EXAMPLES_DIR)/0%.cu
+	@echo "Building CUDA example: $@"
+	@case "$<" in \
+		*dynamic_parallelism*) \
+			$(NVCC) $(CUDA_DP_FLAGS) $< -o $@ ;; \
+		*) \
+			$(NVCC) $(CUDA_FLAGS) $(OMP_FLAGS) $< -o $@ ;; \
+	esac
+
+# HIP compilation rules
+.PHONY: hip
+ifeq ($(BUILD_HIP),1)
+hip: setup $(HIP_TARGETS)
+else
+hip: setup
+	@echo "⚠ HIP build requested but no AMD GPU detected"
+endif
+
+ifeq ($(BUILD_HIP),1)
+$(BUILD_DIR)/%_hip: $(EXAMPLES_DIR)/%_hip.cpp
+	@echo "Building HIP example: $@"
+	$(HIPCC) $(HIP_FLAGS) $< -o $@
+endif
+
+# Debug builds
+.PHONY: debug
+debug: CUDA_FLAGS = $(CUDA_DEBUG_FLAGS)
+debug: HIP_FLAGS = $(HIP_DEBUG_FLAGS)
+debug: all
+
+# Clean
+.PHONY: clean
+clean:
+	rm -rf $(BUILD_DIR) $(PROFILE_DIR)
+
+# Help
+.PHONY: help
+help:
+	@echo "Module 4: Advanced Multi-GPU Programming"
+	@echo "Available targets:"
+	@echo "  all     - Build all examples for detected GPU vendor"
+	@echo "  cuda    - Build CUDA examples (requires NVIDIA GPU)"
+	@echo "  hip     - Build HIP examples (requires AMD GPU)"
+	@echo "  debug   - Build with debug flags"
+	@echo "  clean   - Remove build artifacts"
+	@echo "  help    - Show this help message"
 
 # Individual example targets with specific requirements
 
@@ -270,13 +387,6 @@ analyze_memory: all
 	@echo "Memory access pattern analysis:"
 	@echo "  ncu --metrics l1tex__data_bank_conflicts_pipe_lsu_mem_shared_op_ld.sum ./01_cuda_streams_basics"
 
-# Clean targets
-clean:
-	rm -f $(CUDA_EXECUTABLES) $(HIP_EXECUTABLES)
-	rm -f *.o
-	rm -f streams multi_gpu unified_memory p2p dynamic
-	rm -f streams_hip multi_gpu_hip unified_memory_hip p2p_hip
-
 # Deep clean including profiling outputs
 clean_all: clean
 	rm -f *.nsys-rep *.ncu-rep *.sqlite *.qdrep
@@ -297,8 +407,8 @@ list:
 	@echo "  p2p          - Peer-to-peer GPU communication"
 	@echo "  dynamic      - Dynamic parallelism (GPU launches GPU)"
 
-# Help target
-help:
+# Extended help target for module 4 specifics
+help_extended:
 	@echo "GPU Programming 101 - Module 4 Examples Makefile"
 	@echo "================================================="
 	@echo ""
@@ -376,6 +486,6 @@ help:
 
 .PHONY: all cuda hip both test test_cuda test_hip test_both test_compile test_compile_cuda test_compile_hip
 .PHONY: test_performance test_performance_cuda test_performance_hip test_multi_gpu test_streams test_dynamic
-.PHONY: system_info profile_examples analyze_memory clean clean_all list help
+.PHONY: system_info profile_examples analyze_memory clean clean_all list help help_extended
 .PHONY: streams multi_gpu unified_memory p2p dynamic
 .PHONY: streams_hip multi_gpu_hip unified_memory_hip p2p_hip

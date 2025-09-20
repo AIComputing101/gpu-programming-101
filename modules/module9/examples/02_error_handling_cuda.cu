@@ -1,6 +1,8 @@
 #include <cuda_runtime.h>
 #include <cuda_profiler_api.h>
+#ifdef USE_NVML
 #include <nvml.h>
+#endif
 #include <iostream>
 #include <memory>
 #include <string>
@@ -10,6 +12,8 @@
 #include <exception>
 #include <map>
 #include <mutex>
+#include <iomanip>
+#include <thread>
 
 #define CHECK_CUDA(call) do { \
     cudaError_t error = call; \
@@ -18,12 +22,16 @@
     } \
 } while(0)
 
+#ifdef USE_NVML
 #define CHECK_NVML(call) do { \
     nvmlReturn_t result = call; \
     if (result != NVML_SUCCESS) { \
         throw GPUException("NVML Error", nvmlErrorString(result), __FILE__, __LINE__); \
     } \
 } while(0)
+#else
+#define CHECK_NVML(call) do { } while(0)
+#endif
 
 class GPUException : public std::exception {
 private:
@@ -88,12 +96,15 @@ public:
 
 class GPUHealthChecker {
 private:
+#ifdef USE_NVML
     nvmlDevice_t device_;
     unsigned int device_count_;
+#endif
     ErrorLogger& logger_;
     
 public:
     GPUHealthChecker(ErrorLogger& logger) : logger_(logger) {
+#ifdef USE_NVML
         CHECK_NVML(nvmlInit());
         CHECK_NVML(nvmlDeviceGetCount(&device_count_));
         
@@ -103,10 +114,15 @@ public:
         
         CHECK_NVML(nvmlDeviceGetHandleByIndex(0, &device_));
         logger_.logInfo("GPU Health Checker initialized for " + std::to_string(device_count_) + " devices");
+#else
+        logger_.logInfo("GPU Health Checker initialized (NVML not available - basic mode)");
+#endif
     }
     
     ~GPUHealthChecker() {
+#ifdef USE_NVML
         nvmlShutdown();
+#endif
     }
     
     struct HealthStatus {
@@ -123,6 +139,7 @@ public:
     HealthStatus checkHealth() {
         HealthStatus status = {};
         
+#ifdef USE_NVML
         try {
             CHECK_NVML(nvmlDeviceGetTemperature(device_, NVML_TEMPERATURE_GPU, &status.temperature));
             CHECK_NVML(nvmlDeviceGetPowerUsage(device_, &status.power_usage));
@@ -165,6 +182,43 @@ public:
             status.warnings = "Health check failed: " + std::string(e.what());
             logger_.logError(e);
         }
+#else
+        // Fallback health check without NVML
+        try {
+            // Basic CUDA runtime checks
+            int device_count;
+            CHECK_CUDA(cudaGetDeviceCount(&device_count));
+            
+            // Get basic memory info
+            size_t free_mem, total_mem;
+            CHECK_CUDA(cudaMemGetInfo(&free_mem, &total_mem));
+            
+            status.temperature = 0;  // Not available without NVML
+            status.power_usage = 0;  // Not available without NVML
+            status.memory_used = (total_mem - free_mem) / (1024 * 1024); // MB
+            status.memory_total = total_mem / (1024 * 1024); // MB
+            status.gpu_utilization = 0;  // Not available without NVML
+            status.memory_utilization = 0;  // Not available without NVML
+            
+            status.is_healthy = true;
+            
+            // Basic memory check
+            double memory_usage_percent = (double(status.memory_used) / status.memory_total) * 100;
+            if (memory_usage_percent > 90) {
+                status.is_healthy = false;
+                status.warnings += "Critical memory usage (" + std::to_string(int(memory_usage_percent)) + "%); ";
+                logger_.logWarning("GPU memory usage critical: " + std::to_string(int(memory_usage_percent)) + "%");
+            } else if (memory_usage_percent > 80) {
+                status.warnings += "High memory usage (" + std::to_string(int(memory_usage_percent)) + "%); ";
+                logger_.logWarning("GPU memory usage high: " + std::to_string(int(memory_usage_percent)) + "%");
+            }
+            
+        } catch (const GPUException& e) {
+            status.is_healthy = false;
+            status.warnings = "Basic health check failed: " + std::string(e.what());
+            logger_.logError(e);
+        }
+#endif
         
         return status;
     }
@@ -188,7 +242,7 @@ public:
 class SafeMemoryManager {
 private:
     std::map<void*, size_t> allocated_ptrs_;
-    std::mutex alloc_mutex_;
+    mutable std::mutex alloc_mutex_;
     size_t total_allocated_;
     ErrorLogger& logger_;
     

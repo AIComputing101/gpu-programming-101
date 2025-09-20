@@ -1,90 +1,146 @@
-# GPU Programming Module 3 Examples Makefile
-# Advanced GPU Algorithms and Parallel Patterns
+# Module 3: Advanced GPU Algorithms
+# Makefile for comprehensive build and testing
 
 # Compiler settings
 NVCC = nvcc
 HIPCC = hipcc
-NVCC_FLAGS = -O2 -std=c++11 -arch=sm_75 -lcuda -diag-suppress 177
-HIPCC_FLAGS = -O2 -std=c++11
+CXX = g++
 
-# Source files (following consistent naming pattern)
-CUDA_SOURCES = $(wildcard *_cuda.cu)
-HIP_SOURCES = $(wildcard *_hip.cpp)
+# GPU vendor detection
+NVIDIA_GPU := $(shell nvidia-smi > /dev/null 2>&1 && echo 1 || echo 0)
+AMD_GPU := $(shell rocm-smi > /dev/null 2>&1 && echo 1 || echo 0)
 
-# Executable names
-CUDA_EXECUTABLES = $(CUDA_SOURCES:_cuda.cu=_cuda)
-HIP_EXECUTABLES = $(HIP_SOURCES:_hip.cpp=_hip)
+# Determine build target based on GPU vendor
+ifeq ($(NVIDIA_GPU),1)
+BUILD_CUDA = 1
+BUILD_HIP = 0
+GPU_VENDOR = NVIDIA
+else ifeq ($(AMD_GPU),1)
+BUILD_CUDA = 0
+BUILD_HIP = 1
+GPU_VENDOR = AMD
+else
+BUILD_CUDA = 0
+BUILD_HIP = 0
+GPU_VENDOR = NONE
+endif
+
+# Compiler flags
+CUDA_FLAGS = -std=c++17 -O2 -arch=sm_75 -lcudart -lcuda
+CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_75 -lcudart -lcuda
+HIP_FLAGS = -std=c++17 -O2
+HIP_DEBUG_FLAGS = -std=c++17 -g
+CXX_FLAGS = -std=c++17 -O2
+
+# Directories
+EXAMPLES_DIR = .
+BUILD_DIR = build
+PROFILE_DIR = profiles
+
+# CUDA Examples
+CUDA_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_cuda.cu $(EXAMPLES_DIR)/0*.cu)
+CUDA_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cu,$(BUILD_DIR)/%,$(CUDA_SOURCES))
+
+# HIP Examples
+HIP_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_hip.cpp)
+HIP_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(BUILD_DIR)/%,$(HIP_SOURCES))
+
+# Check for hipcc availability
+HIPCC_AVAILABLE := $(shell command -v hipcc >/dev/null 2>&1 && echo 1 || echo 0)
+
+# Active targets based on detected GPU vendor and compiler availability
+ifeq ($(BUILD_CUDA),1)
+  ALL_TARGETS = $(CUDA_TARGETS)
+else ifeq ($(BUILD_HIP),1)
+  ALL_TARGETS = $(HIP_TARGETS)
+else
+  ALL_TARGETS = 
+endif
 
 # Default target
-all: cuda
+.PHONY: all
+all: setup $(ALL_TARGETS)
 
-# CUDA targets
-cuda: $(CUDA_EXECUTABLES)
+# Setup directories
+.PHONY: setup
+setup:
+	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(PROFILE_DIR)
+ifeq ($(GPU_VENDOR),NVIDIA)
+	@echo "✓ NVIDIA GPU detected - building CUDA examples"
+else ifeq ($(GPU_VENDOR),AMD)
+	@echo "✓ AMD GPU detected - building HIP examples"
+else
+	@echo "⚠ No compatible GPU detected"
+endif
 
-%_cuda: %_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
+# CUDA compilation rules
+.PHONY: cuda
+ifeq ($(BUILD_CUDA),1)
+cuda: setup $(CUDA_TARGETS)
+else
+cuda: setup
+	@echo "⚠ CUDA build requested but no NVIDIA GPU detected"
+endif
 
-# HIP targets  
-hip: $(HIP_EXECUTABLES)
+$(BUILD_DIR)/%_cuda: $(EXAMPLES_DIR)/%_cuda.cu
+	@echo "Building CUDA example: $@"
+	$(NVCC) $(CUDA_FLAGS) $< -o $@
 
-%_hip: %_hip.cpp
-	$(HIPCC) $(HIPCC_FLAGS) $< -o $@
+# Pattern for numbered CUDA examples
+$(BUILD_DIR)/0%: $(EXAMPLES_DIR)/0%.cu
+	@echo "Building CUDA example: $@"
+	$(NVCC) $(CUDA_FLAGS) $< -o $@
 
-# Individual example targets
-01_reduction_algorithms_cuda: 01_reduction_algorithms_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
+# HIP compilation rules
+.PHONY: hip
+ifeq ($(BUILD_HIP),1)
+hip: setup $(HIP_TARGETS)
+else
+hip: setup
+	@echo "⚠ HIP build requested but no AMD GPU detected"
+endif
 
-01_reduction_algorithms_hip: 01_reduction_algorithms_hip.cpp
-	$(HIPCC) $(HIPCC_FLAGS) $< -o $@
+ifeq ($(BUILD_HIP),1)
+$(BUILD_DIR)/%_hip: $(EXAMPLES_DIR)/%_hip.cpp
+	@echo "Building HIP example: $@"
+	$(HIPCC) $(HIP_FLAGS) $< -o $@
+endif
 
-02_scan_prefix_sum_cuda: 02_scan_prefix_sum_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
+# Debug builds
+.PHONY: debug
+debug: CUDA_FLAGS = $(CUDA_DEBUG_FLAGS)
+debug: HIP_FLAGS = $(HIP_DEBUG_FLAGS)
+debug: all
 
-02_scan_prefix_sum_hip: 02_scan_prefix_sum_hip.cpp
-	$(HIPCC) $(HIPCC_FLAGS) $< -o $@
+# Clean
+.PHONY: clean
+clean:
+	rm -rf $(BUILD_DIR) $(PROFILE_DIR)
 
-03_sorting_algorithms_cuda: 03_sorting_algorithms_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
+# Help
+.PHONY: help
+help:
+	@echo "Module 3: Advanced GPU Algorithms"
+	@echo "Available targets:"
+	@echo "  all     - Build all examples for detected GPU vendor"
+	@echo "  cuda    - Build CUDA examples (requires NVIDIA GPU)"
+	@echo "  hip     - Build HIP examples (requires AMD GPU)"
+	@echo "  debug   - Build with debug flags"
+	@echo "  clean   - Remove build artifacts"
+	@echo "  help    - Show this help message"
 
-03_sorting_algorithms_hip: 03_sorting_algorithms_hip.cpp
-	$(HIPCC) $(HIPCC_FLAGS) $< -o $@
+# Legacy target mappings for convenience
+.PHONY: reduction scan sorting convolution matrix graph cooperative
+reduction: $(BUILD_DIR)/01_reduction_algorithms_cuda
+scan: $(BUILD_DIR)/02_scan_prefix_sum_cuda
+sorting: $(BUILD_DIR)/03_sorting_algorithms_cuda
+convolution: $(BUILD_DIR)/04_convolution_stencil_cuda
+matrix: $(BUILD_DIR)/05_matrix_operations_cuda
+graph: $(BUILD_DIR)/06_graph_algorithms_cuda
+cooperative: $(BUILD_DIR)/07_cooperative_groups_cuda
 
-04_convolution_stencil_cuda: 04_convolution_stencil_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
 
-04_convolution_stencil_hip: 04_convolution_stencil_hip.cpp
-	$(HIPCC) $(HIPCC_FLAGS) $< -o $@
-
-05_matrix_operations_cuda: 05_matrix_operations_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
-
-06_graph_algorithms_cuda: 06_graph_algorithms_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
-
-07_cooperative_groups_cuda: 07_cooperative_groups_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
-
-# Legacy targets for backward compatibility
-reduction_cuda: 01_reduction_algorithms_cuda
-reduction_hip: 01_reduction_algorithms_hip
-scan_cuda: 02_scan_prefix_sum_cuda
-scan_hip: 02_scan_prefix_sum_hip
-sorting_cuda: 03_sorting_algorithms_cuda
-sorting_hip: 03_sorting_algorithms_hip
-convolution_cuda: 04_convolution_stencil_cuda
-convolution_hip: 04_convolution_stencil_hip
-matrix_cuda: 05_matrix_operations_cuda
-graph_cuda: 06_graph_algorithms_cuda
-cooperative_cuda: 07_cooperative_groups_cuda
-
-# Generic legacy targets (default to CUDA)
-reduction: 01_reduction_algorithms_cuda
-scan: 02_scan_prefix_sum_cuda
-sorting: 03_sorting_algorithms_cuda
-convolution: 04_convolution_stencil_cuda
-matrix: 05_matrix_operations_cuda
-graph: 06_graph_algorithms_cuda
-cooperative: 07_cooperative_groups_cuda
 
 # Test targets
 test: test_cuda
@@ -180,19 +236,7 @@ profile_algorithms: cuda
 	@echo "  ncu --metrics l1tex__data_bank_conflicts_pipe_lsu_mem_shared_op_ld.sum ./02_scan_prefix_sum_cuda"
 	@echo "  ncu --metrics smsp__sass_average_branch_targets_threads_uniform.pct ./03_sorting_algorithms_cuda"
 
-# Clean targets
-clean:
-	rm -f $(CUDA_EXECUTABLES) $(HIP_EXECUTABLES)
-	rm -f 01_reduction_algorithms_cuda 01_reduction_algorithms_hip
-	rm -f 02_scan_prefix_sum_cuda 02_scan_prefix_sum_hip
-	rm -f 03_sorting_algorithms_cuda 03_sorting_algorithms_hip
-	rm -f 04_convolution_stencil_cuda 04_convolution_stencil_hip
-	rm -f 05_matrix_operations_cuda
-	rm -f 06_graph_algorithms_cuda
-	rm -f 07_cooperative_groups_cuda
-	rm -f reduction_cuda reduction_hip scan_cuda scan_hip sorting_cuda sorting_hip
-	rm -f convolution_cuda convolution_hip matrix_cuda graph_cuda cooperative_cuda
-	rm -f reduction scan sorting convolution matrix graph cooperative
+
 
 # List available examples
 list:
@@ -205,65 +249,10 @@ list:
 	@echo "HIP Examples:"
 	@ls -1 *_hip.cpp 2>/dev/null | sed 's/_hip.cpp//' | nl -w2 -s'. '
 
-# Help target
-help:
-	@echo "GPU Programming 101 - Module 3 Examples Makefile"
-	@echo "================================================"
-	@echo ""
+# Extended help for module 3 specifics
+help_extended:
 	@echo "Module 3: Advanced GPU Algorithms and Parallel Patterns"
-	@echo ""
-	@echo "Build Targets:"
-	@echo "  all               - Build all CUDA examples (default)"
-	@echo "  cuda              - Build all CUDA examples"
-	@echo "  hip               - Build all HIP examples"
-	@echo ""
-	@echo "Test Targets:"
-	@echo "  test              - Run CUDA tests"
-	@echo "  test_cuda         - Run CUDA tests"
-	@echo "  test_hip          - Run HIP tests"
-	@echo "  test_all          - Run both CUDA and HIP tests"
-	@echo "  test_compile      - Test compilation only"
-	@echo "  test_performance  - Run performance benchmarks"
-	@echo ""
-	@echo "Individual Examples (CUDA):"
-	@echo "  01_reduction_algorithms_cuda       - Parallel reduction patterns"
-	@echo "  02_scan_prefix_sum_cuda            - Scan/prefix sum algorithms"
-	@echo "  03_sorting_algorithms_cuda         - GPU sorting implementations"
-	@echo "  04_convolution_stencil_cuda        - Stencil computation patterns"
-	@echo "  05_matrix_operations_cuda          - Matrix multiplication and operations"
-	@echo "  06_graph_algorithms_cuda           - Graph processing algorithms"
-	@echo "  07_cooperative_groups_cuda         - Modern cooperative groups API"
-	@echo ""
-	@echo "Individual Examples (HIP):"
-	@echo "  01_reduction_algorithms_hip        - Cross-platform reduction"
-	@echo "  02_scan_prefix_sum_hip             - Cross-platform scan algorithms"
-	@echo "  03_sorting_algorithms_hip          - Cross-platform sorting"
-	@echo "  04_convolution_stencil_hip         - Cross-platform convolution"
-	@echo ""
-	@echo "Legacy Targets:"
-	@echo "  reduction, scan, sorting, convolution, matrix, graph, cooperative"
-	@echo "  (These default to CUDA versions)"
-	@echo ""
-	@echo "Analysis Targets:"
-	@echo "  analyze_complexity - Algorithm complexity analysis"
-	@echo "  profile_algorithms - Show profiling commands"
-	@echo ""
-	@echo "Utility Targets:"
-	@echo "  list              - List all available examples"
-	@echo "  clean             - Remove all executables"
-	@echo "  help              - Show this help"
-	@echo ""
-	@echo "Example Usage:"
-	@echo "  make cuda                              # Build all CUDA examples"
-	@echo "  make hip                               # Build all HIP examples"
-	@echo "  make 01_reduction_algorithms_cuda      # Build specific example"
-	@echo "  make test_performance                  # Run performance tests"
-	@echo "  make profile_algorithms                # Show profiling commands"
-	@echo ""
-	@echo "Requirements:"
-	@echo "  CUDA: nvcc compiler and NVIDIA GPU"
-	@echo "  HIP:  hipcc compiler and AMD/NVIDIA GPU"
-	@echo ""
+	@echo "======================================================="
 	@echo "Learning Objectives:"
 	@echo "  - Master fundamental parallel algorithm patterns"
 	@echo "  - Understand reduction and scan operations"

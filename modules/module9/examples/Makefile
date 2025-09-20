@@ -6,6 +6,25 @@ NVCC = nvcc
 HIPCC = hipcc
 CXX = g++
 
+# GPU vendor detection
+NVIDIA_GPU := $(shell nvidia-smi > /dev/null 2>&1 && echo 1 || echo 0)
+AMD_GPU := $(shell rocm-smi > /dev/null 2>&1 && echo 1 || echo 0)
+
+# Determine build target based on GPU vendor
+ifeq ($(NVIDIA_GPU),1)
+BUILD_CUDA = 1
+BUILD_HIP = 0
+GPU_VENDOR = NVIDIA
+else ifeq ($(AMD_GPU),1)
+BUILD_CUDA = 0
+BUILD_HIP = 1
+GPU_VENDOR = AMD
+else
+BUILD_CUDA = 0
+BUILD_HIP = 0
+GPU_VENDOR = NONE
+endif
+
 # Compiler flags for production-ready applications
 CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo --use_fast_math -DPRODUCTION_BUILD
 CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70 -DDEBUG_BUILD
@@ -14,9 +33,31 @@ HIP_DEBUG_FLAGS = -std=c++17 -g -DDEBUG_BUILD
 CXX_FLAGS = -std=c++17 -O3 -DPRODUCTION_BUILD
 
 # Library flags for production dependencies
-CUDA_LIBS = -lcublas -lcurand -lcufft -lcudnn -lnvml
-HIP_LIBS = -lrocblas -lrocrand -lrocfft -lMIOpen -lrocm_smi64
+CUDA_LIBS = -lcublas -lcurand -lcufft
+HIP_LIBS = -lrocblas -lrocrand -lrocfft
 COMMON_LIBS = -lpthread -ldl
+
+# Optional libraries (check for availability)
+OPTIONAL_CUDA_LIBS = 
+OPTIONAL_HIP_LIBS = 
+
+# Check for NVML availability by trying to compile a simple test
+ifeq ($(shell echo 'int main(){return 0;}' | $(CXX) -x c -lnvml - -o /dev/null 2>/dev/null && echo "found"), found)
+OPTIONAL_CUDA_LIBS += -lnvml
+CUDA_FLAGS += -DUSE_NVML
+$(info NVML library found - enabling NVML support)
+else
+$(info NVML library not found - compiling without NVML support)
+endif
+
+# Check for cuDNN availability by trying to compile a simple test
+ifeq ($(shell echo 'int main(){return 0;}' | $(CXX) -x c -lcudnn - -o /dev/null 2>/dev/null && echo "found"), found)
+OPTIONAL_CUDA_LIBS += -lcudnn
+CUDA_FLAGS += -DUSE_CUDNN
+$(info cuDNN library found - enabling cuDNN support)
+else
+$(info cuDNN library not found - compiling without cuDNN support)
+endif
 
 # Directories
 BUILD_DIR = build
@@ -30,7 +71,20 @@ CUDA_SOURCES = $(wildcard *_cuda.cu)
 HIP_SOURCES = $(wildcard *_hip.cpp)
 CPP_SOURCES = $(wildcard *_common.cpp)
 
-# Target executables
+# Target executables based on GPU vendor
+ifeq ($(BUILD_CUDA),1)
+ACTIVE_CUDA_TARGETS = $(CUDA_SOURCES:%.cu=$(BUILD_DIR)/%)
+else
+ACTIVE_CUDA_TARGETS = 
+endif
+
+ifeq ($(BUILD_HIP),1)
+ACTIVE_HIP_TARGETS = $(HIP_SOURCES:%.cpp=$(BUILD_DIR)/%)
+else
+ACTIVE_HIP_TARGETS = 
+endif
+
+# Legacy target definitions (for compatibility)
 CUDA_TARGETS = $(CUDA_SOURCES:%.cu=$(BUILD_DIR)/%)
 HIP_TARGETS = $(HIP_SOURCES:%.cpp=$(BUILD_DIR)/%)
 CPP_TARGETS = $(CPP_SOURCES:%.cpp=$(BUILD_DIR)/%)
@@ -47,25 +101,54 @@ setup:
 	@mkdir -p $(DEPLOY_DIR)
 	@mkdir -p $(CONFIG_DIR)
 	@mkdir -p $(LOGS_DIR)
+ifeq ($(GPU_VENDOR),NVIDIA)
+	@echo "✓ NVIDIA GPU detected - building CUDA examples"
+else ifeq ($(GPU_VENDOR),AMD)
+	@echo "✓ AMD GPU detected - building HIP examples"
+else
+	@echo "⚠ No compatible GPU detected - building CPU examples only"
+endif
 
 # Build CUDA production applications
 .PHONY: cuda
-cuda: setup $(CUDA_TARGETS)
+ifeq ($(BUILD_CUDA),1)
+cuda: setup $(ACTIVE_CUDA_TARGETS)
+else
+cuda: setup
+	@echo "⚠ CUDA build requested but no NVIDIA GPU detected"
+endif
 
 # Build HIP production applications
 .PHONY: hip
-hip: setup $(HIP_TARGETS)
+ifeq ($(BUILD_HIP),1)
+hip: setup $(ACTIVE_HIP_TARGETS)
+else
+hip: setup
+	@echo "⚠ HIP build requested but no AMD GPU detected"
+endif
 
 # Build common C++ applications
 .PHONY: common
 common: setup $(CPP_TARGETS)
 
-# Individual CUDA compilation with production libraries
+# Conditional compilation rules based on GPU vendor
+ifeq ($(BUILD_CUDA),1)
 $(BUILD_DIR)/%_cuda: %_cuda.cu
 	@echo "Building CUDA production application: $@"
-	$(NVCC) $(CUDA_FLAGS) $< -o $@ $(CUDA_LIBS) $(COMMON_LIBS)
+	$(NVCC) $(CUDA_FLAGS) $< -o $@ $(CUDA_LIBS) $(OPTIONAL_CUDA_LIBS) $(COMMON_LIBS)
+endif
 
-# Individual HIP compilation with production libraries
+ifeq ($(BUILD_HIP),1)
+$(BUILD_DIR)/%_hip: %_hip.cpp
+	@echo "Building HIP production application: $@"
+	$(HIPCC) $(HIP_FLAGS) $< -o $@ $(HIP_LIBS) $(COMMON_LIBS)
+endif
+
+# Legacy compilation rules (for compatibility with explicit targets)
+$(BUILD_DIR)/%_cuda: %_cuda.cu
+	@echo "Building CUDA production application: $@"
+	$(NVCC) $(CUDA_FLAGS) $< -o $@ $(CUDA_LIBS) $(OPTIONAL_CUDA_LIBS) $(COMMON_LIBS)
+
 $(BUILD_DIR)/%_hip: %_hip.cpp
 	@echo "Building HIP production application: $@"
 	$(HIPCC) $(HIP_FLAGS) $< -o $@ $(HIP_LIBS) $(COMMON_LIBS)

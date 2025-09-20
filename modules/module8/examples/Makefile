@@ -5,6 +5,25 @@
 NVCC = nvcc
 HIPCC = hipcc
 
+# GPU vendor detection
+NVIDIA_GPU := $(shell nvidia-smi > /dev/null 2>&1 && echo 1 || echo 0)
+AMD_GPU := $(shell rocm-smi > /dev/null 2>&1 && echo 1 || echo 0)
+
+# Determine build target based on GPU vendor
+ifeq ($(NVIDIA_GPU),1)
+BUILD_CUDA = 1
+BUILD_HIP = 0
+GPU_VENDOR = NVIDIA
+else ifeq ($(AMD_GPU),1)
+BUILD_CUDA = 0
+BUILD_HIP = 1
+GPU_VENDOR = AMD
+else
+BUILD_CUDA = 0
+BUILD_HIP = 0
+GPU_VENDOR = NONE
+endif
+
 # Compiler flags for production-quality applications
 CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo --use_fast_math
 CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70
@@ -24,13 +43,29 @@ DATA_DIR = data
 CUDA_SOURCES = $(wildcard *_cuda.cu)
 HIP_SOURCES = $(wildcard *_hip.cpp)
 
-# Target executables
+# Target executables based on GPU vendor
+ifeq ($(BUILD_CUDA),1)
+ACTIVE_TARGETS = $(CUDA_SOURCES:%.cu=$(BUILD_DIR)/%)
+ACTIVE_SOURCES = $(CUDA_SOURCES)
+COMPILER = $(NVCC)
+COMPILE_FLAGS = $(CUDA_FLAGS)
+else ifeq ($(BUILD_HIP),1)
+ACTIVE_TARGETS = $(HIP_SOURCES:%.cpp=$(BUILD_DIR)/%)
+ACTIVE_SOURCES = $(HIP_SOURCES)
+COMPILER = $(HIPCC)
+COMPILE_FLAGS = $(HIP_FLAGS)
+else
+ACTIVE_TARGETS = 
+ACTIVE_SOURCES = 
+endif
+
+# Legacy target definitions (for compatibility)
 CUDA_TARGETS = $(CUDA_SOURCES:%.cu=$(BUILD_DIR)/%)
 HIP_TARGETS = $(HIP_SOURCES:%.cpp=$(BUILD_DIR)/%)
 
 # Default target
 .PHONY: all
-all: setup cuda hip
+all: setup $(ACTIVE_TARGETS)
 
 # Setup directories
 .PHONY: setup
@@ -38,21 +73,50 @@ setup:
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(PROFILE_DIR)
 	@mkdir -p $(DATA_DIR)
+ifeq ($(GPU_VENDOR),NVIDIA)
+	@echo "✓ NVIDIA GPU detected - building CUDA examples"
+else ifeq ($(GPU_VENDOR),AMD)
+	@echo "✓ AMD GPU detected - building HIP examples"
+else
+	@echo "⚠ No compatible GPU detected - no examples will be built"
+endif
 
-# Build CUDA examples with library linking
+# Build CUDA examples (if NVIDIA GPU detected)
 .PHONY: cuda
+ifeq ($(BUILD_CUDA),1)
 cuda: setup $(CUDA_TARGETS)
+else
+cuda: setup
+	@echo "⚠ CUDA build requested but no NVIDIA GPU detected"
+endif
 
-# Build HIP examples with library linking
+# Build HIP examples (if AMD GPU detected)  
 .PHONY: hip
+ifeq ($(BUILD_HIP),1)
 hip: setup $(HIP_TARGETS)
+else
+hip: setup
+	@echo "⚠ HIP build requested but no AMD GPU detected"
+endif
 
-# Individual CUDA compilation with library linking
+# Vendor-specific compilation rules
+ifeq ($(BUILD_CUDA),1)
+$(BUILD_DIR)/%_cuda: %_cuda.cu
+	@echo "Building CUDA domain application: $@"
+	$(NVCC) $(CUDA_FLAGS) $< -o $@ $(CUDA_LIBS)
+endif
+
+ifeq ($(BUILD_HIP),1)
+$(BUILD_DIR)/%_hip: %_hip.cpp
+	@echo "Building HIP domain application: $@"
+	$(HIPCC) $(HIP_FLAGS) $< -o $@ $(HIP_LIBS)
+endif
+
+# Legacy compilation rules (for compatibility with explicit targets)
 $(BUILD_DIR)/%_cuda: %_cuda.cu
 	@echo "Building CUDA domain application: $@"
 	$(NVCC) $(CUDA_FLAGS) $< -o $@ $(CUDA_LIBS)
 
-# Individual HIP compilation with library linking
 $(BUILD_DIR)/%_hip: %_hip.cpp
 	@echo "Building HIP domain application: $@"
 	$(HIPCC) $(HIP_FLAGS) $< -o $@ $(HIP_LIBS)
@@ -72,32 +136,57 @@ production: all
 # Domain-specific application targets
 .PHONY: deep_learning
 deep_learning: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 01_deep_learning_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 01_deep_learning_cuda.cu -o $(BUILD_DIR)/01_deep_learning_cuda $(CUDA_LIBS); fi
+endif
+ifeq ($(BUILD_HIP),1)
 	@if [ -f 01_deep_learning_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 01_deep_learning_hip.cpp -o $(BUILD_DIR)/01_deep_learning_hip $(HIP_LIBS); fi
+endif
 
 .PHONY: scientific
 scientific: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 02_scientific_computing_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 02_scientific_computing_cuda.cu -o $(BUILD_DIR)/02_scientific_computing_cuda $(CUDA_LIBS); fi
+endif
+ifeq ($(BUILD_HIP),1)
 	@if [ -f 02_scientific_computing_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 02_scientific_computing_hip.cpp -o $(BUILD_DIR)/02_scientific_computing_hip $(HIP_LIBS); fi
+endif
 
 .PHONY: image_processing
 image_processing: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 03_image_signal_processing_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 03_image_signal_processing_cuda.cu -o $(BUILD_DIR)/03_image_signal_processing_cuda $(CUDA_LIBS); fi
+endif
+ifeq ($(BUILD_HIP),1)
 	@if [ -f 03_image_signal_processing_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 03_image_signal_processing_hip.cpp -o $(BUILD_DIR)/03_image_signal_processing_hip $(HIP_LIBS); fi
+endif
 
 .PHONY: monte_carlo
 monte_carlo: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 04_monte_carlo_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 04_monte_carlo_cuda.cu -o $(BUILD_DIR)/04_monte_carlo_cuda $(CUDA_LIBS); fi
+endif
+ifeq ($(BUILD_HIP),1)
 	@if [ -f 04_monte_carlo_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 04_monte_carlo_hip.cpp -o $(BUILD_DIR)/04_monte_carlo_hip $(HIP_LIBS); fi
+endif
 
 .PHONY: finance
 finance: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 05_computational_finance_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 05_computational_finance_cuda.cu -o $(BUILD_DIR)/05_computational_finance_cuda $(CUDA_LIBS); fi
+endif
+ifeq ($(BUILD_HIP),1)
 	@if [ -f 05_computational_finance_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 05_computational_finance_hip.cpp -o $(BUILD_DIR)/05_computational_finance_hip $(HIP_LIBS); fi
+endif
 
 .PHONY: library_integration
 library_integration: setup
+ifeq ($(BUILD_CUDA),1)
 	@if [ -f 06_library_integration_cuda.cu ]; then $(NVCC) $(CUDA_FLAGS) 06_library_integration_cuda.cu -o $(BUILD_DIR)/06_library_integration_cuda $(CUDA_LIBS); fi
+endif
+ifeq ($(BUILD_HIP),1)
+	@if [ -f 06_library_integration_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 06_library_integration_hip.cpp -o $(BUILD_DIR)/06_library_integration_hip $(HIP_LIBS); fi
+endif
 	@if [ -f 06_library_integration_hip.cpp ]; then $(HIPCC) $(HIP_FLAGS) 06_library_integration_hip.cpp -o $(BUILD_DIR)/06_library_integration_hip $(HIP_LIBS); fi
 
 # Testing targets with domain-specific validation

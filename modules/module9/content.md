@@ -1,5 +1,7 @@
 # Production GPU Programming: Enterprise-Grade Implementation Guide
 
+> Environment note: Production examples and deployment references assume development using Docker images with CUDA 12.9.1 and ROCm 7.0 (rocm/dev-ubuntu-22.04:7.0-complete) for parity between environments.
+
 This comprehensive guide covers all aspects of deploying, maintaining, and scaling GPU applications in production environments, from architecture design to operational excellence.
 
 ## Table of Contents

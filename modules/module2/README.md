@@ -1,7 +1,7 @@
-# Module 2: Multi-Dimensional Data Processing
+# Module 2: Advanced GPU Memory Management
 
 ## Overview
-This module explores multidimensional grid organization, thread mapping to data structures, image processing kernels, and matrix multiplication algorithms.
+This module focuses on GPU memory hierarchy mastery and performance optimization: shared memory tiling, memory coalescing, texture/read-only memory usage, unified memory, and bandwidth optimization.
 
 ## Learning Objectives
 After completing this module, you will be able to:
@@ -12,16 +12,31 @@ After completing this module, you will be able to:
 - Handle boundary conditions in multidimensional algorithms
 
 ## Module Content
-- **[content.md](content.md)** - Complete module content (Coming Soon)
-- **[examples/](examples/)** - Practical code examples (Coming Soon)
+- **[content.md](content.md)** - Complete module content
+- **[examples/](examples/)** - Practical code examples
 
-## Status: 🚧 Under Development
+## Quick Start
 
-This module is currently being developed. Check back soon for:
-- Comprehensive theory and explanations
-- Working code examples  
-- Hands-on exercises
-- Performance benchmarks
+### Prerequisites
+- NVIDIA GPU with CUDA support OR AMD GPU with ROCm support
+- CUDA Toolkit 12.0+ or ROCm 6.0+ (Docker images provide CUDA 12.9.1 and ROCm 7.0)
+- C/C++ compiler (GCC, Clang, or MSVC)
+
+Recommended: use our Docker dev environment
+```
+./docker/scripts/run.sh --auto
+```
+
+### Build and Run
+```bash
+cd modules/module2/examples
+make            # auto-detects your GPU and builds accordingly
+
+# Run a few examples (binaries in build/)
+./build/01_shared_memory_transpose_cuda    # or _hip on AMD
+./build/02_memory_coalescing_cuda          # or _hip on AMD
+./build/04_unified_memory_cuda
+```
 
 ## Topics to be Covered
 
@@ -30,20 +45,20 @@ This module is currently being developed. Check back soon for:
 - Grid size calculations for arbitrary data sizes
 - Thread-to-data mapping strategies
 
-### 2. Image Processing Applications
-- Image convolution kernels
-- Color space transformations
-- Image filtering and enhancement
+### 2. Memory Access Patterns
+- Coalesced vs strided access
+- Structure of Arrays vs Array of Structures
+- Read-only/texture cache benefits
 
-### 3. Matrix Operations
-- Matrix multiplication algorithms
-- Tiled matrix multiplication
-- Memory access optimization
+### 3. Shared Memory and Tiling
+- Tiled transpose with bank-conflict avoidance
+- Block-level cooperation and synchronization
+- Padding strategies to avoid bank conflicts
 
-### 4. Advanced Indexing
-- Row-major vs column-major layouts
-- Handling non-square matrices
-- Boundary checking techniques
+### 4. Unified Memory and Bandwidth
+- Unified memory prefetch and advice
+- Measuring and optimizing memory bandwidth
+- Analyzing profiler metrics for memory performance
 
 ---
 **Duration**: 6-8 hours  

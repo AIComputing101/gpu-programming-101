@@ -1,5 +1,7 @@
 # Module 7: Advanced Algorithmic Patterns - Comprehensive Guide
 
+> Environment note: Use the provided Docker environment (CUDA 12.9.1, ROCm 7.0-complete) for consistent builds and tools across platforms.
+
 ## Introduction
 
 Advanced algorithmic patterns represent sophisticated computational techniques that push the boundaries of GPU performance. This module covers complex algorithms including advanced sorting techniques, sparse matrix operations, graph algorithms, and dynamic programming patterns that require deep understanding of parallel computing principles and GPU architecture optimization.

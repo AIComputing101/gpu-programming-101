@@ -217,7 +217,7 @@ cd gpu-programming-101
 
 # Inside container: verify GPU access and start learning
 /workspace/test-gpu.sh
-cd modules/module1 && make && ./01_vector_addition_cuda
+cd modules/module1 && make && ./build/01_vector_addition_cuda
 ```
 
 ### Option 2: Native Installation

@@ -1,6 +1,8 @@
 # Module 1: Foundations of GPU Programming with CUDA and HIP
 *Heterogeneous Data Parallel Computing*
 
+> Environment note: Examples are validated in containers using CUDA 12.9.1 (Ubuntu 22.04) and ROCm 7.0 (rocm/dev-ubuntu-22.04:7.0-complete). Using Docker is recommended for a consistent setup.
+
 ## Learning Objectives
 After completing this module, you will be able to:
 - Understand the fundamental differences between CPU and GPU architectures

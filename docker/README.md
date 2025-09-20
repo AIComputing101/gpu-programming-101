@@ -73,7 +73,7 @@ docker/
 
 ### ROCm Development Container
 **Image**: `gpu-programming-101:rocm`  
-**Base**: `rocm/dev-ubuntu-22.04:7.0`
+**Base**: `rocm/dev-ubuntu-22.04:7.0-complete`
 
 **Features**:
 - ROCm 7.0 with HIP development environment
@@ -298,7 +298,7 @@ sudo apt update && sudo apt upgrade docker-ce docker-compose
 
 # Check base image availability
 docker pull nvidia/cuda:12.9.1-devel-ubuntu22.04
-docker pull rocm/dev-ubuntu-22.04:7.0
+docker pull rocm/dev-ubuntu-22.04:7.0-complete
 ```
 
 **"Permission denied errors"**

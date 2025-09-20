@@ -1,5 +1,7 @@
 # Module 4: Advanced GPU Programming - Multi-GPU, Streams, and Scalability
 
+> Environment note: Examples are validated with CUDA 12.9.1 and ROCm 7.0 (complete) in Docker containers. Multi-GPU sections may require appropriate hardware and drivers.
+
 ## Overview
 
 This module covers advanced GPU programming techniques for maximizing performance and scalability across multiple GPUs, asynchronous execution with streams, unified memory management, and dynamic parallelism. These concepts are essential for building high-performance applications that can scale across modern GPU clusters and data centers.

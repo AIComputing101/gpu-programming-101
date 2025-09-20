@@ -1,8 +1,6 @@
-# Module 2: Multi-Dimensional Data Processing Examples
+# Module 2: Advanced GPU Memory Management Examples
 
-⚠️ **Note**: This module is currently under restructuring. The examples present focus on advanced memory management techniques and will be updated to better align with multi-dimensional data processing concepts.
-
-This directory contains practical examples for GPU memory optimization techniques using both CUDA and HIP.
+This directory contains practical examples for GPU memory optimization techniques using both CUDA and HIP. These examples accompany Module 2 and focus on shared memory tiling, memory coalescing, texture/read-only memory, unified memory, and bandwidth optimization.
 
 ## Learning Objectives
 
@@ -63,15 +61,15 @@ Comprehensive memory bandwidth optimization techniques:
 ## Building and Running Examples
 
 ### Prerequisites
-- CUDA Toolkit 11.0+ (for CUDA examples)
-- ROCm 5.0+ (for HIP examples)
+- CUDA Toolkit 12.0+ (for CUDA examples)
+- ROCm 6.0+ (for HIP examples)
 - Compatible GPU (NVIDIA or AMD)
-- C++11 compatible compiler
+- C++17 compatible compiler
 
 ### Quick Start
 ```bash
-# Build all examples
-make all
+ # Build all examples (auto-detects your GPU)
+make
 
 # Run performance tests
 make test
@@ -87,19 +85,19 @@ make 01_shared_memory_transpose_cuda
 **NVIDIA Nsight Compute:**
 ```bash
 # Memory bandwidth analysis
-ncu --metrics dram__throughput.avg.pct_of_peak_sustained_elapsed ./01_shared_memory_transpose_cuda
+ncu --metrics dram__throughput.avg.pct_of_peak_sustained_elapsed ./build/01_shared_memory_transpose_cuda
 
 # Memory coalescing efficiency
-ncu --metrics l1tex__throughput.avg.pct_of_peak_sustained_elapsed ./02_memory_coalescing_cuda
+ncu --metrics l1tex__throughput.avg.pct_of_peak_sustained_elapsed ./build/02_memory_coalescing_cuda
 ```
 
 **AMD ROCProfiler:**
 ```bash
 # HIP memory analysis
-rocprof --hip-trace ./01_shared_memory_transpose_hip
+rocprof --hip-trace ./build/01_shared_memory_transpose_hip
 
 # Detailed memory metrics
-rocprof --stats ./02_memory_coalescing_hip
+rocprof --stats ./build/02_memory_coalescing_hip
 ```
 
 ### Expected Performance Improvements
@@ -108,16 +106,6 @@ rocprof --stats ./02_memory_coalescing_hip
 - **Memory Coalescing:** 2-10x performance difference between coalesced vs strided access
 - **Texture Memory:** 1.5-3x speedup for spatial locality patterns
 
-## Status Note
+## Notes
 
-This module is being restructured to better focus on multi-dimensional data processing concepts. Future updates will include:
-- 2D/3D grid organization examples
-- Image processing kernels
-- Matrix multiplication with proper thread mapping
-- Boundary condition handling in multi-dimensional algorithms
-
-The current memory optimization examples will be reorganized or moved to more appropriate modules.
-
----
-
-**Note:** These examples demonstrate advanced GPU memory optimization techniques. While they don't perfectly align with the "Multi-Dimensional Data Processing" theme, they provide valuable insights into GPU memory hierarchy optimization.
+These examples are designed to be educational and performance-oriented. Use the provided Docker environment for consistent toolchains (CUDA 12.9.1, ROCm 7.0-complete). Binaries are emitted to the `build/` directory by the Makefile.

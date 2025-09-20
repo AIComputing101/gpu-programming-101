@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CUDA](https://img.shields.io/badge/CUDA-12.9.1-76B900?logo=nvidia)](https://developer.nvidia.com/cuda-toolkit)
-[![ROCm](https://img.shields.io/badge/ROCm-6.4.3-red?logo=amd)](https://rocmdocs.amd.com/)
+[![ROCm](https://img.shields.io/badge/ROCm-7.0-red?logo=amd)](https://rocmdocs.amd.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
 [![Examples](https://img.shields.io/badge/Examples-70%2B-green)](modules/)
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=github-actions)](https://github.com/features/actions)
@@ -322,7 +322,7 @@ Module 5: Performance Tuning
   - **Driver Requirements**: 
     - Linux: 550.54.14+ for CUDA 12.4+
     - Windows: 551.61+ for CUDA 12.4+
-- **ROCm Platform**: 6.0+ (Docker uses ROCm 6.4.3)
+- **ROCm Platform**: 6.0+ (Docker uses ROCm 7.0)
   - **Driver Requirements**: Latest AMDGPU-PRO or open-source AMDGPU drivers
   - **Kernel Support**: Linux kernel 5.4+ recommended
 

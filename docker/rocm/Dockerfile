@@ -1,13 +1,13 @@
 # GPU Programming 101 - ROCm Development Container
-# Based on AMD's official ROCm 6.4.3 development image (latest stable as of 2025)
+# Based on AMD's official ROCm 7.0 development image (latest stable as of 2025)
 
-FROM rocm/dev-ubuntu-22.04:6.4.3
+FROM rocm/dev-ubuntu-22.04:7.0
 
 # Metadata
 LABEL maintainer="GPU Programming 101"
 LABEL description="ROCm/HIP development environment for GPU programming course"
 LABEL version="2.0"
-LABEL rocm.version="6.4.3"
+LABEL rocm.version="7.0"
 LABEL ubuntu.version="22.04"
 
 # Avoid interactive prompts during package installation
@@ -64,7 +64,7 @@ ENV PATH=${ROCM_PATH}/bin:${HIP_PATH}/bin:${PATH}
 ENV LD_LIBRARY_PATH=${ROCM_PATH}/lib:${HIP_PATH}/lib:${LD_LIBRARY_PATH}
 ENV HIP_PLATFORM=amd
 ENV HSA_OVERRIDE_GFX_VERSION=11.0.0
-ENV ROCM_VERSION=6.4.3
+ENV ROCM_VERSION=7.0
 
 # Verify HIP compiler installation (skip rocminfo as no GPU during build)
 RUN hipcc --version

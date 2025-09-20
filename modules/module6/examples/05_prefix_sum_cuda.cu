@@ -43,6 +43,15 @@ namespace cg = cooperative_groups;
         } \
     } while(0)
 
+// Bank conflict avoidance for shared memory access
+#define CONFLICT_FREE_OFFSET(n) ((n) >> NUM_BANKS + (n) >> (2 * LOG_NUM_BANKS))
+#define NUM_BANKS 32
+#define LOG_NUM_BANKS 5
+
+// Forward declarations
+__global__ void blelloch_scan_with_totals(float* input, float* output, float* block_totals, int n);
+__global__ void add_increments(float* data, float* increments, int n);
+
 // Hillis-Steele Scan (Inclusive) - Work inefficient but step efficient
 __global__ void hillis_steele_scan_inclusive(float* input, float* output, int n) {
     extern __shared__ float temp[];
@@ -250,11 +259,6 @@ __global__ void blelloch_scan_optimized(float* input, float* output, int n) {
         output[idx + (n / 2)] = temp[bi + bank_offset_b];
     }
 }
-
-// Macro for bank conflict free access
-#define CONFLICT_FREE_OFFSET(n) ((n) >> NUM_BANKS + (n) >> (2 * NUM_BANKS))
-#define NUM_BANKS 16
-#define LOG_NUM_BANKS 4
 
 // Warp-level scan using shuffle operations (CUDA 9.0+)
 __device__ float warp_scan_inclusive(float val) {

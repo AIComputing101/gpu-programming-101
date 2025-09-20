@@ -232,7 +232,6 @@ double runMultiGPUWeighted(float *h_data, int size, int numGPUs) {
     auto start = std::chrono::high_resolution_clock::now();
     
     // Launch on all GPUs with weighted distribution
-    int offset = 0;
     #pragma omp parallel for
     for (int gpu = 0; gpu < numGPUs; gpu++) {
         int currentOffset = 0;

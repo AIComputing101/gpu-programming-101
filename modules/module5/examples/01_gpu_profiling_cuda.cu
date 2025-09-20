@@ -1,6 +1,6 @@
 #include <cuda_runtime.h>
 #include <cuda_profiler_api.h>
-#include <nvToolsExt.h>
+// #include <nvtx3/nvtx3.hpp>  // NVTX disabled for compatibility
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -14,11 +14,10 @@
 #define BLOCK_SIZE 256
 #define NUM_ITERATIONS 10
 
-// Custom profiling colors for NVTX
-#define NVTX_COLOR_RED    0xFFFF0000
-#define NVTX_COLOR_GREEN  0xFF00FF00
-#define NVTX_COLOR_BLUE   0xFF0000FF
-#define NVTX_COLOR_YELLOW 0xFFFFFF00
+// NVTX compatibility macros (disabled for compatibility)
+#define nvtxRangePushA(name) do {} while(0)
+#define nvtxRangePushEx(name, color) do {} while(0)
+#define nvtxRangePop() do {} while(0)
 
 // Performance counter class for detailed analysis
 class PerformanceProfiler {
@@ -87,6 +86,22 @@ public:
     }
 };
 
+// Helper function to estimate cores per SM based on compute capability
+int _ConvertSMVer2Cores(int major, int minor) {
+    // Cores per SM for different compute capabilities
+    switch (major) {
+        case 3: return 192; // Kepler
+        case 5: return 128; // Maxwell
+        case 6: 
+            return (minor == 1 || minor == 2) ? 128 : 64; // Pascal
+        case 7: 
+            return (minor == 0) ? 64 : 128; // Volta/Turing
+        case 8: return 128; // Ampere
+        case 9: return 128; // Hopper
+        default: return 64; // Conservative estimate
+    }
+}
+
 #define CUDA_CHECK(call) \
     do { \
         cudaError_t error = call; \
@@ -99,8 +114,6 @@ public:
 
 // Kernel with different compute intensities for profiling analysis
 __global__ void computeIntensiveKernel(float *data, int n, int iterations) {
-    nvtxRangePushA("Compute Intensive Kernel");
-    
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     
     if (idx < n) {
@@ -114,14 +127,10 @@ __global__ void computeIntensiveKernel(float *data, int n, int iterations) {
         
         data[idx] = value;
     }
-    
-    nvtxRangePop();
 }
 
 // Memory bandwidth intensive kernel
 __global__ void memoryIntensiveKernel(float *input, float *output, int n) {
-    nvtxRangePushA("Memory Intensive Kernel");
-    
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     
     if (idx < n) {
@@ -132,8 +141,6 @@ __global__ void memoryIntensiveKernel(float *input, float *output, int n) {
         }
         output[idx] = sum / 8.0f;
     }
-    
-    nvtxRangePop();
 }
 
 // Kernel with poor memory coalescing for profiling analysis
@@ -278,45 +285,6 @@ void analyzeDeviceProperties() {
     printf("\n");
 }
 
-// Helper function to convert SM version to core count (approximate)
-int _ConvertSMVer2Cores(int major, int minor) {
-    // Approximate cores per SM for different architectures
-    int cores = 0;
-    switch ((major << 4) + minor) {
-        case 0x30: // Kepler
-        case 0x32:
-        case 0x35:
-        case 0x37:
-            cores = 192;
-            break;
-        case 0x50: // Maxwell
-        case 0x52:
-        case 0x53:
-            cores = 128;
-            break;
-        case 0x60: // Pascal
-        case 0x61:
-        case 0x62:
-            cores = 64;
-            break;
-        case 0x70: // Volta
-        case 0x72:
-        case 0x75: // Turing
-            cores = 64;
-            break;
-        case 0x80: // Ampere
-        case 0x86:
-            cores = 64;
-            break;
-        case 0x90: // Hopper
-            cores = 128;
-            break;
-        default:
-            cores = 64; // Default estimate
-    }
-    return cores;
-}
-
 void runProfilingBenchmarks(PerformanceProfiler& profiler) {
     printf("=== Running Profiling Benchmarks ===\n");
     
@@ -382,12 +350,14 @@ void runProfilingBenchmarks(PerformanceProfiler& profiler) {
         CUDA_CHECK(cudaDeviceSynchronize());
         
         profiler.startTimer("Poor_Coalescing_Stride_8");
-        poorCoalescingKernel<<<grid / 8, block>>>(d_data, ARRAY_SIZE, 8);
+        dim3 grid_8(grid.x / 8, grid.y, grid.z);
+        poorCoalescingKernel<<<grid_8, block>>>(d_data, ARRAY_SIZE, 8);
         profiler.endTimer("Poor_Coalescing_Stride_8");
         CUDA_CHECK(cudaDeviceSynchronize());
         
         profiler.startTimer("Poor_Coalescing_Stride_32");
-        poorCoalescingKernel<<<grid / 32, block>>>(d_data, ARRAY_SIZE, 32);
+        dim3 grid_32(grid.x / 32, grid.y, grid.z);
+        poorCoalescingKernel<<<grid_32, block>>>(d_data, ARRAY_SIZE, 32);
         profiler.endTimer("Poor_Coalescing_Stride_32");
         CUDA_CHECK(cudaDeviceSynchronize());
     }

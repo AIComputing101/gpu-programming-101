@@ -131,7 +131,7 @@ __global__ void spmv_csr_warp_kernel(const float* values, const int* row_ptr, co
     for (int row = warp_id; row < rows; row += total_warps) {
         int start = row_ptr[row];
         int end = row_ptr[row + 1];
-        int nnz_in_row = end - start;
+        // int nnz_in_row = end - start; // Unused, commented out
         
         float sum = 0.0f;
         
@@ -160,7 +160,7 @@ __global__ void spmv_csr_vector_kernel(const float* values, const int* row_ptr, 
     
     int start = row_ptr[row];
     int end = row_ptr[row + 1];
-    int nnz_in_row = end - start;
+    // int nnz_in_row = end - start; // Unused, commented out
     
     float sum = 0.0f;
     
@@ -478,7 +478,7 @@ void demonstrateAdvancedSparseOperations() {
     const float alpha = 1.0f, beta = 0.0f;
     
     // Compute buffer sizes
-    size_t bufferSize1 = 0, bufferSize2 = 0;
+    size_t bufferSize1 = 0; // bufferSize2 unused, removed
     
     CHECK_CUSPARSE(cusparseSpGEMM_workEstimation(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                                 CUSPARSE_OPERATION_NON_TRANSPOSE,

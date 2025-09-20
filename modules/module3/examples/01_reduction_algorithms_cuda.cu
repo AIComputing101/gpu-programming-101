@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <chrono>
 #include <algorithm>
+#include <float.h>
 
 namespace cg = cooperative_groups;
 
@@ -409,18 +410,6 @@ void demonstrateMultiPassReduction() {
     // Allocate and initialize large dataset
     float *d_large_data;
     CUDA_CHECK(cudaMalloc(&d_large_data, large_n * sizeof(float)));
-    
-    // Initialize with pattern
-    const int init_threads = 256;
-    const int init_blocks = (large_n + init_threads - 1) / init_threads;
-    
-    // Simple initialization kernel
-    auto init_kernel = [] __device__ (float *data, size_t n) {
-        size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx < n) {
-            data[idx] = 1.0f; // Each element contributes 1.0
-        }
-    };
     
     // Initialize data (all 1.0, so sum should be large_n)
     float *h_temp = new float[large_n];

@@ -20,8 +20,13 @@ After completing this module, you will be able to:
 
 ### Prerequisites
 - NVIDIA GPU with CUDA support OR AMD GPU with ROCm support
-- CUDA Toolkit 11.0+ or ROCm 4.0+
+- CUDA Toolkit 12.0+ or ROCm 6.0+ (Docker images provide CUDA 12.9.1 and ROCm 7.0)
 - C/C++ compiler (GCC, Clang, or MSVC)
+
+Tip: You can skip native installs by using our Docker environment (recommended):
+```
+./docker/scripts/run.sh --auto
+```
 
 ### Running Examples
 
@@ -30,15 +35,19 @@ Navigate to the examples directory:
 cd examples/
 ```
 
-Build and run examples:
+Build and run examples (binaries are written to `build/`):
 ```bash
-# Build all examples
+# Build all examples for your detected GPU
 make
 
-# Run specific examples
-./01_vector_addition_cuda
-./04_device_info_cuda
-./05_performance_comparison
+# Run specific examples (CUDA)
+./build/01_vector_addition_cuda
+./build/04_device_info_cuda
+./build/05_performance_comparison_cuda || ./build/05_performance_comparison
+
+# Or HIP versions (cross-platform)
+./build/02_vector_addition_hip
+./build/04_device_info_hip
 ```
 
 ## Examples Overview
@@ -48,9 +57,14 @@ make
 | `01_vector_addition_cuda.cu` | Basic CUDA vector addition | Kernels, memory management, error handling |
 | `02_vector_addition_hip.cpp` | Cross-platform HIP version | HIP API, portability |
 | `03_matrix_addition_cuda.cu` | 2D matrix operations | 2D threading, indexing |
+| `03_matrix_addition_hip.cpp` | HIP 2D matrix operations | HIP indexing, portability |
 | `04_device_info_cuda.cu` | GPU properties and capabilities | Device queries, system info |
-| `05_performance_comparison.cu` | CPU vs GPU benchmarking | Performance analysis, timing |
-| `06_debug_example.cu` | Debugging and optimization | Error checking, occupancy |
+| `04_device_info_hip.cpp` | HIP device and platform info | HIP device queries |
+| `05_performance_comparison_cuda.cu` | CPU vs GPU benchmarking (CUDA) | Performance analysis, timing |
+| `05_performance_comparison_hip.cpp` | Benchmarking (HIP) | HIP performance, memory bandwidth |
+| `06_debug_example_cuda.cu` | Debugging and optimization (CUDA) | Error checking, occupancy |
+| `06_debug_example_hip.cpp` | Debugging and optimization (HIP) | HIP debugging |
+| `07_cross_platform_comparison.cpp` | AMD vs NVIDIA comparison | Portability, tuning |
 
 ## Topics Covered
 

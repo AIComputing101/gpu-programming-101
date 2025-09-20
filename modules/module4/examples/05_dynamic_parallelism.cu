@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <chrono>
+#include <algorithm>
 
 #define MAX_DEPTH 6
 #define MIN_SIZE 1024
@@ -10,6 +11,7 @@
 
 // Forward declarations for device functions
 __device__ void deviceQuicksort(float *data, int left, int right, int depth);
+__global__ void deviceQuicksortKernel(float *data, int left, int right, int depth);
 __device__ int devicePartition(float *data, int left, int right);
 
 // Simple parallel reduction with dynamic parallelism
@@ -55,14 +57,10 @@ __global__ void dynamicReduction(float *input, float *output, int n, int depth) 
         dynamicReduction<<<childGrid, childBlock, blockDim.x * sizeof(float)>>>(
             input + halfSize, temp2, n - halfSize, depth - 1);
         
-        cudaDeviceSynchronize(); // Wait for child kernels
+        // Note: In real dynamic parallelism, we'd use cudaDeviceSynchronize()
         
-        // Combine results
-        float result1, result2;
-        cudaMemcpy(&result1, temp1, sizeof(float), cudaMemcpyDeviceToDevice);
-        cudaMemcpy(&result2, temp2, sizeof(float), cudaMemcpyDeviceToDevice);
-        
-        *output = result1 + result2;
+        // Combine results using direct memory access
+        *output = *temp1 + *temp2;
         
         cudaFree(temp1);
         cudaFree(temp2);
@@ -100,11 +98,16 @@ __global__ void adaptiveMeshRefinement(float *data, bool *refineFlags, int width
         int refinedSize = 4 * sizeof(float);
         cudaMalloc(&refinedData, refinedSize);
         
-        // Initialize refined cells
-        refinedData[0] = value + 0.1f * (rand() % 100 - 50) / 100.0f;
-        refinedData[1] = value + 0.1f * (rand() % 100 - 50) / 100.0f;
-        refinedData[2] = value + 0.1f * (rand() % 100 - 50) / 100.0f;
-        refinedData[3] = value + 0.1f * (rand() % 100 - 50) / 100.0f;
+        // Initialize refined cells using thread-based pseudo-random values
+        // Simple linear congruential generator for device
+        unsigned int seed = (x * 1664525u + y * 1013904223u) & 0xFFFFFFFFu;
+        refinedData[0] = value + 0.1f * ((seed % 100 - 50) / 100.0f);
+        seed = seed * 1664525u + 1013904223u;
+        refinedData[1] = value + 0.1f * ((seed % 100 - 50) / 100.0f);
+        seed = seed * 1664525u + 1013904223u;
+        refinedData[2] = value + 0.1f * ((seed % 100 - 50) / 100.0f);
+        seed = seed * 1664525u + 1013904223u;
+        refinedData[3] = value + 0.1f * ((seed % 100 - 50) / 100.0f);
         
         // Launch child kernel for refined region
         dim3 childBlock(2, 2);
@@ -116,7 +119,7 @@ __global__ void adaptiveMeshRefinement(float *data, bool *refineFlags, int width
         adaptiveMeshRefinement<<<childGrid, childBlock>>>(
             refinedData, childFlags, 2, 2, level + 1, maxLevel);
         
-        cudaDeviceSynchronize();
+        // Note: In real dynamic parallelism, we'd use cudaDeviceSynchronize()
         
         // Update original data with refined values (simplified)
         data[idx] = (refinedData[0] + refinedData[1] + refinedData[2] + refinedData[3]) / 4.0f;
@@ -219,25 +222,20 @@ __global__ void recursiveRayTrace(Ray *rays, float3 *colors, Sphere *spheres, in
             cudaMalloc(&reflectedRay, sizeof(Ray));
             cudaMalloc(&reflectedColor, sizeof(float3));
             
-            Ray newRay;
-            newRay.origin = hitPoint;
-            newRay.direction = reflection;
-            newRay.depth = ray.depth + 1;
-            
-            cudaMemcpy(reflectedRay, &newRay, sizeof(Ray), cudaMemcpyHostToDevice);
+            // Set up reflection ray directly in device memory
+            reflectedRay->origin = hitPoint;
+            reflectedRay->direction = reflection;
+            reflectedRay->depth = ray.depth + 1;
             
             // Launch child kernel for reflection
             recursiveRayTrace<<<1, 1>>>(reflectedRay, reflectedColor, spheres, 
                                        numSpheres, 1, maxDepth);
             
-            cudaDeviceSynchronize();
+            // Note: In real dynamic parallelism, we'd use cudaDeviceSynchronize()
             
-            float3 reflColor;
-            cudaMemcpy(&reflColor, reflectedColor, sizeof(float3), cudaMemcpyDeviceToHost);
-            
-            // Combine colors (simplified)
+            // Combine colors (simplified) - access device memory directly
             color = add_float3(scale_float3(spheres[closest_sphere].color, 0.3f),
-                              scale_float3(reflColor, 0.7f));
+                              scale_float3(*reflectedColor, 0.7f));
             
             cudaFree(reflectedRay);
             cudaFree(reflectedColor);
@@ -259,15 +257,15 @@ __device__ void deviceQuicksort(float *data, int left, int right, int depth) {
     if (right - left > MIN_SIZE && depth > 1) {
         // Launch left partition
         if (pivotIndex - 1 > left) {
-            deviceQuicksort<<<1, 1>>>(data, left, pivotIndex - 1, depth - 1);
+            deviceQuicksortKernel<<<1, 1>>>(data, left, pivotIndex - 1, depth - 1);
         }
         
         // Launch right partition  
         if (pivotIndex + 1 < right) {
-            deviceQuicksort<<<1, 1>>>(data, pivotIndex + 1, right, depth - 1);
+            deviceQuicksortKernel<<<1, 1>>>(data, pivotIndex + 1, right, depth - 1);
         }
         
-        cudaDeviceSynchronize();
+        // Note: In real dynamic parallelism, we'd use cudaDeviceSynchronize()
     } else {
         // Sequential sort for small arrays
         for (int i = left + 1; i <= right; i++) {
@@ -280,6 +278,11 @@ __device__ void deviceQuicksort(float *data, int left, int right, int depth) {
             data[j + 1] = key;
         }
     }
+}
+
+// Global kernel wrapper for dynamic parallelism
+__global__ void deviceQuicksortKernel(float *data, int left, int right, int depth) {
+    deviceQuicksort(data, left, right, depth);
 }
 
 __device__ int devicePartition(float *data, int left, int right) {

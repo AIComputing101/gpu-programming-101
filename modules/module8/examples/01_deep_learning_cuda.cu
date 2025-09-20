@@ -25,7 +25,7 @@
 #include <cooperative_groups.h>
 #include <cuda_fp16.h>
 #include <cublas_v2.h>
-#include <cudnn.h>
+#include <curand.h>
 #include <iostream>
 #include <vector>
 #include <chrono>

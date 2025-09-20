@@ -5,9 +5,9 @@ This directory contains Docker configurations for comprehensive GPU programming 
 ## 🚀 Latest Versions (2025)
 
 - **CUDA**: 12.9.1 (Latest stable release)
-- **ROCm**: 6.4.3 (Latest stable release) 
+- **ROCm**: 7.0 (Latest stable release) 
 - **Ubuntu**: 22.04 LTS
-- **Nsight Tools**: 2025.1.1 (with fallback to 2024.6.1)
+- **Nsight Tools**: 2025.1.1
 
 ## 🚀 Quick Start
 
@@ -58,10 +58,10 @@ docker/
 
 ### CUDA Development Container
 **Image**: `gpu-programming-101:cuda`  
-**Base**: `nvidia/cuda:12.4-devel-ubuntu22.04`
+**Base**: `nvidia/cuda:12.9.1-devel-ubuntu22.04`
 
 **Features**:
-- CUDA 12.4 with development tools
+- CUDA 12.9.1 with development tools
 - NVIDIA Nsight Systems & Compute profilers
 - Python 3 with scientific libraries
 - GPU monitoring and debugging tools
@@ -73,17 +73,17 @@ docker/
 
 ### ROCm Development Container
 **Image**: `gpu-programming-101:rocm`  
-**Base**: `rocm/dev-ubuntu-22.04:6.0`
+**Base**: `rocm/dev-ubuntu-22.04:7.0-complete`
 
 **Features**:
-- ROCm 6.0 with HIP development environment
+- ROCm 7.0 with HIP development environment
 - Cross-platform GPU programming (AMD/NVIDIA)
 - ROCm profiling tools (rocprof, roctracer)
 - Python 3 with scientific libraries
 
 **GPU Requirements**:
 - AMD GPU with ROCm support (RX 580+, MI series)
-- AMD drivers with ROCm 6.0+
+- AMD drivers with ROCm 7.0+
 
 ## 🔧 Container Usage
 
@@ -251,7 +251,7 @@ NVIDIA_VISIBLE_DEVICES=all
 ROCM_PATH=/opt/rocm
 HIP_PATH=/opt/rocm/hip
 HIP_PLATFORM=amd
-HSA_OVERRIDE_GFX_VERSION=10.3.0
+HSA_OVERRIDE_GFX_VERSION=11.0.0
 ```
 
 ## 🛡️ Security Considerations
@@ -282,10 +282,10 @@ nvidia-smi  # For NVIDIA
 rocm-smi   # For AMD
 
 # Verify Docker GPU support
-docker run --rm --gpus all nvidia/cuda:12.4-base nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.9.1-base nvidia-smi
 
 # Check container runtime
-docker run --rm --device=/dev/kfd rocm/dev-ubuntu-22.04 rocminfo
+docker run --rm --device=/dev/kfd rocm/dev-ubuntu-22.04:7.0 rocminfo
 ```
 
 **"Container build fails"**
@@ -297,8 +297,8 @@ docker system prune -a
 sudo apt update && sudo apt upgrade docker-ce docker-compose
 
 # Check base image availability
-docker pull nvidia/cuda:12.4-devel-ubuntu22.04
-docker pull rocm/dev-ubuntu-22.04:6.0
+docker pull nvidia/cuda:12.9.1-devel-ubuntu22.04
+docker pull rocm/dev-ubuntu-22.04:7.0-complete
 ```
 
 **"Permission denied errors"**

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <chrono>
 #include <algorithm>
+#include <string>
 
 namespace cg = cooperative_groups;
 
@@ -150,14 +151,11 @@ __global__ void cooperativeGroupsScan(float *input, float *output, int n) {
     auto warp = cg::tiled_partition<32>(block);
     
     __shared__ float warp_sums[32];
-    __shared__ float shared_data[1024];
     
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int tid = threadIdx.x;
     
     // Load data
     float value = (idx < n) ? input[idx] : 0.0f;
-    shared_data[tid] = value;
     
     // Phase 1: Warp-level scan
     #pragma unroll
@@ -545,7 +543,7 @@ int main() {
     int num_sizes = sizeof(test_sizes) / sizeof(test_sizes[0]);
     
     for (int i = 0; i < num_sizes; i++) {
-        printf("\n" + std::string(50, '=') + "\n");
+        printf("\n%s\n", std::string(50, '=').c_str());
         ScanBenchmark benchmark(test_sizes[i]);
         benchmark.runBasicScans();
         benchmark.testSegmentedScan();

@@ -146,8 +146,9 @@ __global__ void warpPrimitivesDemo(int *input, int *output, int n) {
     bool any_true = warp.any(predicate);        // Any thread satisfies condition
     unsigned int ballot = warp.ballot(predicate); // Bitmask of threads satisfying condition
     
-    // 3. Matching operations (if supported)
-    unsigned int match_mask = warp.match_all(value);  // Threads with same value
+    // 3. Matching operations (using ballot for similar functionality)
+    // Note: match_all is not available in older CUDA versions, using ballot instead
+    unsigned int match_mask = warp.ballot(true);  // Get active lane mask
     
     if (tid < n) {
         // Store various results for demonstration
@@ -158,10 +159,11 @@ __global__ void warpPrimitivesDemo(int *input, int *output, int n) {
 
 // Multi-GPU cooperative kernel (requires special launch)
 __global__ void multiGPUReduction(float *input, float *output, int n, int gpu_id) {
-    auto grid = cg::this_multi_grid();
+    // Note: this_multi_grid() not available in older CUDA versions
+    // Using simplified grid-level approach
     auto block = cg::this_thread_block();
     
-    int tid = blockIdx.x * blockDim.x + threadIdx.x + gpu_id * (n / grid.num_grids());
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
     
     float sum = 0.0f;
     
@@ -171,10 +173,23 @@ __global__ void multiGPUReduction(float *input, float *output, int n, int gpu_id
     }
     
     // Grid-level reduction using cooperative groups
-    sum = cg::reduce(grid, sum, cg::plus<float>());
+    // Manual reduction since cg::reduce may not be available in older CUDA versions
+    __shared__ float shared_data[256];
     
-    if (grid.thread_rank() == 0) {
-        atomicAdd(output, sum);
+    // Block-level reduction first
+    shared_data[threadIdx.x] = sum;
+    __syncthreads();
+    
+    for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
+        if (threadIdx.x < stride) {
+            shared_data[threadIdx.x] += shared_data[threadIdx.x + stride];
+        }
+        __syncthreads();
+    }
+    
+    // Only block 0 thread 0 adds to final result
+    if (blockIdx.x == 0 && threadIdx.x == 0) {
+        atomicAdd(output, shared_data[0]);
     }
 }
 

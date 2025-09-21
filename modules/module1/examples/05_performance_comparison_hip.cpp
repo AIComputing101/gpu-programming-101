@@ -4,6 +4,17 @@
 #include <chrono>
 #include <math.h>
 
+// HIP error checking macro
+#define HIP_CHECK(call) \
+    do { \
+        hipError_t error = call; \
+        if (error != hipSuccess) { \
+            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
+                    hipGetErrorString(error)); \
+            exit(EXIT_FAILURE); \
+        } \
+    } while(0)
+
 // CPU version of vector addition
 void addVectorsCPU(float *a, float *b, float *c, int n) {
     for (int i = 0; i < n; i++) {
@@ -63,16 +74,6 @@ public:
         return std::chrono::duration<double, std::milli>(end - start).count();
     }
 };
-
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
-                    hipGetErrorString(error)); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0)
 
 int main() {
     // Get device information

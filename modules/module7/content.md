@@ -1,6 +1,6 @@
 # Module 7: Advanced Algorithmic Patterns - Comprehensive Guide
 
-> Environment note: Use the provided Docker environment (CUDA 12.9.1, ROCm latest) for consistent builds and tools across platforms.
+> Environment note: Use the provided Docker environment (CUDA 12.9.1 on Ubuntu 22.04, ROCm 7.0 on Ubuntu 24.04) for consistent builds and tools across platforms. Recent algorithmic pattern fixes included.
 
 ## Introduction
 

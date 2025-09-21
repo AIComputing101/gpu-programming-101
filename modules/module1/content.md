@@ -1,7 +1,7 @@
 # Module 1: Foundations of GPU Programming with CUDA and HIP
 *Heterogeneous Data Parallel Computing*
 
-> Environment note: Examples are validated in containers using CUDA 12.9.1 (Ubuntu 22.04) and ROCm latest (rocm/dev-ubuntu-22.04:latest). Using Docker is recommended for a consistent setup.
+> Environment note: Examples are validated in containers using CUDA 12.9.1 (Ubuntu 22.04) and ROCm 7.0 (Ubuntu 24.04). The advanced build system automatically detects your GPU vendor and optimizes accordingly. Using Docker is recommended for a consistent setup.
 
 ## Learning Objectives
 After completing this module, you will be able to:
@@ -127,7 +127,7 @@ nvidia-smi
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
 sudo dpkg -i cuda-keyring_1.1-1_all.deb
 sudo apt-get update
-sudo apt-get -y install cuda-toolkit-12-4
+sudo apt-get -y install cuda-toolkit-12-6
 
 # Add to PATH
 echo 'export PATH=/usr/local/cuda/bin${PATH:+:${PATH}}' >> ~/.bashrc
@@ -145,9 +145,9 @@ nvidia-smi
 
 **Step 1: Install ROCm**
 ```bash
-# Ubuntu 22.04
-wget https://repo.radeon.com/amdgpu-install/6.0/ubuntu/jammy/amdgpu-install_6.0.60000-1_all.deb
-sudo apt install ./amdgpu-install_6.0.60000-1_all.deb
+# Ubuntu 22.04/24.04
+wget https://repo.radeon.com/amdgpu-install/7.0/ubuntu/jammy/amdgpu-install_7.0.60000-1_all.deb
+sudo apt install ./amdgpu-install_7.0.60000-1_all.deb
 sudo amdgpu-install --usecase=hiplibsdk,rocm
 
 # Add user to video group

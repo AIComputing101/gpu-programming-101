@@ -2,9 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CUDA](https://img.shields.io/badge/CUDA-12.9.1-76B900?logo=nvidia)](https://developer.nvidia.com/cuda-toolkit)
-[![ROCm](https://img.shields.io/badge/ROCm-latest-red?logo=amd)](https://rocmdocs.amd.com/)
+[![ROCm](https://img.shields.io/badge/ROCm-7.0-red?logo=amd)](https://rocmdocs.amd.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
-[![Examples](https://img.shields.io/badge/Examples-70%2B-green)](modules/)
+[![Examples](https://img.shields.io/badge/Examples-71-green)](modules/)
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=github-actions)](https://github.com/features/actions)
 
 **A comprehensive, hands-on educational project for mastering GPU programming with CUDA and HIP**
@@ -35,7 +35,7 @@
 **GPU Programming 101** is a complete educational resource for learning modern GPU programming. This project provides:
 
 - **9 comprehensive modules** covering beginner to expert topics
-- **70+ working code examples** in both CUDA and HIP
+- **71 working code examples** in both CUDA and HIP
 - **Cross-platform support** for NVIDIA and AMD GPUs  
 - **Production-ready development environment** with Docker
 - **Professional tooling** including profilers, debuggers, and CI/CD
@@ -197,10 +197,11 @@ This architectural knowledge is essential for writing efficient GPU code and is 
 |---------|-------------|
 | 🎯 **Complete Curriculum** | 9 progressive modules from basics to advanced topics |
 | 💻 **Cross-Platform** | Full CUDA and HIP support for NVIDIA and AMD GPUs |
-| 🐳 **Docker Ready** | Complete containerized development environment |
-| 🔧 **Production Quality** | Professional build systems, testing, and profiling |
+| 🐳 **Docker Ready** | Complete containerized development environment with CUDA 12.9.1 & ROCm 7.0 |
+| 🔧 **Production Quality** | Professional build systems, auto-detection, testing, and profiling |
 | 📊 **Performance Focus** | Optimization techniques and benchmarking throughout |
 | 🌐 **Community Driven** | Open source with comprehensive contribution guidelines |
+| 🧪 **Advanced Libraries** | Support for Thrust, MIOpen, and production ML frameworks |
 
 ## 🚀 Quick Start
 
@@ -224,7 +225,7 @@ cd modules/module1 && make && ./build/01_vector_addition_cuda
 For direct system installation:
 
 ```bash
-# Prerequisites: CUDA 11.0+ or ROCm 5.0+, GCC 7+, Make
+# Prerequisites: CUDA 12.0+ or ROCm 7.0+, GCC 9+, Make
 
 # Clone and build
 git clone https://github.com/AIComputing101/gpu-programming-101.git
@@ -265,7 +266,7 @@ Our comprehensive curriculum progresses from fundamental concepts to production-
 | [**Module 8**](modules/module8/) | 🚀 Expert | 10-12h | **Domain Applications** | ML, Scientific Computing | 4 |
 | [**Module 9**](modules/module9/) | 🚀 Expert | 6-8h | **Production Deployment** | Libraries, Integration, Scaling | 4 |
 
-**📈 Progressive Learning Path: 70+ Examples • 50+ Hours • Beginner to Expert**
+**📈 Progressive Learning Path: 71 Examples • 50+ Hours • Beginner to Expert**
 
 ### Learning Progression
 
@@ -313,7 +314,7 @@ Module 5: Performance Tuning
 ### Software Requirements
 
 #### Operating System Support
-- **Linux** (Recommended): Ubuntu 22.04 LTS, RHEL 8/9, SLES 15 SP5
+- **Linux** (Recommended): Ubuntu 22.04/24.04 LTS, RHEL 8/9, SLES 15 SP5
 - **Windows**: Windows 10/11 with WSL2 recommended for optimal compatibility
 - **macOS**: macOS 12+ (Metal Performance Shaders for basic GPU compute)
 
@@ -322,7 +323,7 @@ Module 5: Performance Tuning
   - **Driver Requirements**: 
     - Linux: 550.54.14+ for CUDA 12.4+
     - Windows: 551.61+ for CUDA 12.4+
-- **ROCm Platform**: 6.0+ (Docker uses ROCm latest)
+- **ROCm Platform**: 7.0+ (Docker uses ROCm 7.0)
   - **Driver Requirements**: Latest AMDGPU-PRO or open-source AMDGPU drivers
   - **Kernel Support**: Linux kernel 5.4+ recommended
 
@@ -338,6 +339,8 @@ Module 5: Performance Tuning
 - **Profiling**: Nsight Compute, Nsight Systems (NVIDIA), rocprof (AMD)
 - **Debugging**: cuda-gdb, rocgdb, compute-sanitizer
 - **Libraries**: cuBLAS, cuFFT, rocBLAS, rocFFT (for advanced modules)
+- **ML Libraries**: Thrust (NVIDIA), MIOpen (AMD) for deep learning applications
+- **System Management**: NVML (NVIDIA), ROCm SMI (AMD) for hardware monitoring
 
 ### Performance Expectations by Hardware Tier
 
@@ -381,27 +384,41 @@ Experience the full development environment with zero setup:
 - 📦 Isolated and reproducible builds
 - 🧹 Easy cleanup when done
 
+**Container Specifications:**
+- **CUDA**: NVIDIA CUDA 12.9.1 on Ubuntu 22.04
+- **ROCm**: AMD ROCm 7.0 on Ubuntu 24.04 
+- **Libraries**: Production-ready toolchains with debugging support
+
 **[📖 Complete Docker Guide →](docker/README.md)**
 
 ## 🔧 Build System
 
+Our advanced build system features automatic GPU vendor detection and optimized configurations:
+
 ### Project-Wide Commands
 ```bash
-make all           # Build all modules
+make all           # Build all modules with auto-detection
 make test          # Run comprehensive tests  
 make clean         # Clean all artifacts
-make check-system  # Verify GPU setup
+make check-system  # Verify GPU setup and dependencies
 make status        # Show module completion status
 ```
 
 ### Module-Specific Commands
 ```bash
 cd modules/module1/examples
-make               # Build all examples in module
+make               # Build all examples with vendor auto-detection
 make test          # Run module tests
 make profile       # Performance profiling
 make debug         # Debug builds with extra checks
 ```
+
+### Advanced Build Features
+- **Automatic GPU Detection**: Detects NVIDIA/AMD hardware and builds accordingly
+- **Production Optimization**: `-O3`, fast math, architecture-specific optimizations
+- **Debug Support**: Full debugging symbols and validation checks
+- **Library Management**: Automatic detection of optional dependencies (NVML, MIOpen)
+- **Cross-Platform**: Single Makefile supports both CUDA and HIP builds
 
 ##  Performance Expectations
 

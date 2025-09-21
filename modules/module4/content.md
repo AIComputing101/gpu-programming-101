@@ -1,6 +1,6 @@
 # Module 4: Advanced GPU Programming - Multi-GPU, Streams, and Scalability
 
-> Environment note: Examples are validated with CUDA 12.9.1 and ROCm latest in Docker containers. Multi-GPU sections may require appropriate hardware and drivers.
+> Environment note: Examples are validated with CUDA 12.9.1 (Ubuntu 22.04) and ROCm 7.0 (Ubuntu 24.04) in Docker containers. Multi-GPU sections may require appropriate hardware and drivers. Auto-detection build system optimizes for your platform.
 
 ## Overview
 

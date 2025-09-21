@@ -1,7 +1,8 @@
 #include <hip/hip_runtime.h>
 #include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 
-// Conditional rocsparse support - comment out if not available
+// Conditional rocsparse support - disabled by default since rocsparse may not be available
+// #define HAS_ROCSPARSE
 #ifdef HAS_ROCSPARSE
 #include <rocsparse/rocsparse.h>
 #include <rocblas/rocblas.h>
@@ -204,22 +205,31 @@ __global__ void spmv_csr_lds_optimized_kernel(const float* values, const int* ro
 
 class SparseMatrixMultiplier {
 private:
+#ifdef HAS_ROCSPARSE
     rocsparse_handle rocsparse_handle;
+#endif
     hipStream_t stream;
     
 public:
     SparseMatrixMultiplier() {
+#ifdef HAS_ROCSPARSE
         CHECK_ROCSPARSE(rocsparse_create_handle(&rocsparse_handle));
+#endif
         CHECK_HIP(hipStreamCreate(&stream));
+#ifdef HAS_ROCSPARSE
         CHECK_ROCSPARSE(rocsparse_set_stream(rocsparse_handle, stream));
+#endif
     }
     
     ~SparseMatrixMultiplier() {
+#ifdef HAS_ROCSPARSE
         rocsparse_destroy_handle(rocsparse_handle);
-        hipStreamDestroy(stream);
+#endif
+        HIP_CHECK(hipStreamDestroy(stream));
     }
     
     void spmv_rocsparse(const CSRMatrix& matrix, const float* d_x, float* d_y) {
+#ifdef HAS_ROCSPARSE
         const float alpha = 1.0f, beta = 0.0f;
         
         rocsparse_mat_descr descr;
@@ -251,10 +261,14 @@ public:
         CHECK_HIP(hipStreamSynchronize(stream));
         
         // Cleanup
-        CHECK_HIP(HIP_CHECK(hipFree(d_values));
-        CHECK_HIP(HIP_CHECK(hipFree(d_row_ptr));
-        CHECK_HIP(HIP_CHECK(hipFree(d_col_idx));
+        HIP_CHECK(hipFree(d_values));
+        HIP_CHECK(hipFree(d_row_ptr));
+        HIP_CHECK(hipFree(d_col_idx));
         rocsparse_destroy_mat_descr(descr);
+#else
+        std::cout << "ROCsparse not available. Using custom implementation.\n";
+        spmv_custom(matrix, d_x, d_y, 0);
+#endif
     }
     
     void spmv_custom(const CSRMatrix& matrix, const float* d_x, float* d_y, int kernel_type = 0) {

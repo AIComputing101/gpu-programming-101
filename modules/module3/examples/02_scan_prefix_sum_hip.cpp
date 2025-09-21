@@ -348,7 +348,7 @@ int main() {
     HIP_CHECK(hipDeviceSynchronize());
     auto end = std::chrono::high_resolution_clock::now();
     
-    double hillis_time = std::chrono::duration<double, std::milli>(end - start).count();
+    hillis_time = std::chrono::duration<double, std::milli>(end - start).count();
     
     HIP_CHECK(hipMemcpy(h_output, d_output, bytes, hipMemcpyDeviceToHost));
     
@@ -369,7 +369,7 @@ int main() {
     HIP_CHECK(hipDeviceSynchronize());
     end = std::chrono::high_resolution_clock::now();
     
-    double blelloch_time = std::chrono::duration<double, std::milli>(end - start).count();
+    blelloch_time = std::chrono::duration<double, std::milli>(end - start).count();
     
     HIP_CHECK(hipMemcpy(h_output, d_output, bytes, hipMemcpyDeviceToHost));
     

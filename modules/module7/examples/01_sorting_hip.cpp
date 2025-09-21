@@ -34,15 +34,6 @@
 
 namespace cg = cooperative_groups;
 
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            std::cerr << "HIP error at " << __FILE__ << ":" << __LINE__ << " - " << hipGetErrorString(error) << std::endl; \
-            exit(1); \
-        } \
-    } while(0)
-
 constexpr int WAVEFRONT_SIZE = 64;
 
 // Bitonic sorting network adapted for AMD architecture
@@ -487,9 +478,9 @@ int main() {
     
     // Check HIP device properties
     int device;
-    hipGetDevice(&device);
+    HIP_CHECK(hipGetDevice(&device));
     hipDeviceProp_t props;
-    hipGetDeviceProperties(&props, device);
+    HIP_CHECK(hipGetDeviceProperties(&props, device));
     
     std::cout << "GPU: " << props.name << "\n";
     std::cout << "Compute Capability: " << props.major << "." << props.minor << "\n";

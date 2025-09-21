@@ -29,15 +29,7 @@
 #include <iomanip>
 #include <functional>
 
-// Utility macros
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            std::cerr << "HIP error at " << __FILE__ << ":" << __LINE__ << " - " << hipGetErrorString(error) << std::endl; \
-            exit(1); \
-        } \
-    } while(0)
+// Utility macros - using rocm7_utils.h HIP_CHECK
 
 // AMD GPU typically has 64-thread wavefronts
 constexpr int WAVEFRONT_SIZE = 64;
@@ -113,7 +105,7 @@ __global__ void histogram_wavefront_aggregation(int* input, int* histogram, int 
         int same_bin_count = __popcll(same_bin_mask);
         
         // Only first thread with this bin value updates
-        if (__ffsll(same_bin_mask) - 1 == lane) {
+        if (__ffsll((unsigned long long)same_bin_mask) - 1 == lane) {
             atomicAdd(&lds_hist[bin], same_bin_count);
         }
     }
@@ -480,9 +472,9 @@ int main() {
     
     // Check HIP device properties
     int device;
-    hipGetDevice(&device);
+    HIP_CHECK(hipGetDevice(&device));
     hipDeviceProp_t props;
-    hipGetDeviceProperties(&props, device);
+    HIP_CHECK(hipGetDeviceProperties(&props, device));
     
     std::cout << "GPU: " << props.name << "\n";
     std::cout << "Compute Capability: " << props.major << "." << props.minor << "\n";

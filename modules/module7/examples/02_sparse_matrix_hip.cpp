@@ -1,7 +1,11 @@
 #include <hip/hip_runtime.h>
 #include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
+
+// Conditional rocsparse support - comment out if not available
+#ifdef HAS_ROCSPARSE
 #include <rocsparse/rocsparse.h>
 #include <rocblas/rocblas.h>
+#endif
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -17,6 +21,7 @@
     } \
 } while(0)
 
+#ifdef HAS_ROCSPARSE
 #define CHECK_ROCSPARSE(call) do { \
     rocsparse_status status = call; \
     if (status != rocsparse_status_success) { \
@@ -24,6 +29,7 @@
         exit(1); \
     } \
 } while(0)
+#endif
 
 class Timer {
 private:
@@ -527,8 +533,19 @@ int main() {
     std::cout << "HIP/ROCm Sparse Matrix Operations Demo" << std::endl;
     std::cout << "======================================" << std::endl;
     
+#ifdef HAS_ROCSPARSE
     demonstrateSparseOperations();
     demonstrateAdvancedSparseOperations();
     
     return 0;
+#else
+    std::cout << "Note: This example requires rocSPARSE library which is not available." << std::endl;
+    std::cout << "To enable this example:" << std::endl;
+    std::cout << "1. Install rocSPARSE: sudo apt install rocsparse-dev" << std::endl;
+    std::cout << "2. Compile with -DHAS_ROCSPARSE flag" << std::endl;
+    std::cout << "3. Link with -lrocsparse -lrocblas" << std::endl;
+    std::cout << std::endl;
+    std::cout << "Skipping sparse matrix operations..." << std::endl;
+    return 0;
+#endif
 }

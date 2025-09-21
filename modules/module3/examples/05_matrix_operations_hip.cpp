@@ -1,10 +1,21 @@
 #include <hip/hip_runtime.h>
-#include <rocblas/rocblas.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <chrono>
 #include "rocm7_utils.h"
+
+// Try to include ROCBlas if available
+#ifdef __has_include
+    #if __has_include(<rocblas/rocblas.h>)
+        #include <rocblas/rocblas.h>
+        #define HAS_ROCBLAS 1
+    #else
+        #define HAS_ROCBLAS 0
+    #endif
+#else
+    #define HAS_ROCBLAS 0
+#endif
 
 #define TILE_SIZE 16
 #define BLOCK_SIZE 256
@@ -271,22 +282,25 @@ __global__ void strassenMatrixMul(float *A, float *B, float *C, int N, int level
     }
 }
 
-    }
-}
-
 // Matrix multiplication demonstration
 
 class MatrixOperations {
 private:
+#if HAS_ROCBLAS
     rocblas_handle handle;
+#endif
     
 public:
     MatrixOperations() {
+#if HAS_ROCBLAS
         rocblas_create_handle(&handle);
+#endif
     }
     
     ~MatrixOperations() {
+#if HAS_ROCBLAS
         rocblas_destroy_handle(handle);
+#endif
     }
     
     void testMatrixMultiplication() {
@@ -299,7 +313,9 @@ public:
         float *h_A = (float*)malloc(size);
         float *h_B = (float*)malloc(size);
         float *h_C_custom = (float*)malloc(size);
+#if HAS_ROCBLAS
         float *h_C_rocblas = (float*)malloc(size);
+#endif
         
         // Initialize matrices
         for (int i = 0; i < N * N; i++) {
@@ -308,11 +324,14 @@ public:
         }
         
         // Allocate device memory
-        float *d_A, *d_B, *d_C_custom, *d_C_rocblas;
+        float *d_A, *d_B, *d_C_custom;
         HIP_CHECK(hipMalloc(&d_A, size));
         HIP_CHECK(hipMalloc(&d_B, size));
         HIP_CHECK(hipMalloc(&d_C_custom, size));
+#if HAS_ROCBLAS
+        float *d_C_rocblas;
         HIP_CHECK(hipMalloc(&d_C_rocblas, size));
+#endif
         
         // Copy data to device
         HIP_CHECK(hipMemcpy(d_A, h_A, size, hipMemcpyHostToDevice));
@@ -327,8 +346,7 @@ public:
         HIP_CHECK(hipEventCreate(&stop));
         
         HIP_CHECK(hipEventRecord(start));
-        hipLaunchKernelGGL(matrixMulTiled, gridSize, blockSize, 0, 0, 
-                          d_A, d_B, d_C_custom, N);
+        matrixMulTiled<<<gridSize, blockSize>>>(d_A, d_B, d_C_custom, N);
         HIP_CHECK(hipEventRecord(stop));
         HIP_CHECK(hipEventSynchronize(stop));
         
@@ -340,14 +358,14 @@ public:
         dim3 amdGridSize((N + 31) / 32, (N + 31) / 32);
         
         HIP_CHECK(hipEventRecord(start));
-        hipLaunchKernelGGL(matrixMulAMDOptimized, amdGridSize, amdBlockSize, 0, 0, 
-                          d_A, d_B, d_C_custom, N);
+        matrixMulAMDOptimized<<<amdGridSize, amdBlockSize>>>(d_A, d_B, d_C_custom, N);
         HIP_CHECK(hipEventRecord(stop));
         HIP_CHECK(hipEventSynchronize(stop));
         
         float amd_time;
         HIP_CHECK(hipEventElapsedTime(&amd_time, start, stop));
         
+#if HAS_ROCBLAS
         // Test rocBLAS implementation
         const float alpha = 1.0f, beta = 0.0f;
         
@@ -359,6 +377,7 @@ public:
         
         float rocblas_time;
         HIP_CHECK(hipEventElapsedTime(&rocblas_time, start, stop));
+#endif
         
         // Performance analysis
         double flops = 2.0 * N * N * N; // Multiply-add operations
@@ -368,11 +387,16 @@ public:
                custom_time, flops / (custom_time * 1e6));
         printf("AMD optimized GEMM:    %8.3f ms (%8.2f GFLOPS)\n", 
                amd_time, flops / (amd_time * 1e6));
+#if HAS_ROCBLAS
         printf("rocBLAS GEMM:          %8.3f ms (%8.2f GFLOPS)\n", 
                rocblas_time, flops / (rocblas_time * 1e6));
+#else
+        printf("rocBLAS GEMM:          Not available (rocBLAS not found)\n");
+#endif
         
         // Verify correctness
         HIP_CHECK(hipMemcpy(h_C_custom, d_C_custom, size, hipMemcpyDeviceToHost));
+#if HAS_ROCBLAS
         HIP_CHECK(hipMemcpy(h_C_rocblas, d_C_rocblas, size, hipMemcpyDeviceToHost));
         
         double max_error = 0.0;
@@ -381,13 +405,20 @@ public:
             max_error = fmax(max_error, error);
         }
         printf("Max error vs rocBLAS: %e\n", max_error);
+#else
+        printf("Correctness verification: rocBLAS not available\n");
+#endif
         
         // Cleanup
         HIP_CHECK(hipEventDestroy(start));
         HIP_CHECK(hipEventDestroy(stop));
         
-        free(h_A); free(h_B); free(h_C_custom); free(h_C_rocblas);
-        HIP_CHECK(hipFree(d_A)); HIP_CHECK(hipFree(d_B)); HIP_CHECK(hipFree(d_C_custom)); HIP_CHECK(hipFree(d_C_rocblas));
+        free(h_A); free(h_B); free(h_C_custom);
+        HIP_CHECK(hipFree(d_A)); HIP_CHECK(hipFree(d_B)); HIP_CHECK(hipFree(d_C_custom));
+#if HAS_ROCBLAS
+        free(h_C_rocblas);
+        HIP_CHECK(hipFree(d_C_rocblas));
+#endif
     }
     
     void testMatrixTranspose() {
@@ -421,8 +452,7 @@ public:
         
         // Standard transpose
         HIP_CHECK(hipEventRecord(start));
-        hipLaunchKernelGGL(transposeSharedMem, gridSize, blockSize, 0, 0, 
-                          d_input, d_output, width, height);
+        transposeSharedMem<<<gridSize, blockSize>>>(d_input, d_output, width, height);
         HIP_CHECK(hipEventRecord(stop));
         HIP_CHECK(hipEventSynchronize(stop));
         
@@ -434,8 +464,7 @@ public:
         dim3 amdGridSize((width + 31) / 32, (height + 31) / 32);
         
         HIP_CHECK(hipEventRecord(start));
-        hipLaunchKernelGGL(transposeAMDOptimized, amdGridSize, amdBlockSize, 0, 0, 
-                          d_input, d_output, width, height);
+        transposeAMDOptimized<<<amdGridSize, amdBlockSize>>>(d_input, d_output, width, height);
         HIP_CHECK(hipEventRecord(stop));
         HIP_CHECK(hipEventSynchronize(stop));
         
@@ -494,8 +523,7 @@ public:
         
         // Standard implementation
         HIP_CHECK(hipEventRecord(start));
-        hipLaunchKernelGGL(matrixVectorMul, N, BLOCK_SIZE, 0, 0, 
-                          d_matrix, d_vector, d_result, N);
+        matrixVectorMul<<<N, BLOCK_SIZE>>>(d_matrix, d_vector, d_result, N);
         HIP_CHECK(hipEventRecord(stop));
         HIP_CHECK(hipEventSynchronize(stop));
         
@@ -504,8 +532,7 @@ public:
         
         // Wavefront-optimized implementation
         HIP_CHECK(hipEventRecord(start));
-        hipLaunchKernelGGL(matrixVectorMulWavefront, N, BLOCK_SIZE, 0, 0, 
-                          d_matrix, d_vector, d_result, N);
+        matrixVectorMulWavefront<<<N, BLOCK_SIZE>>>(d_matrix, d_vector, d_result, N);
         HIP_CHECK(hipEventRecord(stop));
         HIP_CHECK(hipEventSynchronize(stop));
         

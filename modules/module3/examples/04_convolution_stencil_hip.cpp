@@ -271,9 +271,6 @@ __global__ void separableConvCol(float *input, float *output, float *kernel,
     }
 }
 
-    }
-}
-
 // 1D Convolution demonstration
 
 void printImage(float *image, int width, int height, const char *name, int max_show = 8) {

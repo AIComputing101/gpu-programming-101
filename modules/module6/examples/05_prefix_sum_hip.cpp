@@ -31,16 +31,6 @@
 #include <numeric>
 #include <functional>
 
-// Utility macros and functions
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            std::cerr << "HIP error at " << __FILE__ << ":" << __LINE__ << " - " << hipGetErrorString(error) << std::endl; \
-            exit(1); \
-        } \
-    } while(0)
-
 // AMD GPU typically has 64-thread wavefronts
 constexpr int WAVEFRONT_SIZE = 64;
 
@@ -192,7 +182,7 @@ __global__ void blelloch_scan_exclusive(float* input, float* output, int n) {
 // LDS bank conflict free optimization for AMD GPUs
 #define NUM_BANKS 32
 #define LOG_NUM_BANKS 5
-#define CONFLICT_FREE_OFFSET(n) ((n) >> NUM_BANKS + (n) >> (2 * NUM_BANKS))
+#define CONFLICT_FREE_OFFSET(n) (((n) >> NUM_BANKS) + ((n) >> (2 * NUM_BANKS)))
 
 __global__ void blelloch_scan_lds_optimized(float* input, float* output, int n) {
     __shared__ float temp[512 + 512/NUM_BANKS];  // Extra space for conflict avoidance
@@ -675,9 +665,9 @@ int main() {
     
     // Check HIP device properties
     int device;
-    hipGetDevice(&device);
+    HIP_CHECK(hipGetDevice(&device));
     hipDeviceProp_t props;
-    hipGetDeviceProperties(&props, device);
+    HIP_CHECK(hipGetDeviceProperties(&props, device));
     
     std::cout << "GPU: " << props.name << "\n";
     std::cout << "Compute Capability: " << props.major << "." << props.minor << "\n";

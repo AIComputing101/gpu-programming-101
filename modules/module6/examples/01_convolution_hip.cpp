@@ -19,17 +19,6 @@
 #include <vector>
 #include <cassert>
 
-// Error checking macro
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t err = call; \
-        if (err != hipSuccess) { \
-            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
-                    hipGetErrorString(err)); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0)
-
 // Constants
 const int BLOCK_SIZE = 16;
 const int TILE_SIZE = 16;
@@ -509,9 +498,9 @@ void benchmark_conv1d() {
     delete[] h_output_naive;
     delete[] h_output_shared;
     delete[] h_output_cpu;
-    HIP_CHECK(HIP_CHECK(hipFree(d_input));
-    HIP_CHECK(HIP_CHECK(hipFree(d_kernel));
-    HIP_CHECK(HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_kernel));
+    HIP_CHECK(hipFree(d_output));
 }
 
 /**
@@ -615,9 +604,9 @@ void benchmark_conv2d() {
     delete[] h_output_naive;
     delete[] h_output_shared;
     delete[] h_output_cpu;
-    HIP_CHECK(HIP_CHECK(hipFree(d_input));
-    HIP_CHECK(HIP_CHECK(hipFree(d_kernel));
-    HIP_CHECK(HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_kernel));
+    HIP_CHECK(hipFree(d_output));
 }
 
 /**
@@ -710,10 +699,10 @@ void benchmark_separable_conv() {
     delete[] h_output_separable;
     delete[] h_output_cpu;
     delete[] h_temp;
-    HIP_CHECK(HIP_CHECK(hipFree(d_input));
-    HIP_CHECK(HIP_CHECK(hipFree(d_kernel));
-    HIP_CHECK(HIP_CHECK(hipFree(d_output));
-    HIP_CHECK(HIP_CHECK(hipFree(d_temp));
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_kernel));
+    HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(hipFree(d_temp));
 }
 
 /**

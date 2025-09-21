@@ -28,16 +28,7 @@
 #include <cassert>
 #include <iomanip>
 #include <functional>
-
-// Utility macros and functions
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            std::cerr << "HIP error at " << __FILE__ << ":" << __LINE__ << " - " << hipGetErrorString(error) << std::endl; \
-            exit(1); \
-        } \
-    } while(0)
+#include <cfloat>
 
 // AMD GPU typically has 64-thread wavefronts (vs 32-thread warps on NVIDIA)
 constexpr int WAVEFRONT_SIZE = 64;
@@ -533,9 +524,9 @@ int main() {
     
     // Check HIP device properties
     int device;
-    hipGetDevice(&device);
+    HIP_CHECK(hipGetDevice(&device));
     hipDeviceProp_t props;
-    hipGetDeviceProperties(&props, device);
+    HIP_CHECK(hipGetDeviceProperties(&props, device));
     
     std::cout << "GPU: " << props.name << "\n";
     std::cout << "Compute Capability: " << props.major << "." << props.minor << "\n";

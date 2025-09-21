@@ -141,7 +141,8 @@ debug: all
 # Clean
 .PHONY: clean
 clean:
-	rm -rf $(BUILD_DIR) $(PROFILE_DIR)
+	@echo "Cleaning build artifacts..."
+	rm -rf build profiles
 
 # Help
 .PHONY: help

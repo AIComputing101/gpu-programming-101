@@ -188,6 +188,7 @@ debug: all
 # Clean
 .PHONY: clean
 clean:
+	@echo "Cleaning build artifacts..."
 	rm -rf $(BUILD_DIR) $(PROFILE_DIR)
 
 # Help

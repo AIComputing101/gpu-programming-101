@@ -34,10 +34,26 @@ HIP_DEBUG_FLAGS = -std=c++17 -g
 CUDA_LIBS = -lcublas -lcurand -lcufft
 
 # Check for optional ROC libraries and set flags accordingly
+# Only check for libraries if not cleaning and pkg-config is available
+ifneq ($(MAKECMDGOALS),clean)
+PKG_CONFIG_AVAILABLE := $(shell command -v pkg-config >/dev/null 2>&1 && echo 1 || echo 0)
+ifeq ($(PKG_CONFIG_AVAILABLE),1)
 HAS_ROCBLAS := $(shell pkg-config --exists rocblas && echo 1 || echo 0)
 HAS_ROCRAND := $(shell pkg-config --exists rocrand && echo 1 || echo 0)
 HAS_ROCFFT := $(shell pkg-config --exists rocfft && echo 1 || echo 0)
 HAS_MIOPEN := $(shell pkg-config --exists MIOpen && echo 1 || echo 0)
+else
+HAS_ROCBLAS := 0
+HAS_ROCRAND := 0
+HAS_ROCFFT := 0
+HAS_MIOPEN := 0
+endif
+else
+HAS_ROCBLAS := 0
+HAS_ROCRAND := 0
+HAS_ROCFFT := 0
+HAS_MIOPEN := 0
+endif
 
 # Build HIP_LIBS conditionally
 HIP_LIBS = 

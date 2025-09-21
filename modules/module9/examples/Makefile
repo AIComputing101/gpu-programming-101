@@ -41,6 +41,8 @@ COMMON_LIBS = -lpthread -ldl
 OPTIONAL_CUDA_LIBS = 
 OPTIONAL_HIP_LIBS = 
 
+# Check for optional libraries only when building (not during clean)
+ifneq ($(MAKECMDGOALS),clean)
 # Check for NVML availability by trying to compile a simple test
 ifeq ($(shell echo 'int main(){return 0;}' | $(CXX) -x c -lnvml - -o /dev/null 2>/dev/null && echo "found"), found)
 OPTIONAL_CUDA_LIBS += -lnvml
@@ -57,6 +59,7 @@ CUDA_FLAGS += -DUSE_CUDNN
 $(info cuDNN library found - enabling cuDNN support)
 else
 $(info cuDNN library not found - compiling without cuDNN support)
+endif
 endif
 
 # Directories

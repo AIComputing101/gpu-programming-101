@@ -138,10 +138,7 @@ debug: CUDA_FLAGS = $(CUDA_DEBUG_FLAGS)
 debug: HIP_FLAGS = $(HIP_DEBUG_FLAGS)
 debug: all
 
-# Clean
-.PHONY: clean
-clean:
-	rm -rf $(BUILD_DIR) $(PROFILE_DIR)
+# Clean\n.PHONY: clean\nclean:\n\t@echo \"Cleaning build artifacts...\"\n\trm -rf $(BUILD_DIR) $(PROFILE_DIR)
 
 # Help
 .PHONY: help

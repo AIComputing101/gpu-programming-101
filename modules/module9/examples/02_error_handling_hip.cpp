@@ -11,6 +11,7 @@
 #include <map>
 #include <mutex>
 #include <thread>
+#include <iomanip>
 
 #define CHECK_HIP(call) do { \
     hipError_t error = call; \
@@ -196,7 +197,7 @@ public:
 class SafeMemoryManager {
 private:
     std::map<void*, size_t> allocated_ptrs_;
-    std::mutex alloc_mutex_;
+    mutable std::mutex alloc_mutex_;
     size_t total_allocated_;
     ErrorLogger& logger_;
     

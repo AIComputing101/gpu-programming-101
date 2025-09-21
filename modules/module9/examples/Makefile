@@ -43,6 +43,9 @@ OPTIONAL_HIP_LIBS =
 
 # Check for optional libraries only when building (not during clean)
 ifneq ($(MAKECMDGOALS),clean)
+
+# NVIDIA-specific library checks (only when building for NVIDIA GPUs)
+ifeq ($(BUILD_CUDA),1)
 # Check for NVML availability by trying to compile a simple test
 ifeq ($(shell echo 'int main(){return 0;}' | $(CXX) -x c -lnvml - -o /dev/null 2>/dev/null && echo "found"), found)
 OPTIONAL_CUDA_LIBS += -lnvml
@@ -60,6 +63,29 @@ $(info cuDNN library found - enabling cuDNN support)
 else
 $(info cuDNN library not found - compiling without cuDNN support)
 endif
+endif
+
+# AMD-specific library checks (only when building for AMD GPUs)
+ifeq ($(BUILD_HIP),1)
+# Check for MIOpen availability by trying to compile a simple test
+ifeq ($(shell echo 'int main(){return 0;}' | $(CXX) -x c -lMIOpen - -o /dev/null 2>/dev/null && echo "found"), found)
+OPTIONAL_HIP_LIBS += -lMIOpen
+HIP_FLAGS += -DUSE_MIOPEN
+$(info MIOpen library found - enabling MIOpen support)
+else
+$(info MIOpen library not found - compiling without MIOpen support)
+endif
+
+# Check for rocALUTION availability
+ifeq ($(shell echo 'int main(){return 0;}' | $(CXX) -x c -lrocalution - -o /dev/null 2>/dev/null && echo "found"), found)
+OPTIONAL_HIP_LIBS += -lrocalution
+HIP_FLAGS += -DUSE_ROCALUTION
+$(info rocALUTION library found - enabling rocALUTION support)
+else
+$(info rocALUTION library not found - compiling without rocALUTION support)
+endif
+endif
+
 endif
 
 # Directories
@@ -92,9 +118,15 @@ CUDA_TARGETS = $(CUDA_SOURCES:%.cu=$(BUILD_DIR)/%)
 HIP_TARGETS = $(HIP_SOURCES:%.cpp=$(BUILD_DIR)/%)
 CPP_TARGETS = $(CPP_SOURCES:%.cpp=$(BUILD_DIR)/%)
 
-# Default target
+# Default target - build only for detected GPU vendor
 .PHONY: all
-all: setup cuda hip common
+ifeq ($(BUILD_CUDA),1)
+all: setup cuda common
+else ifeq ($(BUILD_HIP),1)
+all: setup hip common
+else
+all: setup common
+endif
 
 # Setup directories for production deployment
 .PHONY: setup
@@ -118,7 +150,7 @@ ifeq ($(BUILD_CUDA),1)
 cuda: setup $(ACTIVE_CUDA_TARGETS)
 else
 cuda: setup
-	@echo "⚠ CUDA build requested but no NVIDIA GPU detected"
+	@echo "ℹ Skipping CUDA build - no NVIDIA GPU detected"
 endif
 
 # Build HIP production applications
@@ -127,7 +159,7 @@ ifeq ($(BUILD_HIP),1)
 hip: setup $(ACTIVE_HIP_TARGETS)
 else
 hip: setup
-	@echo "⚠ HIP build requested but no AMD GPU detected"
+	@echo "ℹ Skipping HIP build - no AMD GPU detected"
 endif
 
 # Build common C++ applications

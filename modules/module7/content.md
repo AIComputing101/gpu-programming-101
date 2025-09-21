@@ -1,6 +1,6 @@
 # Module 7: Advanced Algorithmic Patterns - Comprehensive Guide
 
-> Environment note: Use the provided Docker environment (CUDA 12.9.1, ROCm 7.0-complete) for consistent builds and tools across platforms.
+> Environment note: Use the provided Docker environment (CUDA 12.9.1, ROCm latest) for consistent builds and tools across platforms.
 
 ## Introduction
 

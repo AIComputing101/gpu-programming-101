@@ -212,7 +212,7 @@ main() {
     if [ "$pull" = true ]; then
         log "Pulling base images..."
         docker pull nvidia/cuda:12.4-devel-ubuntu22.04 || warning "Failed to pull CUDA base image"
-        docker pull rocm/dev-ubuntu-22.04:6.0 || warning "Failed to pull ROCm base image"
+        docker pull rocm/dev-ubuntu-24.04:latest || warning "Failed to pull ROCm base image"
     fi
     
     local success_count=0

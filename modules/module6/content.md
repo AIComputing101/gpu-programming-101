@@ -1,6 +1,6 @@
 # Module 6: Fundamental Parallel Algorithms - Comprehensive Guide
 
-> Environment note: The examples and benchmarks in this module are tested in Docker with CUDA 12.9.1 and ROCm 7.0 (complete) to ensure reproducibility.
+> Environment note: The examples and benchmarks in this module are tested in Docker with CUDA 12.9.1 and ROCm latest to ensure reproducibility.
 
 ## Introduction
 

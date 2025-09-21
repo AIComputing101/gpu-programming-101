@@ -30,6 +30,51 @@ CUDA_FLAGS = -std=c++17 -O2 -arch=sm_70
 CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70
 HIP_FLAGS = -std=c++17 -O2
 HIP_DEBUG_FLAGS = -std=c++17 -g
+
+# ROCm 7 note: hipcc may require explicit --rocm-path when HIP runtime/version files
+# aren't in legacy locations. See ROCm docs on file structure reorg.
+# Prefer environment ROCM_PATH if set; fall back to /opt/rocm.
+ROCM_PATH ?= /opt/rocm
+# Prefer hipconfig (ROCm 7) to locate ROCm root, then fall back to hipcc path.
+HIPCONFIG_BIN := $(shell command -v hipconfig 2>/dev/null)
+ifneq ($(HIPCONFIG_BIN),)
+	ROCM_PATH := $(shell hipconfig -R 2>/dev/null)
+endif
+ifeq ($(strip $(ROCM_PATH)),)
+	ROCM_PATH := /opt/rocm
+endif
+# If HIP headers not found under ROCM_PATH, try to auto-detect from hipcc location via readlink -f
+ifeq ($(wildcard $(ROCM_PATH)/include/hip/hip_runtime.h),)
+	HIPCC_BIN := $(shell command -v hipcc 2>/dev/null)
+	ifneq ($(HIPCC_BIN),)
+		ROCM_PATH_DETECTED := $(shell readlink -f $(HIPCC_BIN) | xargs dirname | xargs dirname)
+		ROCM_PATH := $(ROCM_PATH_DETECTED)
+	endif
+endif
+HIP_ROCM_FLAG = --rocm-path=$(ROCM_PATH)
+HIP_INC_DIR := $(ROCM_PATH)/include
+HIP_LIB_DIR := $(ROCM_PATH)/lib
+HIP_LDFLAGS := -L$(HIP_LIB_DIR) -lamdhip64 -Wl,-rpath,$(HIP_LIB_DIR)
+HIP_FLAGS += $(HIP_ROCM_FLAG) -I$(HIP_INC_DIR)
+HIP_DEBUG_FLAGS += $(HIP_ROCM_FLAG) -I$(HIP_INC_DIR)
+HIP_DEVICE_LIB_DIR := $(ROCM_PATH)/amdgcn/bitcode
+ifneq ($(wildcard $(HIP_DEVICE_LIB_DIR)/ockl.bc),)
+	HIP_FLAGS += --hip-device-lib-path=$(HIP_DEVICE_LIB_DIR)
+	HIP_DEBUG_FLAGS += --hip-device-lib-path=$(HIP_DEVICE_LIB_DIR)
+endif
+
+# GPU architecture detection - get actual GPU architecture from rocminfo
+GPU_ARCH := $(shell if command -v rocminfo >/dev/null 2>&1; then rocminfo 2>/dev/null | grep -o 'gfx[0-9]*' | head -1; else echo gfx1030; fi)
+ifeq ($(strip $(GPU_ARCH)),)
+	GPU_ARCH := gfx1030
+endif
+
+# Add detected GPU architecture to HIP flags
+HIP_FLAGS += --offload-arch=$(GPU_ARCH)
+HIP_DEBUG_FLAGS += --offload-arch=$(GPU_ARCH)
+
+# Ensure hipcc sees correct paths in FHS layout
+HIP_ENV := ROCM_PATH=$(ROCM_PATH) HIP_PATH=$(ROCM_PATH) HIP_PLATFORM=amd
 CXX_FLAGS = -std=c++17 -O2
 
 # Directories
@@ -87,6 +132,11 @@ ifeq ($(GPU_VENDOR),NVIDIA)
   endif
 else ifeq ($(GPU_VENDOR),AMD)
 	@echo "✓ AMD GPU detected - building HIP examples"
+	@echo "ℹ Using ROCm path: $(ROCM_PATH)"
+	@echo "ℹ Target GPU architecture: $(GPU_ARCH)"
+	@if [ ! -f "$(HIP_INC_DIR)/hip/hip_runtime.h" ]; then \
+	  echo "⚠ hip_runtime.h not found under $(HIP_INC_DIR). Set ROCM_PATH or install hip-dev."; \
+	fi
 else
 	@echo "⚠ No compatible GPU detected - building CPU examples only"
   ifeq ($(HIPCC_AVAILABLE),0)
@@ -119,14 +169,14 @@ endif
 ifeq ($(BUILD_HIP),1)
 $(BUILD_DIR)/%_hip: $(EXAMPLES_DIR)/%_hip.cpp
 	@echo "Building HIP example: $@"
-	$(HIPCC) $(HIP_FLAGS) $< -o $@
+	$(HIP_ENV) $(HIPCC) $(HIP_FLAGS) $< -o $@ $(HIP_LDFLAGS)
 endif
 
 # Cross-platform examples (only if hipcc is available)
 ifeq ($(HIPCC_AVAILABLE),1)
 $(BUILD_DIR)/%_comparison: $(EXAMPLES_DIR)/%_comparison.cpp
 	@echo "Building cross-platform example: $@"
-	$(HIPCC) $(HIP_FLAGS) $< -o $@
+	$(HIP_ENV) $(HIPCC) $(HIP_FLAGS) $< -o $@ $(HIP_LDFLAGS)
 endif
 
 # Debug builds

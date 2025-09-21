@@ -1,7 +1,7 @@
 # Module 2: Advanced GPU Memory Management and Optimization
 *Mastering GPU Memory Hierarchies and Performance Optimization*
 
-> Environment note: Examples are tested in Docker containers with CUDA 12.9.1 and ROCm 7.0 (rocm/dev-ubuntu-22.04:7.0-complete). Prefer Docker for reproducible builds.
+> Environment note: Examples are tested in Docker containers with CUDA 12.9.1 and ROCm latest (rocm/dev-ubuntu-22.04:latest). Prefer Docker for reproducible builds.
 
 ## Learning Objectives
 After completing this module, you will be able to:

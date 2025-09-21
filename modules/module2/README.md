@@ -19,7 +19,7 @@ After completing this module, you will be able to:
 
 ### Prerequisites
 - NVIDIA GPU with CUDA support OR AMD GPU with ROCm support
-- CUDA Toolkit 12.0+ or ROCm 6.0+ (Docker images provide CUDA 12.9.1 and ROCm 7.0)
+- CUDA Toolkit 12.0+ or ROCm 6.0+ (Docker images provide CUDA 12.9.1 and ROCm latest)
 - C/C++ compiler (GCC, Clang, or MSVC)
 
 Recommended: use our Docker dev environment

@@ -108,4 +108,4 @@ rocprof --stats ./build/02_memory_coalescing_hip
 
 ## Notes
 
-These examples are designed to be educational and performance-oriented. Use the provided Docker environment for consistent toolchains (CUDA 12.9.1, ROCm 7.0-complete). Binaries are emitted to the `build/` directory by the Makefile.
+These examples are designed to be educational and performance-oriented. Use the provided Docker environment for consistent toolchains (CUDA 12.9.1, ROCm latest). Binaries are emitted to the `build/` directory by the Makefile.

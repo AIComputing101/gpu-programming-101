@@ -30,6 +30,30 @@ CUDA_FLAGS = -std=c++17 -O3 -arch=sm_90 -lineinfo
 CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_90
 HIP_FLAGS = -std=c++17 -O3
 HIP_DEBUG_FLAGS = -std=c++17 -g
+
+# ROCm 7: Ensure hipcc can find HIP runtime by passing --rocm-path
+ROCM_PATH ?= /opt/rocm
+# Auto-detect ROCm path from hipcc if headers not found
+ifeq ($(wildcard $(ROCM_PATH)/include/hip/hip_runtime.h),)
+	HIPCC_BIN := $(shell command -v hipcc 2>/dev/null)
+	ifneq ($(HIPCC_BIN),)
+		ROCM_PATH_DETECTED := $(shell dirname $$(dirname $$(realpath $(HIPCC_BIN))))
+		ROCM_PATH := $(ROCM_PATH_DETECTED)
+	endif
+endif
+HIP_ROCM_FLAG = --rocm-path=$(ROCM_PATH)
+HIP_FLAGS += $(HIP_ROCM_FLAG)
+HIP_DEBUG_FLAGS += $(HIP_ROCM_FLAG)
+
+# GPU architecture detection - get actual GPU architecture from rocminfo
+GPU_ARCH := $(shell if command -v rocminfo >/dev/null 2>&1; then rocminfo 2>/dev/null | grep -o 'gfx[0-9]*' | head -1; else echo gfx1030; fi)
+ifeq ($(strip $(GPU_ARCH)),)
+	GPU_ARCH := gfx1030
+endif
+
+# Add detected GPU architecture to HIP flags
+HIP_FLAGS += --offload-arch=$(GPU_ARCH)
+HIP_DEBUG_FLAGS += --offload-arch=$(GPU_ARCH)
 CXX_FLAGS = -std=c++17 -O3 -fopenmp
 
 # Profiling flags
@@ -76,6 +100,7 @@ ifeq ($(GPU_VENDOR),NVIDIA)
 	@echo "✓ NVIDIA GPU detected - building CUDA examples"
 else ifeq ($(GPU_VENDOR),AMD)
 	@echo "✓ AMD GPU detected - building HIP examples"
+	@echo "ℹ Using ROCm path: $(ROCM_PATH)"
 else
 	@echo "⚠ No compatible GPU detected - no examples will be built"
 endif

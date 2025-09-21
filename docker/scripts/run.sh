@@ -221,7 +221,7 @@ run_rocm() {
     # Set up GPU access for AMD
     local detected_gpu=$(detect_gpu)
     if [ "$detected_gpu" = "amd" ] && [ "$no_gpu_requested" = false ]; then
-        gpu_args="--device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined"
+        gpu_args="--device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined --group-add video"
         log "Enabling AMD GPU access"
     elif [ "$no_gpu_requested" = true ]; then
         log "GPU access explicitly disabled with --no-gpu"
@@ -247,8 +247,6 @@ run_rocm() {
         -v "$PROJECT_ROOT:/workspace/gpu-programming-101:rw"
         -v "gpu101-rocm-home:/root"
         -w "/workspace/gpu-programming-101"
-        -e HIP_VISIBLE_DEVICES=0
-        -e HSA_OVERRIDE_GFX_VERSION=10.3.0
     )
     
     # Add port mapping

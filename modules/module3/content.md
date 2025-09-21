@@ -1,7 +1,7 @@
 # Module 3: Advanced GPU Algorithms and Parallel Patterns
 *Mastering High-Performance Parallel Computing Algorithms*
 
-> Environment note: Use the provided Docker images (CUDA 12.9.1, ROCm 7.0-complete) for consistent toolchains across platforms.
+> Environment note: Use the provided Docker images (CUDA 12.9.1, ROCm latest) for consistent toolchains across platforms.
 
 ## Learning Objectives
 After completing this module, you will be able to:

@@ -1,73 +1,14 @@
 # GPU Programming 101 - ROCm Development Container
-# Based on AMD's official ROCm 7.0 complete development image
+# Based on AMD's official ROCm development image - used as-is for maximum compatibility
 
-FROM rocm/dev-ubuntu-22.04:7.0-complete
+FROM rocm/dev-ubuntu-24.04:latest
 
 # Metadata
 LABEL maintainer="GPU Programming 101"
 LABEL description="ROCm/HIP development environment for GPU programming course"
 LABEL version="2.0"
-LABEL rocm.version="7.0"
-LABEL ubuntu.version="22.04"
-
-# Avoid interactive prompts during package installation
-ARG DEBIAN_FRONTEND=noninteractive
-
-# Install essential development tools for GPU programming
-RUN apt-get update && apt-get install -y \
-    # Core development tools
-    build-essential \
-    cmake \
-    git \
-    wget \
-    curl \
-    vim \
-    nano \
-    htop \
-    tree \
-    # Minimal Python for basic scripting (not data science)
-    python3 \
-    python3-pip \
-    python3-dev \
-    # Additional utilities
-    pkg-config \
-    software-properties-common \
-    # Debugging and profiling tools
-    gdb \
-    valgrind \
-    strace \
-    # Network tools
-    net-tools \
-    iputils-ping \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install core ROCm development packages (keep minimal)
-RUN apt-get update && apt-get install -y \
-    # Core ROCm packages for GPU programming
-    hip-dev \
-    hip-samples \
-    hipblas-dev \
-    # ROCm profiling tools (essential for performance work)
-    rocprofiler-dev \
-    roctracer-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install minimal Python packages for basic development (no heavy data science libs)
-RUN pip3 install --no-cache-dir \
-    numpy \
-    matplotlib
-
-# Set up ROCm environment variables
-ENV ROCM_PATH=/opt/rocm
-ENV HIP_PATH=/opt/rocm/hip
-ENV PATH=${ROCM_PATH}/bin:${HIP_PATH}/bin:${PATH}
-ENV LD_LIBRARY_PATH=${ROCM_PATH}/lib:${HIP_PATH}/lib:${LD_LIBRARY_PATH}
-ENV HIP_PLATFORM=amd
-ENV HSA_OVERRIDE_GFX_VERSION=11.0.0
-ENV ROCM_VERSION=7.0
-
-# Verify HIP compiler installation (skip rocminfo as no GPU during build)
-RUN hipcc --version
+LABEL rocm.version="latest"
+LABEL ubuntu.version="24.04"
 
 # Create development workspace
 WORKDIR /workspace
@@ -76,7 +17,7 @@ RUN mkdir -p /workspace/{projects,samples,output}
 # Copy course materials (will be mounted as volume in practice)
 COPY . /workspace/gpu-programming-101/
 
-# Set up convenient aliases and environment
+# Set up convenient aliases and environment for the course
 RUN echo 'alias ll="ls -alF"' >> /root/.bashrc && \
     echo 'alias la="ls -A"' >> /root/.bashrc && \
     echo 'alias l="ls -CF"' >> /root/.bashrc && \
@@ -159,17 +100,5 @@ echo "=== All tests completed ==="\n' > /workspace/test-gpu.sh
 
 RUN chmod +x /workspace/test-gpu.sh
 
-# Install HIP samples for learning and reference
-RUN cd /workspace && \
-    if [ -d "/opt/rocm/hip/samples" ]; then \
-        cp -r /opt/rocm/hip/samples ./hip-samples; \
-    else \
-        git clone https://github.com/ROCm-Developer-Tools/HIP-Examples.git hip-examples; \
-    fi
-
 # Default command
 CMD ["/bin/bash"]
-
-# Health check to verify HIP compiler access (will only work when GPU is available)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD hipcc --version > /dev/null 2>&1 || exit 1

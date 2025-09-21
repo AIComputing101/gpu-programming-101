@@ -1,3 +1,19 @@
+# Module 1 Examples
+
+## HIP build note (ROCm 7)
+
+ROCm 7 follows the Linux FHS layout. If hipcc reports:
+
+   cannot find HIP runtime; provide its path via '--rocm-path'
+
+set ROCM_PATH to your ROCm root (defaults to `/opt/rocm`) or let the Makefile auto-detect from `hipcc`.
+
+Examples:
+
+- Export a custom path: `export ROCM_PATH=/opt/rocm`
+- Verify headers exist: `ls $ROCM_PATH/include/hip/hip_runtime.h`
+
+Reference: ROCm File Structure Reorg docs.
 # Module 1 Examples: GPU Programming Fundamentals
 
 This directory contains practical examples that accompany Module 1 of the GPU Programming 101 course. These examples demonstrate the core concepts of CUDA and HIP programming.

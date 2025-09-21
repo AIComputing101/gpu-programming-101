@@ -1,6 +1,6 @@
 # Module 5: Performance Considerations and GPU Optimization
 
-> Environment note: Examples and profiling workflows are validated using Docker images with CUDA 12.9.1 and ROCm 7.0 (rocm/dev-ubuntu-22.04:7.0-complete) for consistent toolchains.
+> Environment note: Examples and profiling workflows are validated using Docker images with CUDA 12.9.1 and ROCm latest (rocm/dev-ubuntu-22.04:latest) for consistent toolchains.
 
 ## Table of Contents
 1. [Introduction to GPU Performance Optimization](#introduction)

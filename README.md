@@ -9,7 +9,7 @@
 
 **A comprehensive, hands-on educational project for mastering GPU programming with CUDA and HIP**
 
-*From beginner fundamentals to production-ready optimization techniques*
+*From beginner fundamentals to professional-grade optimization techniques*
 
 ## 📑 Table of Contents
 
@@ -37,7 +37,7 @@
 - **9 comprehensive modules** covering beginner to expert topics
 - **71 working code examples** in both CUDA and HIP
 - **Cross-platform support** for NVIDIA and AMD GPUs  
-- **Production-ready development environment** with Docker
+- **Comprehensive development environment** with Docker
 - **Professional tooling** including profilers, debuggers, and CI/CD
 
 Perfect for students, researchers, and developers looking to master GPU computing.
@@ -198,7 +198,7 @@ This architectural knowledge is essential for writing efficient GPU code and is 
 | 🎯 **Complete Curriculum** | 9 progressive modules from basics to advanced topics |
 | 💻 **Cross-Platform** | Full CUDA and HIP support for NVIDIA and AMD GPUs |
 | 🐳 **Docker Ready** | Complete containerized development environment with CUDA 12.9.1 & ROCm 7.0 |
-| 🔧 **Production Quality** | Professional build systems, auto-detection, testing, and profiling |
+| 🔧 **Professional Quality** | Professional build systems, auto-detection, testing, and profiling |
 | 📊 **Performance Focus** | Optimization techniques and benchmarking throughout |
 | 🌐 **Community Driven** | Open source with comprehensive contribution guidelines |
 | 🧪 **Advanced Libraries** | Support for Thrust, MIOpen, and production ML frameworks |
@@ -252,21 +252,21 @@ Choose your track based on your experience level:
 
 ## 📚 Modules
 
-Our comprehensive curriculum progresses from fundamental concepts to production-ready optimization techniques:
+Our comprehensive curriculum progresses from fundamental concepts to advanced optimization techniques:
 
-| Module | Level | Duration | Focus Area | Key Topics | Examples |
-|--------|-------|----------|------------|------------|----------|
-| [**Module 1**](modules/module1/) | 👶 Beginner | 4-6h | **GPU Fundamentals** | Architecture, Memory, First Kernels | 13 |
-| [**Module 2**](modules/module2/) | 👶→🔥 | 6-8h | **Memory Optimization** | Coalescing, Shared Memory, Texture | 10 |
-| [**Module 3**](modules/module3/) | 🔥 Intermediate | 6-8h | **Execution Models** | Warps, Occupancy, Synchronization | 12 |
-| [**Module 4**](modules/module4/) | 🔥→🚀 | 8-10h | **Advanced Programming** | Streams, Multi-GPU, Unified Memory | 9 |
-| [**Module 5**](modules/module5/) | 🚀 Advanced | 6-8h | **Performance Engineering** | Profiling, Bottleneck Analysis | 5 |
-| [**Module 6**](modules/module6/) | 🚀 Advanced | 8-10h | **Parallel Algorithms** | Reduction, Scan, Convolution | 10 |
-| [**Module 7**](modules/module7/) | 🚀 Expert | 8-10h | **Algorithmic Patterns** | Sorting, Graph Algorithms | 4 |
-| [**Module 8**](modules/module8/) | 🚀 Expert | 10-12h | **Domain Applications** | ML, Scientific Computing | 4 |
-| [**Module 9**](modules/module9/) | 🚀 Expert | 6-8h | **Production Deployment** | Libraries, Integration, Scaling | 4 |
+| Module | Level | Focus Area | Key Topics | Examples |
+|--------|-------|------------|------------|----------|
+| [**Module 1**](modules/module1/) | 👶 Beginner | **GPU Fundamentals** | Architecture, Memory, First Kernels | 13 |
+| [**Module 2**](modules/module2/) | 👶→🔥 | **Memory Optimization** | Coalescing, Shared Memory, Texture | 10 |
+| [**Module 3**](modules/module3/) | 🔥 Intermediate | **Execution Models** | Warps, Occupancy, Synchronization | 12 |
+| [**Module 4**](modules/module4/) | 🔥→🚀 | **Advanced Programming** | Streams, Multi-GPU, Unified Memory | 9 |
+| [**Module 5**](modules/module5/) | 🚀 Advanced | **Performance Engineering** | Profiling, Bottleneck Analysis | 5 |
+| [**Module 6**](modules/module6/) | 🚀 Advanced | **Parallel Algorithms** | Reduction, Scan, Convolution | 10 |
+| [**Module 7**](modules/module7/) | 🚀 Expert | **Algorithmic Patterns** | Sorting, Graph Algorithms | 4 |
+| [**Module 8**](modules/module8/) | 🚀 Expert | **Domain Applications** | ML, Scientific Computing | 4 |
+| [**Module 9**](modules/module9/) | 🚀 Expert | **Production Deployment** | Libraries, Integration, Scaling | 4 |
 
-**📈 Progressive Learning Path: 71 Examples • 50+ Hours • Beginner to Expert**
+**📈 Progressive Learning Path: 71 Examples • Beginner to Expert**
 
 ### Learning Progression
 
@@ -387,7 +387,7 @@ Experience the full development environment with zero setup:
 **Container Specifications:**
 - **CUDA**: NVIDIA CUDA 12.9.1 on Ubuntu 22.04
 - **ROCm**: AMD ROCm 7.0 on Ubuntu 24.04 
-- **Libraries**: Production-ready toolchains with debugging support
+- **Libraries**: Professional toolchains with debugging support
 
 **[📖 Complete Docker Guide →](docker/README.md)**
 
@@ -415,7 +415,7 @@ make debug         # Debug builds with extra checks
 
 ### Advanced Build Features
 - **Automatic GPU Detection**: Detects NVIDIA/AMD hardware and builds accordingly
-- **Production Optimization**: `-O3`, fast math, architecture-specific optimizations
+- **Professional Optimization**: `-O3`, fast math, architecture-specific optimizations
 - **Debug Support**: Full debugging symbols and validation checks
 - **Library Management**: Automatic detection of optional dependencies (NVML, MIOpen)
 - **Cross-Platform**: Single Makefile supports both CUDA and HIP builds
@@ -426,7 +426,7 @@ make debug         # Debug builds with extra checks
 |--------------|-------------------|------------------|--------------|
 | **Beginner** | 10-100x | 60-80% | Educational |
 | **Intermediate** | 50-500x | 80-95% | Optimized |
-| **Advanced** | 100-1000x | 85-95% | Production |
+| **Advanced** | 100-1000x | 85-95% | Professional |
 | **Expert** | 500-5000x | 95%+ | Library-Quality |
 
 ## 🐛 Troubleshooting
@@ -507,7 +507,7 @@ If you use this project in your research, education, or publications, please cit
   author={{Stephen Shao}},
   year={2025},
   howpublished={\url{https://github.com/AIComputing101/gpu-programming-101}},
-  note={A complete GPU programming educational resource with 70+ production-ready examples covering fundamentals through advanced optimization techniques for NVIDIA CUDA and AMD HIP platforms}
+  note={A complete GPU programming educational resource with 71 comprehensive examples covering fundamentals through advanced optimization techniques for NVIDIA CUDA and AMD HIP platforms}
 }
 ```
 

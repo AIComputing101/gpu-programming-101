@@ -24,7 +24,7 @@ BUILD_HIP = 0
 GPU_VENDOR = NONE
 endif
 
-# Compiler flags for production-quality applications
+# Compiler flags for professional-quality applications
 CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo --use_fast_math
 CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70
 HIP_FLAGS = -std=c++17 -O3 -ffast-math
@@ -186,7 +186,7 @@ debug: CUDA_FLAGS = $(CUDA_DEBUG_FLAGS)
 debug: HIP_FLAGS = $(HIP_DEBUG_FLAGS)
 debug: all
 
-# Production builds with maximum optimization
+# Professional builds with maximum optimization
 .PHONY: production
 production: CUDA_FLAGS += -DNDEBUG -Xptxas -O3
 production: HIP_FLAGS += -DNDEBUG
@@ -589,7 +589,7 @@ help:
 	@echo "  cuda             - Build CUDA applications only"
 	@echo "  hip              - Build HIP applications only"
 	@echo "  debug            - Build with debug flags"
-	@echo "  production       - Build with maximum optimization"
+	@echo "  professional     - Build with maximum optimization"
 	@echo "  clean            - Remove build artifacts"
 	@echo ""
 	@echo "Domain Application Targets:"

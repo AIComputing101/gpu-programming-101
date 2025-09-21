@@ -1,12 +1,12 @@
 /**
  * Module 9: Production GPU Programming - Production Architecture Patterns (CUDA)
  * 
- * Enterprise-grade GPU application architecture demonstrating production-ready patterns
+ * Enterprise-grade GPU application architecture demonstrating professional patterns
  * including microservices design, error handling, monitoring integration, and scalable
  * deployment strategies. This example showcases real-world production requirements.
  * 
  * Topics Covered:
- * - Production-grade error handling and recovery mechanisms
+ * - Professional-grade error handling and recovery mechanisms
  * - Comprehensive logging and monitoring integration
  * - Resource management and memory pools
  * - Health checks and service discovery integration
@@ -37,7 +37,7 @@
 #include <random>
 #include <functional>
 
-// Production-grade error handling macros
+// Professional-grade error handling macros
 #define CUDA_CHECK_PROD(call, context) \
     do { \
         cudaError_t error = call; \
@@ -841,7 +841,7 @@ int main(int argc, char* argv[]) {
     // Demo mode - show capabilities
     std::cout << "Production GPU Architecture Features:\n";
     std::cout << "• Comprehensive error handling and recovery\n";
-    std::cout << "• Production-grade logging and monitoring\n";
+    std::cout << "• Professional-grade logging and monitoring\n";
     std::cout << "• Resource management and memory pools\n";
     std::cout << "• Health checks and service discovery\n";
     std::cout << "• Configuration management\n";

@@ -13,7 +13,7 @@
 
 const int WAVEFRONT_SIZE = 64;earning Inference Kernels (HIP)
  * 
- * Production-quality neural network inference implementations optimized for AMD GPU architectures.
+ * Professional-quality neural network inference implementations optimized for AMD GPU architectures.
  * This example demonstrates deep learning kernels adapted for ROCm/HIP with wavefront-aware
  * optimizations and LDS utilization patterns specific to AMD hardware.
  * 

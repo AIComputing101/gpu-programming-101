@@ -1,7 +1,7 @@
 /**
  * Module 8: Domain-Specific Applications - Deep Learning Inference Kernels (CUDA)
  * 
- * Production-quality neural network inference implementations optimized for NVIDIA GPU architectures.
+ * Professional-quality neural network inference implementations optimized for NVIDIA GPU architectures.
  * This example demonstrates custom convolution kernels, GEMM optimization, activation functions,
  * and mixed precision inference with Tensor Core utilization.
  * 

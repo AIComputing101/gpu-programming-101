@@ -13,15 +13,7 @@
 #include <random>
 #include <algorithm>
 #include <iomanip>
-
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            std::cerr << "HIP error at " << __FILE__ << ":" << __LINE__ << " - " << hipGetErrorString(error) << std::endl; \
-            exit(1); \
-        } \
-    } while(0)
+#include "rocm7_utils.h"
 
 constexpr int WAVEFRONT_SIZE = 64;
 
@@ -87,8 +79,8 @@ public:
     }
     
     ~PerformanceTimer() {
-        hipEventDestroy(start_event);
-        hipEventDestroy(stop_event);
+        HIP_CHECK(hipEventDestroy(start_event));
+        HIP_CHECK(hipEventDestroy(stop_event));
     }
     
     void start() {
@@ -150,8 +142,8 @@ void test_memory_coalescing() {
               << " (Bandwidth: " << std::setprecision(1) << non_coalesced_bandwidth << " GB/s)\n";
     std::cout << "Performance ratio: " << std::setprecision(2) << non_coalesced_time / coalesced_time << "x\n";
     
-    hipFree(d_input);
-    hipFree(d_output);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_output));
 }
 
 void test_matrix_transpose() {
@@ -201,8 +193,8 @@ void test_matrix_transpose() {
     
     std::cout << "Correctness: " << (correct ? "PASS" : "FAIL") << "\n";
     
-    hipFree(d_input);
-    hipFree(d_output);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_output));
 }
 
 void test_memory_bandwidth() {
@@ -230,8 +222,8 @@ void test_memory_bandwidth() {
               << std::fixed << std::setprecision(3) << kernel_time << " ms"
               << " (Bandwidth: " << std::setprecision(1) << bandwidth << " GB/s)\n";
     
-    hipFree(d_input);
-    hipFree(d_output);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_output));
 }
 
 int main() {
@@ -239,9 +231,9 @@ int main() {
     std::cout << "==================================\n";
     
     int device;
-    hipGetDevice(&device);
+    HIP_CHECK(hipGetDevice(&device));
     hipDeviceProp_t props;
-    hipGetDeviceProperties(&props, device);
+    HIP_CHECK(hipGetDeviceProperties(&props, device));
     
     std::cout << "GPU: " << props.name << "\n";
     std::cout << "Memory: " << props.totalGlobalMem / (1024*1024) << " MB\n";

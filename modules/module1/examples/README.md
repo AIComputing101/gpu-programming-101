@@ -1,3 +1,19 @@
+# Module 1 Examples
+
+## HIP build note (ROCm 7)
+
+ROCm 7 follows the Linux FHS layout. If hipcc reports:
+
+   cannot find HIP runtime; provide its path via '--rocm-path'
+
+set ROCM_PATH to your ROCm root (defaults to `/opt/rocm`) or let the Makefile auto-detect from `hipcc`.
+
+Examples:
+
+- Export a custom path: `export ROCM_PATH=/opt/rocm`
+- Verify headers exist: `ls $ROCM_PATH/include/hip/hip_runtime.h`
+
+Reference: ROCm File Structure Reorg docs.
 # Module 1 Examples: GPU Programming Fundamentals
 
 This directory contains practical examples that accompany Module 1 of the GPU Programming 101 course. These examples demonstrate the core concepts of CUDA and HIP programming.
@@ -6,7 +22,7 @@ This directory contains practical examples that accompany Module 1 of the GPU Pr
 
 ### CUDA Examples (NVIDIA)
 | File | Description | Key Concepts |
-|------|-------------||--------------|
+|------|-------------|--------------|
 | `01_vector_addition_cuda.cu` | Basic CUDA vector addition with error handling | Kernels, memory management, error checking |
 | `03_matrix_addition_cuda.cu` | 2D matrix addition with thread indexing | 2D threading, grid configuration |
 | `04_device_info_cuda.cu` | Query and display GPU properties | Device queries, capability checking |
@@ -15,7 +31,7 @@ This directory contains practical examples that accompany Module 1 of the GPU Pr
 
 ### HIP Examples (AMD/NVIDIA Cross-Platform)
 | File | Description | Key Concepts |
-|------|-------------||--------------|
+|------|-------------|--------------|
 | `02_vector_addition_hip.cpp` | Cross-platform vector addition using HIP | HIP API, portability |
 | `03_matrix_addition_hip.cpp` | 2D matrix addition with HIP | Cross-platform 2D threading |
 | `04_device_info_hip.cpp` | HIP device properties and platform detection | HIP device queries, platform abstraction |
@@ -26,14 +42,14 @@ This directory contains practical examples that accompany Module 1 of the GPU Pr
 ## Prerequisites
 
 ### For CUDA Examples
-- NVIDIA GPU with compute capability 3.5+
-- NVIDIA drivers (version 450+)
-- CUDA Toolkit 11.0+
+- NVIDIA GPU with compute capability 5.0+
+- NVIDIA drivers 550+ recommended
+- CUDA Toolkit 12.0+ (Docker uses CUDA 12.9.1)
 - GCC/Clang compiler
 
 ### For HIP Examples
 - AMD GPU with ROCm support OR NVIDIA GPU
-- ROCm 4.0+ (for AMD) or CUDA 11.0+ (for NVIDIA backend)
+- ROCm 6.0+ (for AMD) or CUDA 12.0+ (for NVIDIA backend)
 - HIP compiler (hipcc)
 
 ## Quick Start
@@ -59,23 +75,25 @@ make help
 
 ### Manual Compilation
 
+Binaries are written to `build/` by the Makefile.
+
 **CUDA Examples:**
 ```bash
-nvcc -o vector_add 01_vector_addition_cuda.cu
-nvcc -o matrix_add 03_matrix_addition_cuda.cu
-nvcc -o device_info 04_device_info_cuda.cu
-nvcc -o performance 05_performance_comparison.cu
-nvcc -o debug 06_debug_example.cu
+nvcc -o build/01_vector_addition_cuda 01_vector_addition_cuda.cu
+nvcc -o build/03_matrix_addition_cuda 03_matrix_addition_cuda.cu
+nvcc -o build/04_device_info_cuda 04_device_info_cuda.cu
+nvcc -o build/05_performance_comparison_cuda 05_performance_comparison_cuda.cu
+nvcc -o build/06_debug_example_cuda 06_debug_example_cuda.cu
 ```
 
 **HIP Examples:**
 ```bash
-hipcc -o vector_add_hip 02_vector_addition_hip.cpp
-hipcc -o matrix_add_hip 03_matrix_addition_hip.cpp
-hipcc -o device_info_hip 04_device_info_hip.cpp
-hipcc -o performance_hip 05_performance_comparison_hip.cpp
-hipcc -o debug_hip 06_debug_example_hip.cpp
-hipcc -o cross_platform 07_cross_platform_comparison.cpp
+hipcc -o build/02_vector_addition_hip 02_vector_addition_hip.cpp
+hipcc -o build/03_matrix_addition_hip 03_matrix_addition_hip.cpp
+hipcc -o build/04_device_info_hip 04_device_info_hip.cpp
+hipcc -o build/05_performance_comparison_hip 05_performance_comparison_hip.cpp
+hipcc -o build/06_debug_example_hip 06_debug_example_hip.cpp
+hipcc -o build/07_cross_platform_comparison 07_cross_platform_comparison.cpp
 ```
 
 ## Example Descriptions
@@ -91,8 +109,8 @@ Demonstrates:
 
 **Usage:**
 ```bash
-make vector_add_cuda
-./vector_add_cuda
+make
+./build/01_vector_addition_cuda
 ```
 
 **Expected Output:**
@@ -116,8 +134,8 @@ Demonstrates:
 
 **Usage:**
 ```bash
-make vector_add_hip
-./vector_add_hip
+make hip
+./build/02_vector_addition_hip
 ```
 
 ### 3. Matrix Addition (CUDA)
@@ -131,8 +149,8 @@ Demonstrates:
 
 **Usage:**
 ```bash
-make matrix_add_cuda
-./matrix_add_cuda
+make
+./build/03_matrix_addition_cuda
 ```
 
 ### 3b. Matrix Addition (HIP)
@@ -146,8 +164,8 @@ Demonstrates:
 
 **Usage:**
 ```bash
-make matrix_add_hip
-./matrix_add_hip
+make hip
+./build/03_matrix_addition_hip
 ```
 
 ### 4. Device Information (CUDA)
@@ -161,8 +179,8 @@ Demonstrates:
 
 **Usage:**
 ```bash
-make device_info_cuda
-./device_info_cuda
+make
+./build/04_device_info_cuda
 ```
 
 ### 4b. Device Information (HIP)
@@ -176,8 +194,8 @@ Demonstrates:
 
 **Usage:**
 ```bash
-make device_info_hip
-./device_info_hip
+make hip
+./build/04_device_info_hip
 ```
 
 ### 5. Performance Comparison (CUDA)
@@ -191,8 +209,8 @@ Demonstrates:
 
 **Usage:**
 ```bash
-make performance_cuda
-./performance_cuda
+make
+./build/05_performance_comparison_cuda
 ```
 
 ### 5b. Performance Comparison (HIP)
@@ -207,8 +225,8 @@ Demonstrates:
 
 **Usage:**
 ```bash
-make performance_hip
-./performance_hip
+make hip
+./build/05_performance_comparison_hip
 ```
 
 ### 6. Debug Example (CUDA)
@@ -222,8 +240,8 @@ Demonstrates:
 
 **Usage:**
 ```bash
-make debug_cuda
-./debug_cuda
+make debug
+./build/06_debug_example_cuda
 ```
 
 ### 6b. Debug Example (HIP)
@@ -238,8 +256,8 @@ Demonstrates:
 
 **Usage:**
 ```bash
-make debug_hip
-./debug_hip
+make debug hip
+./build/06_debug_example_hip
 ```
 
 ### 7. Cross-Platform Comparison

@@ -170,7 +170,7 @@ rocm-smi --showproductname
 ```
 
 **Recommended Requirements:**
-- CUDA Toolkit 11.2+ or ROCm 5.2+
+- CUDA Toolkit 12.0+ or ROCm 6.0+
 - Compute Capability 7.0+ (Tensor Cores for applicable algorithms)
 - 16GB+ GPU memory for large-scale problems
 - Multi-GPU setup recommended for distributed algorithms

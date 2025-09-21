@@ -6,17 +6,87 @@ NVCC = nvcc
 HIPCC = hipcc
 CXX = g++
 
+# GPU vendor detection
+NVIDIA_GPU := $(shell nvidia-smi > /dev/null 2>&1 && echo 1 || echo 0)
+AMD_GPU := $(shell rocm-smi > /dev/null 2>&1 && echo 1 || echo 0)
+
+# Determine build target based on GPU vendor
+ifeq ($(NVIDIA_GPU),1)
+BUILD_CUDA = 1
+BUILD_HIP = 0
+GPU_VENDOR = NVIDIA
+else ifeq ($(AMD_GPU),1)
+BUILD_CUDA = 0
+BUILD_HIP = 1
+GPU_VENDOR = AMD
+else
+BUILD_CUDA = 0
+BUILD_HIP = 0
+GPU_VENDOR = NONE
+endif
+
 # Compiler flags for production-ready applications
 CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo --use_fast_math -DPRODUCTION_BUILD
 CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70 -DDEBUG_BUILD
-HIP_FLAGS = -std=c++17 -O3 --fast-math -DPRODUCTION_BUILD
+HIP_FLAGS = -std=c++17 -O3 -ffast-math -DPRODUCTION_BUILD
 HIP_DEBUG_FLAGS = -std=c++17 -g -DDEBUG_BUILD
 CXX_FLAGS = -std=c++17 -O3 -DPRODUCTION_BUILD
 
 # Library flags for production dependencies
-CUDA_LIBS = -lcublas -lcurand -lcufft -lcudnn -lnvml
-HIP_LIBS = -lrocblas -lrocrand -lrocfft -lMIOpen -lrocm_smi64
+CUDA_LIBS = -lcublas -lcurand -lcufft
+HIP_LIBS = -lrocblas -lrocrand -lrocfft -lrocm_smi64
 COMMON_LIBS = -lpthread -ldl
+
+# Optional libraries (check for availability)
+OPTIONAL_CUDA_LIBS = 
+OPTIONAL_HIP_LIBS = 
+
+# Check for optional libraries only when building (not during clean)
+ifneq ($(MAKECMDGOALS),clean)
+
+# NVIDIA-specific library checks (only when building for NVIDIA GPUs)
+ifeq ($(BUILD_CUDA),1)
+# Check for NVML availability by trying to compile a simple test
+ifeq ($(shell echo 'int main(){return 0;}' | $(CXX) -x c -lnvml - -o /dev/null 2>/dev/null && echo "found"), found)
+OPTIONAL_CUDA_LIBS += -lnvml
+CUDA_FLAGS += -DUSE_NVML
+$(info NVML library found - enabling NVML support)
+else
+$(info NVML library not found - compiling without NVML support)
+endif
+
+# Check for cuDNN availability by trying to compile a simple test
+ifeq ($(shell echo 'int main(){return 0;}' | $(CXX) -x c -lcudnn - -o /dev/null 2>/dev/null && echo "found"), found)
+OPTIONAL_CUDA_LIBS += -lcudnn
+CUDA_FLAGS += -DUSE_CUDNN
+$(info cuDNN library found - enabling cuDNN support)
+else
+$(info cuDNN library not found - compiling without cuDNN support)
+endif
+endif
+
+# AMD-specific library checks (only when building for AMD GPUs)
+ifeq ($(BUILD_HIP),1)
+# Check for MIOpen availability by trying to compile a simple test
+ifeq ($(shell echo 'int main(){return 0;}' | $(CXX) -x c -lMIOpen - -o /dev/null 2>/dev/null && echo "found"), found)
+OPTIONAL_HIP_LIBS += -lMIOpen
+HIP_FLAGS += -DUSE_MIOPEN
+$(info MIOpen library found - enabling MIOpen support)
+else
+$(info MIOpen library not found - compiling without MIOpen support)
+endif
+
+# Check for rocALUTION availability
+ifeq ($(shell echo 'int main(){return 0;}' | $(CXX) -x c -lrocalution - -o /dev/null 2>/dev/null && echo "found"), found)
+OPTIONAL_HIP_LIBS += -lrocalution
+HIP_FLAGS += -DUSE_ROCALUTION
+$(info rocALUTION library found - enabling rocALUTION support)
+else
+$(info rocALUTION library not found - compiling without rocALUTION support)
+endif
+endif
+
+endif
 
 # Directories
 BUILD_DIR = build
@@ -30,14 +100,33 @@ CUDA_SOURCES = $(wildcard *_cuda.cu)
 HIP_SOURCES = $(wildcard *_hip.cpp)
 CPP_SOURCES = $(wildcard *_common.cpp)
 
-# Target executables
+# Target executables based on GPU vendor
+ifeq ($(BUILD_CUDA),1)
+ACTIVE_CUDA_TARGETS = $(CUDA_SOURCES:%.cu=$(BUILD_DIR)/%)
+else
+ACTIVE_CUDA_TARGETS = 
+endif
+
+ifeq ($(BUILD_HIP),1)
+ACTIVE_HIP_TARGETS = $(HIP_SOURCES:%.cpp=$(BUILD_DIR)/%)
+else
+ACTIVE_HIP_TARGETS = 
+endif
+
+# Legacy target definitions (for compatibility)
 CUDA_TARGETS = $(CUDA_SOURCES:%.cu=$(BUILD_DIR)/%)
 HIP_TARGETS = $(HIP_SOURCES:%.cpp=$(BUILD_DIR)/%)
 CPP_TARGETS = $(CPP_SOURCES:%.cpp=$(BUILD_DIR)/%)
 
-# Default target
+# Default target - build only for detected GPU vendor
 .PHONY: all
-all: setup cuda hip common
+ifeq ($(BUILD_CUDA),1)
+all: setup cuda common
+else ifeq ($(BUILD_HIP),1)
+all: setup hip common
+else
+all: setup common
+endif
 
 # Setup directories for production deployment
 .PHONY: setup
@@ -47,25 +136,54 @@ setup:
 	@mkdir -p $(DEPLOY_DIR)
 	@mkdir -p $(CONFIG_DIR)
 	@mkdir -p $(LOGS_DIR)
+ifeq ($(GPU_VENDOR),NVIDIA)
+	@echo "✓ NVIDIA GPU detected - building CUDA examples"
+else ifeq ($(GPU_VENDOR),AMD)
+	@echo "✓ AMD GPU detected - building HIP examples"
+else
+	@echo "⚠ No compatible GPU detected - building CPU examples only"
+endif
 
 # Build CUDA production applications
 .PHONY: cuda
-cuda: setup $(CUDA_TARGETS)
+ifeq ($(BUILD_CUDA),1)
+cuda: setup $(ACTIVE_CUDA_TARGETS)
+else
+cuda: setup
+	@echo "ℹ Skipping CUDA build - no NVIDIA GPU detected"
+endif
 
 # Build HIP production applications
 .PHONY: hip
-hip: setup $(HIP_TARGETS)
+ifeq ($(BUILD_HIP),1)
+hip: setup $(ACTIVE_HIP_TARGETS)
+else
+hip: setup
+	@echo "ℹ Skipping HIP build - no AMD GPU detected"
+endif
 
 # Build common C++ applications
 .PHONY: common
 common: setup $(CPP_TARGETS)
 
-# Individual CUDA compilation with production libraries
+# Conditional compilation rules based on GPU vendor
+ifeq ($(BUILD_CUDA),1)
 $(BUILD_DIR)/%_cuda: %_cuda.cu
 	@echo "Building CUDA production application: $@"
-	$(NVCC) $(CUDA_FLAGS) $< -o $@ $(CUDA_LIBS) $(COMMON_LIBS)
+	$(NVCC) $(CUDA_FLAGS) $< -o $@ $(CUDA_LIBS) $(OPTIONAL_CUDA_LIBS) $(COMMON_LIBS)
+endif
 
-# Individual HIP compilation with production libraries
+ifeq ($(BUILD_HIP),1)
+$(BUILD_DIR)/%_hip: %_hip.cpp
+	@echo "Building HIP production application: $@"
+	$(HIPCC) $(HIP_FLAGS) $< -o $@ $(HIP_LIBS) $(COMMON_LIBS)
+endif
+
+# Legacy compilation rules (for compatibility with explicit targets)
+$(BUILD_DIR)/%_cuda: %_cuda.cu
+	@echo "Building CUDA production application: $@"
+	$(NVCC) $(CUDA_FLAGS) $< -o $@ $(CUDA_LIBS) $(OPTIONAL_CUDA_LIBS) $(COMMON_LIBS)
+
 $(BUILD_DIR)/%_hip: %_hip.cpp
 	@echo "Building HIP production application: $@"
 	$(HIPCC) $(HIP_FLAGS) $< -o $@ $(HIP_LIBS) $(COMMON_LIBS)
@@ -228,92 +346,88 @@ build_containers: production
 .PHONY: k8s_manifests
 k8s_manifests: production
 	@echo "Generating Kubernetes deployment manifests..."
-	@cat > $(DEPLOY_DIR)/gpu-service-deployment.yaml << 'EOF'
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: gpu-production-service
-  namespace: production
-spec:
-  replicas: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-  selector:
-    matchLabels:
-      app: gpu-production-service
-  template:
-    metadata:
-      labels:
-        app: gpu-production-service
-    spec:
-      containers:
-      - name: gpu-service
-        image: gpu-production:latest
-        ports:
-        - containerPort: 8080
-        resources:
-          requests:
-            nvidia.com/gpu: 1
-            memory: 8Gi
-            cpu: 2
-          limits:
-            nvidia.com/gpu: 1
-            memory: 16Gi
-            cpu: 4
-        readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: 8080
-          initialDelaySeconds: 30
-        livenessProbe:
-          httpGet:
-            path: /health/live
-            port: 8080
-          initialDelaySeconds: 60
-EOF
+	@{ \
+		echo "apiVersion: apps/v1"; \
+		echo "kind: Deployment"; \
+		echo "metadata:"; \
+		echo "  name: gpu-production-service"; \
+		echo "  namespace: production"; \
+		echo "spec:"; \
+		echo "  replicas: 3"; \
+		echo "  strategy:"; \
+		echo "    type: RollingUpdate"; \
+		echo "    rollingUpdate:"; \
+		echo "      maxSurge: 1"; \
+		echo "      maxUnavailable: 0"; \
+		echo "  selector:"; \
+		echo "    matchLabels:"; \
+		echo "      app: gpu-production-service"; \
+		echo "  template:"; \
+		echo "    metadata:"; \
+		echo "      labels:"; \
+		echo "        app: gpu-production-service"; \
+		echo "    spec:"; \
+		echo "      containers:"; \
+		echo "      - name: gpu-service"; \
+		echo "        image: gpu-production:latest"; \
+		echo "        ports:"; \
+		echo "        - containerPort: 8080"; \
+		echo "        resources:"; \
+		echo "          requests:"; \
+		echo "            nvidia.com/gpu: 1"; \
+		echo "            memory: 8Gi"; \
+		echo "            cpu: 2"; \
+		echo "          limits:"; \
+		echo "            nvidia.com/gpu: 1"; \
+		echo "            memory: 16Gi"; \
+		echo "            cpu: 4"; \
+		echo "        readinessProbe:"; \
+		echo "          httpGet:"; \
+		echo "            path: /health/ready"; \
+		echo "            port: 8080"; \
+		echo "          initialDelaySeconds: 30"; \
+		echo "        livenessProbe:"; \
+		echo "          httpGet:"; \
+		echo "            path: /health/live"; \
+		echo "            port: 8080"; \
+		echo "          initialDelaySeconds: 60"; \
+	} > $(DEPLOY_DIR)/gpu-service-deployment.yaml
 	@echo "Kubernetes manifests generated in $(DEPLOY_DIR)/"
 
 # Production monitoring setup
 .PHONY: deploy_monitoring
 deploy_monitoring: production
 	@echo "Setting up production monitoring..."
-	@cat > $(DEPLOY_DIR)/prometheus.yml << 'EOF'
-global:
-  scrape_interval: 15s
-
-scrape_configs:
-  - job_name: 'gpu-applications'
-    static_configs:
-      - targets: ['localhost:9090']
-    metrics_path: /metrics
-    scrape_interval: 10s
-EOF
-	@cat > $(DEPLOY_DIR)/grafana-dashboard.json << 'EOF'
-{
-  "dashboard": {
-    "title": "GPU Production Applications",
-    "panels": [
-      {
-        "title": "GPU Utilization",
-        "type": "graph",
-        "targets": [
-          {"expr": "gpu_utilization_percent"}
-        ]
-      },
-      {
-        "title": "Application Throughput",
-        "type": "graph", 
-        "targets": [
-          {"expr": "application_requests_per_second"}
-        ]
-      }
-    ]
-  }
-}
-EOF
+	@echo "global:" > $(DEPLOY_DIR)/prometheus.yml
+	@echo "  scrape_interval: 15s" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "scrape_configs:" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "  - job_name: 'gpu-applications'" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "    static_configs:" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "      - targets: ['localhost:9090']" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "    metrics_path: /metrics" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "    scrape_interval: 10s" >> $(DEPLOY_DIR)/prometheus.yml
+	@echo "{" > $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "  \"dashboard\": {" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "    \"title\": \"GPU Production Applications\"," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "    \"panels\": [" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "      {" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"title\": \"GPU Utilization\"," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"type\": \"graph\"," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"targets\": [" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "          {\"expr\": \"gpu_utilization_percent\"}" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        ]" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "      }," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "      {" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"title\": \"Application Throughput\"," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"type\": \"graph\"," >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        \"targets\": [" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "          {\"expr\": \"application_requests_per_second\"}" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "        ]" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "      }" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "    ]" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "  }" >> $(DEPLOY_DIR)/grafana-dashboard.json
+	@echo "}" >> $(DEPLOY_DIR)/grafana-dashboard.json
 	@echo "Monitoring configuration generated in $(DEPLOY_DIR)/"
 
 # Performance profiling for production
@@ -434,59 +548,57 @@ production_check:
 .PHONY: deployment_docs
 deployment_docs: production
 	@echo "Generating deployment documentation..."
-	@cat > $(DEPLOY_DIR)/DEPLOYMENT.md << 'EOF'
-# Production GPU Application Deployment Guide
-
-## Prerequisites
-
-- CUDA Toolkit 11.8+ or ROCm 5.4+
-- Docker with GPU runtime support
-- Kubernetes cluster with GPU nodes
-- Monitoring stack (Prometheus + Grafana)
-
-## Deployment Steps
-
-1. **Build Applications:**
-   ```bash
-   make production
-   ```
-
-2. **Run Tests:**
-   ```bash
-   make test_production
-   make load_test
-   make security_test
-   ```
-
-3. **Package for Deployment:**
-   ```bash
-   make package_production
-   make build_containers
-   ```
-
-4. **Deploy to Kubernetes:**
-   ```bash
-   kubectl apply -f gpu-service-deployment.yaml
-   ```
-
-5. **Setup Monitoring:**
-   ```bash
-   make deploy_monitoring
-   ```
-
-## Production Checklist
-
-- [ ] All tests passing
-- [ ] Security scan completed
-- [ ] Performance benchmarks meet SLA
-- [ ] Monitoring configured
-- [ ] Backup and recovery procedures tested
-- [ ] Documentation updated
-
-## Support
-
-For production support, contact the GPU Operations team.
-EOF
+	@echo "# Production GPU Application Deployment Guide" > $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "## Prerequisites" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- CUDA Toolkit 11.8+ or ROCm 5.4+" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- Docker with GPU runtime support" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- Kubernetes cluster with GPU nodes" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- Monitoring stack (Prometheus + Grafana)" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "## Deployment Steps" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "1. **Build Applications:**" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`bash" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make production" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "2. **Run Tests:**" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`bash" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make test_production" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make load_test" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make security_test" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "3. **Package for Deployment:**" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`bash" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make package_production" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make build_containers" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "4. **Deploy to Kubernetes:**" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`bash" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   kubectl apply -f gpu-service-deployment.yaml" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "5. **Setup Monitoring:**" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`bash" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   make deploy_monitoring" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "   \`\`\`" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "## Production Checklist" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] All tests passing" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] Security scan completed" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] Performance benchmarks meet SLA" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] Monitoring configured" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] Backup and recovery procedures tested" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- [ ] Documentation updated" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "## Support" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "For production support, contact the GPU Operations team." >> $(DEPLOY_DIR)/DEPLOYMENT.md
 	@echo "Deployment documentation generated: $(DEPLOY_DIR)/DEPLOYMENT.md"
 
 # System information for production

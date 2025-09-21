@@ -10,6 +10,7 @@
  */
 
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -17,17 +18,6 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
-
-// Error checking macro
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t err = call; \
-        if (err != hipSuccess) { \
-            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
-                    hipGetErrorString(err)); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0)
 
 // Constants
 const int BLOCK_SIZE = 16;
@@ -306,7 +296,7 @@ __device__ float wavefront_reduce_sum(float val) {
 void initialize_data(float *data, int size, bool random = true) {
     for (int i = 0; i < size; i++) {
         if (random) {
-            data[i] = static_cast<float>(rand()) / RAND_MAX;
+            data[i] = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
         } else {
             data[i] = 1.0f; // Unit impulse for testing
         }

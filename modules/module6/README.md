@@ -16,16 +16,11 @@ By completing this module, you will:
 
 ## Prerequisites
 
-- Completion of Modules 1-5 (GPU Programming Foundations through Performance Optimization)
-- Understanding of parallel algorithm design principles
-- Familiarity with GPU memory hierarchy and optimization techniques
-- Knowledge of mathematical concepts: convolution, reduction operations, prefix sums
-
-## Contents
+**Recommended Requirements:**
+- CUDA Toolkit 12.0+ or ROCm 6.0+
 
 ### Core Content
 - **content.md** - Comprehensive guide covering all fundamental parallel algorithm patterns
-
 ### Examples
 
 #### 1. Convolution Algorithms (`01_convolution_*.cu/.cpp`)

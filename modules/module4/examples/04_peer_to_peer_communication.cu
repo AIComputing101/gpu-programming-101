@@ -28,6 +28,14 @@ __global__ void verifyData(float *data, float *expected, bool *result, int n) {
     }
 }
 
+// Simple addition kernel for peer-to-peer communication
+__global__ void addArrays(float *result, float *input, int n) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n) {
+        result[idx] += input[idx];
+    }
+}
+
 #define CUDA_CHECK(call) \
     do { \
         cudaError_t error = call; \
@@ -450,17 +458,8 @@ void demonstrateAllReduce(int deviceCount) {
                 dim3 block(256);
                 dim3 grid((elementsPerGPU + block.x - 1) / block.x);
                 
-                // Simple addition kernel
-                auto addKernel = [=] __device__ (float *result, float *input, int n) {
-                    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-                    if (idx < n) {
-                        result[idx] += input[idx];
-                    }
-                };
-                
-                // Launch inline kernel for addition
-                cudaLaunchKernel((void*)addKernel, grid, block, 0, 0, 
-                               gpu_result[dstGPU], temp_buffer, elementsPerGPU);
+                // Launch addition kernel
+                addArrays<<<grid, block>>>(gpu_result[dstGPU], temp_buffer, elementsPerGPU);
                 CUDA_CHECK(cudaGetLastError());
                 CUDA_CHECK(cudaDeviceSynchronize());
                 

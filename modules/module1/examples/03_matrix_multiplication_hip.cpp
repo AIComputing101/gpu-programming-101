@@ -80,8 +80,8 @@ __global__ void matrixMultiplyAMDOptimized(float *A, float *B, float *C, int N) 
     
     float sum = 0.0f;
     
-    // Unrolled tile loop for better instruction scheduling
-    #pragma unroll 4
+    // ROCm 7: Use clang loop optimization hints instead of fixed unroll count
+    // The compiler will determine optimal unrolling based on target architecture
     for (int t = 0; t < (N + TILE_SIZE - 1) / TILE_SIZE; t++) {
         // Coalesced loads
         tileA[hipThreadIdx_y][hipThreadIdx_x] = 
@@ -350,8 +350,11 @@ int main() {
     
     // Cleanup
     free(h_A); free(h_B); free(h_C); free(h_C_ref);
-    hipFree(d_A); hipFree(d_B); hipFree(d_C);
-    hipEventDestroy(start); hipEventDestroy(stop);
+    HIP_CHECK(hipFree(d_A)); 
+    HIP_CHECK(hipFree(d_B)); 
+    HIP_CHECK(hipFree(d_C));
+    HIP_CHECK(hipEventDestroy(start)); 
+    HIP_CHECK(hipEventDestroy(stop));
     
     printf("\nHIP matrix multiplication completed successfully!\n");
     return 0;

@@ -6,11 +6,54 @@ NVCC = nvcc
 HIPCC = hipcc
 CXX = g++
 
+# GPU vendor detection
+NVIDIA_GPU := $(shell nvidia-smi > /dev/null 2>&1 && echo 1 || echo 0)
+AMD_GPU := $(shell rocm-smi > /dev/null 2>&1 && echo 1 || echo 0)
+
+# Determine build target based on GPU vendor
+ifeq ($(NVIDIA_GPU),1)
+BUILD_CUDA = 1
+BUILD_HIP = 0
+GPU_VENDOR = NVIDIA
+else ifeq ($(AMD_GPU),1)
+BUILD_CUDA = 0
+BUILD_HIP = 1
+GPU_VENDOR = AMD
+else
+BUILD_CUDA = 0
+BUILD_HIP = 0
+GPU_VENDOR = NONE
+endif
+
 # Compiler flags
-CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo
-CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70
+CUDA_FLAGS = -std=c++17 -O3 -arch=sm_90 -lineinfo
+CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_90
 HIP_FLAGS = -std=c++17 -O3
 HIP_DEBUG_FLAGS = -std=c++17 -g
+
+# ROCm 7: Ensure hipcc can find HIP runtime by passing --rocm-path
+ROCM_PATH ?= $(shell ls -d /opt/rocm-7.0.0 2>/dev/null || ls -d /opt/rocm* 2>/dev/null | head -1 || echo /opt/rocm)
+# Auto-detect ROCm path from hipcc if headers not found
+ifeq ($(wildcard $(ROCM_PATH)/include/hip/hip_runtime.h),)
+	HIPCC_BIN := $(shell command -v hipcc 2>/dev/null)
+	ifneq ($(HIPCC_BIN),)
+		ROCM_PATH_DETECTED := $(shell dirname $$(dirname $$(realpath $(HIPCC_BIN))))
+		ROCM_PATH := $(ROCM_PATH_DETECTED)
+	endif
+endif
+HIP_ROCM_FLAG = --rocm-path=$(ROCM_PATH)
+HIP_FLAGS += $(HIP_ROCM_FLAG)
+HIP_DEBUG_FLAGS += $(HIP_ROCM_FLAG)
+
+# GPU architecture detection - get actual GPU architecture from rocminfo
+GPU_ARCH := $(shell if command -v rocminfo >/dev/null 2>&1; then rocminfo 2>/dev/null | grep -o 'gfx[0-9]*' | head -1; else echo gfx1030; fi)
+ifeq ($(strip $(GPU_ARCH)),)
+	GPU_ARCH := gfx1030
+endif
+
+# Add detected GPU architecture to HIP flags
+HIP_FLAGS += --offload-arch=$(GPU_ARCH)
+HIP_DEBUG_FLAGS += --offload-arch=$(GPU_ARCH)
 CXX_FLAGS = -std=c++17 -O3 -fopenmp
 
 # Profiling flags
@@ -26,12 +69,23 @@ PROFILE_DIR = profiles
 CUDA_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_cuda.cu)
 CUDA_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cu,$(BUILD_DIR)/%,$(CUDA_SOURCES))
 
-# HIP Examples  
+# HIP Examples (only if AMD GPU detected)
+ifeq ($(BUILD_HIP),1)
 HIP_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_hip.cpp)
 HIP_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(BUILD_DIR)/%,$(HIP_SOURCES))
+else
+HIP_SOURCES = 
+HIP_TARGETS = 
+endif
 
-# All targets
-ALL_TARGETS = $(CUDA_TARGETS) $(HIP_TARGETS)
+# Active targets based on detected GPU vendor
+ifeq ($(BUILD_CUDA),1)
+ALL_TARGETS = $(CUDA_TARGETS)
+else ifeq ($(BUILD_HIP),1)
+ALL_TARGETS = $(HIP_TARGETS)
+else
+ALL_TARGETS = 
+endif
 
 # Default target
 .PHONY: all
@@ -42,16 +96,26 @@ all: setup $(ALL_TARGETS)
 setup:
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(PROFILE_DIR)
+ifeq ($(GPU_VENDOR),NVIDIA)
+	@echo "✓ NVIDIA GPU detected - building CUDA examples"
+else ifeq ($(GPU_VENDOR),AMD)
+	@echo "✓ AMD GPU detected - building HIP examples"
+	@echo "ℹ Using ROCm path: $(ROCM_PATH)"
+else
+	@echo "⚠ No compatible GPU detected - no examples will be built"
+endif
 
 # CUDA compilation rules
 $(BUILD_DIR)/%_cuda: $(EXAMPLES_DIR)/%_cuda.cu
 	@echo "Building CUDA example: $@"
 	$(NVCC) $(CUDA_FLAGS) $< -o $@
 
-# HIP compilation rules
+# HIP compilation rules (only if AMD GPU detected)
+ifeq ($(BUILD_HIP),1)
 $(BUILD_DIR)/%_hip: $(EXAMPLES_DIR)/%_hip.cpp
 	@echo "Building HIP example: $@"
 	$(HIPCC) $(HIP_FLAGS) $< -o $@
+endif
 
 # Debug builds
 .PHONY: debug
@@ -90,7 +154,8 @@ profile-cuda: $(CUDA_TARGETS)
 	done
 
 .PHONY: profile-hip  
-profile-hip: $(HIP_TARGETS)
+profile-hip: 
+ifeq ($(HIP_AVAILABLE),1)
 	@echo "Profiling HIP examples with rocprof..."
 	@for target in $(HIP_TARGETS); do \
 		if [ -f $$target ]; then \
@@ -99,6 +164,9 @@ profile-hip: $(HIP_TARGETS)
 			mv results.csv $(PROFILE_DIR)/$$(basename $$target).csv 2>/dev/null || true; \
 		fi; \
 	done
+else
+	@echo "ℹ HIP not available - skipping HIP profiling"
+endif
 
 # Comprehensive profiling with Nsight Compute (CUDA)
 .PHONY: profile-detailed-cuda
@@ -259,7 +327,7 @@ help:
 
 # Additional individual example targets
 .PHONY: profiling
-profiling: $(BUILD_DIR)/01_gpu_profiling_cuda $(BUILD_DIR)/01_hip_profiling
+profiling: $(BUILD_DIR)/01_gpu_profiling_cuda 01_hip_profiling
 
 .PHONY: memory-opt
 memory-opt: $(BUILD_DIR)/02_memory_optimization_cuda
@@ -271,6 +339,6 @@ kernel-opt: $(BUILD_DIR)/03_kernel_optimization_cuda
 .PHONY: test
 test: all
 	@echo "Quick test run..."
-	@$(BUILD_DIR)/01_gpu_profiling_cuda || echo "CUDA profiling test completed"
-	@$(BUILD_DIR)/02_memory_optimization_cuda || echo "Memory optimization test completed"
-	@$(BUILD_DIR)/03_kernel_optimization_cuda || echo "Kernel optimization test completed"
+	@if [ -f $(BUILD_DIR)/01_gpu_profiling_cuda ]; then $(BUILD_DIR)/01_gpu_profiling_cuda || echo "CUDA profiling test completed"; fi
+	@if [ -f $(BUILD_DIR)/02_memory_optimization_cuda ]; then $(BUILD_DIR)/02_memory_optimization_cuda || echo "Memory optimization test completed"; fi
+	@if [ -f $(BUILD_DIR)/03_kernel_optimization_cuda ]; then $(BUILD_DIR)/03_kernel_optimization_cuda || echo "Kernel optimization test completed"; fi

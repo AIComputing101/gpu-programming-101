@@ -1,5 +1,7 @@
 # Module 6: Fundamental Parallel Algorithms - Comprehensive Guide
 
+> Environment note: The examples and benchmarks in this module are tested in Docker with CUDA 12.9.1 (Ubuntu 22.04) and ROCm 7.0 (Ubuntu 24.04) to ensure reproducibility. Recent algorithm fixes improve performance.
+
 ## Introduction
 
 Fundamental parallel algorithms form the core building blocks of high-performance GPU computing. These algorithms—convolution, stencil computations, histogram operations, reduction patterns, and prefix sum operations—appear across virtually all domains of parallel computing, from scientific simulation to machine learning, image processing to data analytics.

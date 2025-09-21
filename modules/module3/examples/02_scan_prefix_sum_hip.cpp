@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <chrono>
+#include "rocm7_utils.h"
 
 #define BLOCK_SIZE 256
 #define WARP_SIZE 64  // AMD wavefront size
@@ -222,8 +223,8 @@ void largeScan(float *input, float *output, int n) {
     
     // Multi-block approach
     float *block_sums, *block_scan_sums;
-    hipMalloc(&block_sums, blocks_per_grid * sizeof(float));
-    hipMalloc(&block_scan_sums, blocks_per_grid * sizeof(float));
+    HIP_CHECK(hipMalloc(&block_sums, blocks_per_grid * sizeof(float)));
+    HIP_CHECK(hipMalloc(&block_scan_sums, blocks_per_grid * sizeof(float)));
     
     // Phase 1: Scan each block independently and collect block sums
     // (This would require a modified kernel to collect sums - simplified here)
@@ -234,19 +235,9 @@ void largeScan(float *input, float *output, int n) {
     // Phase 2: Scan the block sums (recursive call for simplicity)
     // Phase 3: Add scanned block sums to each block's results
     
-    hipFree(block_sums);
-    hipFree(block_scan_sums);
+    HIP_CHECK(hipFree(block_sums));
+    HIP_CHECK(hipFree(block_scan_sums));
 }
-
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
-                    hipGetErrorString(error)); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0)
 
 void printArray(float *arr, int n, const char *name, int max_print = 10) {
     printf("%s: ", name);
@@ -326,6 +317,9 @@ int main() {
     dim3 block(BLOCK_SIZE);
     dim3 grid((N + BLOCK_SIZE - 1) / BLOCK_SIZE);
     
+    // Timing variables
+    double naive_time = 0.0, hillis_time, blelloch_time;
+    
     // 1. Naive Scan (for small arrays only)
     if (N <= 1024) {
         printf("1. Naive Scan:\n");
@@ -354,7 +348,7 @@ int main() {
     HIP_CHECK(hipDeviceSynchronize());
     auto end = std::chrono::high_resolution_clock::now();
     
-    double hillis_time = std::chrono::duration<double, std::milli>(end - start).count();
+    hillis_time = std::chrono::duration<double, std::milli>(end - start).count();
     
     HIP_CHECK(hipMemcpy(h_output, d_output, bytes, hipMemcpyDeviceToHost));
     
@@ -375,7 +369,7 @@ int main() {
     HIP_CHECK(hipDeviceSynchronize());
     end = std::chrono::high_resolution_clock::now();
     
-    double blelloch_time = std::chrono::duration<double, std::milli>(end - start).count();
+    blelloch_time = std::chrono::duration<double, std::milli>(end - start).count();
     
     HIP_CHECK(hipMemcpy(h_output, d_output, bytes, hipMemcpyDeviceToHost));
     
@@ -460,7 +454,7 @@ int main() {
     
     // Cleanup
     free(h_input); free(h_output); free(h_reference); free(h_flags);
-    hipFree(d_input); hipFree(d_output); hipFree(d_flags);
+    HIP_CHECK(hipFree(d_input)); HIP_CHECK(hipFree(d_output)); HIP_CHECK(hipFree(d_flags));
     
     printf("\nHIP scan algorithms completed successfully!\n");
     return 0;

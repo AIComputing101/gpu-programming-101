@@ -19,6 +19,7 @@
  */
 
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -27,16 +28,7 @@
 #include <cassert>
 #include <iomanip>
 #include <functional>
-
-// Utility macros and functions
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            std::cerr << "HIP error at " << __FILE__ << ":" << __LINE__ << " - " << hipGetErrorString(error) << std::endl; \
-            exit(1); \
-        } \
-    } while(0)
+#include <cfloat>
 
 // AMD GPU typically has 64-thread wavefronts (vs 32-thread warps on NVIDIA)
 constexpr int WAVEFRONT_SIZE = 64;
@@ -274,7 +266,7 @@ float multi_pass_reduction(float* d_input, int n, void (*reduction_kernel)(float
     
     // Clean up temporary buffers
     for (auto ptr : temp_buffers) {
-        hipFree(ptr);
+        HIP_CHECK(hipFree(ptr));
     }
     
     return result;
@@ -292,8 +284,8 @@ public:
     }
     
     ~PerformanceTimer() {
-        hipEventDestroy(start_event);
-        hipEventDestroy(stop_event);
+        HIP_CHECK(hipEventDestroy(start_event));
+        HIP_CHECK(hipEventDestroy(stop_event));
     }
     
     void start() {
@@ -383,7 +375,7 @@ void run_reduction_benchmarks() {
                 HIP_CHECK(hipDeviceSynchronize());
                 
                 float result = multi_pass_reduction(d_output, num_blocks, reduction_wavefront_primitive);
-                hipFree(d_output);
+                HIP_CHECK(hipFree(d_output));
                 return result;
             }),
             ReductionTest("ROCm Optimized", [d_data](float* d_input, int n) {
@@ -397,7 +389,7 @@ void run_reduction_benchmarks() {
                 HIP_CHECK(hipDeviceSynchronize());
                 
                 float result = multi_pass_reduction(d_output, num_blocks, reduction_rocm_optimized);
-                hipFree(d_output);
+                HIP_CHECK(hipFree(d_output));
                 return result;
             })
         };
@@ -424,7 +416,7 @@ void run_reduction_benchmarks() {
                       << ", BW: " << std::setprecision(1) << bandwidth << " GB/s)\n";
         }
         
-        hipFree(d_data);
+        HIP_CHECK(hipFree(d_data));
     }
 }
 
@@ -521,9 +513,9 @@ void demonstrate_specialized_reductions() {
     std::cout << "Max value - GPU: " << gpu_max << ", CPU: " << *cpu_min_max.second
               << " (Error: " << std::abs(gpu_max - *cpu_min_max.second) << ")\n";
     
-    hipFree(d_data);
-    hipFree(d_min);
-    hipFree(d_max);
+    HIP_CHECK(hipFree(d_data));
+    HIP_CHECK(hipFree(d_min));
+    HIP_CHECK(hipFree(d_max));
 }
 
 int main() {
@@ -532,9 +524,9 @@ int main() {
     
     // Check HIP device properties
     int device;
-    hipGetDevice(&device);
+    HIP_CHECK(hipGetDevice(&device));
     hipDeviceProp_t props;
-    hipGetDeviceProperties(&props, device);
+    HIP_CHECK(hipGetDeviceProperties(&props, device));
     
     std::cout << "GPU: " << props.name << "\n";
     std::cout << "Compute Capability: " << props.major << "." << props.minor << "\n";

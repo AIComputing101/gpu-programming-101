@@ -93,7 +93,7 @@ public:
     }
     
     ~UnifiedMemoryDemo() {
-        hipFree(data);
+        HIP_CHECK(hipFree(data));
     }
     
     void processOnGPU() {
@@ -257,7 +257,7 @@ void performanceComparison() {
     
     // Cleanup
     free(h_data);
-    hipFree(d_data);
+    HIP_CHECK(hipFree(d_data));
 }
 
 // Memory usage analysis

@@ -356,13 +356,13 @@ int main() {
     free(h_output_shared);
     free(h_output_optimized);
     free(h_output_cpu);
-    hipFree(d_input);
-    hipFree(d_output_naive);
-    hipFree(d_output_shared);
-    hipFree(d_output_optimized);
-    hipFree(d_bank_data);
-    hipEventDestroy(start);
-    hipEventDestroy(stop);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_output_naive));
+    HIP_CHECK(hipFree(d_output_shared));
+    HIP_CHECK(hipFree(d_output_optimized));
+    HIP_CHECK(hipFree(d_bank_data));
+    HIP_CHECK(hipEventDestroy(start));
+    HIP_CHECK(hipEventDestroy(stop));
     
     printf("\nHIP shared memory transpose example completed successfully!\n");
     return 0;

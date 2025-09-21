@@ -1,72 +1,170 @@
-# GPU Programming Module 2 Examples Makefile
-# Advanced Memory Management and Optimization Examples
+# Module 2: Advanced Memory Management
+# Makefile for comprehensive build and testing
 
 # Compiler settings
 NVCC = nvcc
 HIPCC = hipcc
-NVCC_FLAGS = -O2 -std=c++11 -arch=sm_50
-HIPCC_FLAGS = -O2 -std=c++11
+CXX = g++
 
-# Source files (following consistent naming pattern)
-CUDA_SOURCES = $(wildcard *_cuda.cu)
-HIP_SOURCES = $(wildcard *_hip.cpp)
+# GPU vendor detection
+NVIDIA_GPU := $(shell nvidia-smi > /dev/null 2>&1 && echo 1 || echo 0)
+AMD_GPU := $(shell rocm-smi > /dev/null 2>&1 && echo 1 || echo 0)
 
-# Executable names
-CUDA_EXECUTABLES = $(CUDA_SOURCES:_cuda.cu=_cuda)
-HIP_EXECUTABLES = $(HIP_SOURCES:_hip.cpp=_hip)
+# Determine build target based on GPU vendor
+ifeq ($(NVIDIA_GPU),1)
+BUILD_CUDA = 1
+BUILD_HIP = 0
+GPU_VENDOR = NVIDIA
+else ifeq ($(AMD_GPU),1)
+BUILD_CUDA = 0
+BUILD_HIP = 1
+GPU_VENDOR = AMD
+else
+BUILD_CUDA = 0
+BUILD_HIP = 0
+GPU_VENDOR = NONE
+endif
+
+# Compiler flags
+CUDA_FLAGS = -std=c++17 -O2 -arch=sm_75 -lcudart -lcuda
+CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_75 -lcudart -lcuda
+HIP_FLAGS = -std=c++17 -O2
+HIP_DEBUG_FLAGS = -std=c++17 -g
+
+# ROCm 7: Ensure hipcc can find HIP runtime by passing --rocm-path
+ROCM_PATH ?= $(shell ls -d /opt/rocm-7.0.0 2>/dev/null || ls -d /opt/rocm* 2>/dev/null | head -1 || echo /opt/rocm)
+# Auto-detect ROCm path from hipcc if headers not found
+ifeq ($(wildcard $(ROCM_PATH)/include/hip/hip_runtime.h),)
+	HIPCC_BIN := $(shell command -v hipcc 2>/dev/null)
+	ifneq ($(HIPCC_BIN),)
+		ROCM_PATH_DETECTED := $(shell dirname $$(dirname $$(realpath $(HIPCC_BIN))))
+		ROCM_PATH := $(ROCM_PATH_DETECTED)
+	endif
+endif
+HIP_ROCM_FLAG = --rocm-path=$(ROCM_PATH)
+HIP_FLAGS += $(HIP_ROCM_FLAG)
+HIP_DEBUG_FLAGS += $(HIP_ROCM_FLAG)
+
+# GPU architecture detection - get actual GPU architecture from rocminfo
+GPU_ARCH := $(shell if command -v rocminfo >/dev/null 2>&1; then rocminfo 2>/dev/null | grep -o 'gfx[0-9]*' | head -1; else echo gfx1030; fi)
+ifeq ($(strip $(GPU_ARCH)),)
+	GPU_ARCH := gfx1030
+endif
+
+# Add detected GPU architecture to HIP flags
+HIP_FLAGS += --offload-arch=$(GPU_ARCH)
+HIP_DEBUG_FLAGS += --offload-arch=$(GPU_ARCH)
+CXX_FLAGS = -std=c++17 -O2
+
+# Directories
+EXAMPLES_DIR = .
+BUILD_DIR = build
+PROFILE_DIR = profiles
+
+# CUDA Examples
+CUDA_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_cuda.cu $(EXAMPLES_DIR)/0*.cu)
+CUDA_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cu,$(BUILD_DIR)/%,$(CUDA_SOURCES))
+
+# HIP Examples
+HIP_SOURCES = $(wildcard $(EXAMPLES_DIR)/*_hip.cpp)
+HIP_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(BUILD_DIR)/%,$(HIP_SOURCES))
+
+# Check for hipcc availability
+HIPCC_AVAILABLE := $(shell command -v hipcc >/dev/null 2>&1 && echo 1 || echo 0)
+
+# Active targets based on detected GPU vendor and compiler availability
+ifeq ($(BUILD_CUDA),1)
+  ALL_TARGETS = $(CUDA_TARGETS)
+else ifeq ($(BUILD_HIP),1)
+  ALL_TARGETS = $(HIP_TARGETS)
+else
+  ALL_TARGETS = 
+endif
 
 # Default target
-all: cuda
+.PHONY: all
+all: setup $(ALL_TARGETS)
 
-# CUDA targets
-cuda: $(CUDA_EXECUTABLES)
+# Setup directories
+.PHONY: setup
+setup:
+	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(PROFILE_DIR)
+ifeq ($(GPU_VENDOR),NVIDIA)
+	@echo "✓ NVIDIA GPU detected - building CUDA examples"
+else ifeq ($(GPU_VENDOR),AMD)
+	@echo "✓ AMD GPU detected - building HIP examples"
+	@echo "ℹ Using ROCm path: $(ROCM_PATH)"
+else
+	@echo "⚠ No compatible GPU detected"
+endif
 
-%_cuda: %_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
+# CUDA compilation rules
+.PHONY: cuda
+ifeq ($(BUILD_CUDA),1)
+cuda: setup $(CUDA_TARGETS)
+else
+cuda: setup
+	@echo "⚠ CUDA build requested but no NVIDIA GPU detected"
+endif
 
-# HIP targets  
-hip: $(HIP_EXECUTABLES)
+$(BUILD_DIR)/%_cuda: $(EXAMPLES_DIR)/%_cuda.cu
+	@echo "Building CUDA example: $@"
+	$(NVCC) $(CUDA_FLAGS) $< -o $@
 
-%_hip: %_hip.cpp
-	$(HIPCC) $(HIPCC_FLAGS) $< -o $@
+# Pattern for numbered CUDA examples
+$(BUILD_DIR)/0%: $(EXAMPLES_DIR)/0%.cu
+	@echo "Building CUDA example: $@"
+	$(NVCC) $(CUDA_FLAGS) $< -o $@
 
-# Individual example targets
-01_shared_memory_transpose_cuda: 01_shared_memory_transpose_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
+# HIP compilation rules
+.PHONY: hip
+ifeq ($(BUILD_HIP),1)
+hip: setup $(HIP_TARGETS)
+else
+hip: setup
+	@echo "⚠ HIP build requested but no AMD GPU detected"
+endif
 
-01_shared_memory_transpose_hip: 01_shared_memory_transpose_hip.cpp
-	$(HIPCC) $(HIPCC_FLAGS) $< -o $@
+ifeq ($(BUILD_HIP),1)
+$(BUILD_DIR)/%_hip: $(EXAMPLES_DIR)/%_hip.cpp
+	@echo "Building HIP example: $@"
+	$(HIPCC) $(HIP_FLAGS) $< -o $@
+endif
 
-02_memory_coalescing_cuda: 02_memory_coalescing_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
+# Debug builds
+.PHONY: debug
+debug: CUDA_FLAGS = $(CUDA_DEBUG_FLAGS)
+debug: HIP_FLAGS = $(HIP_DEBUG_FLAGS)
+debug: all
 
-02_memory_coalescing_hip: 02_memory_coalescing_hip.cpp
-	$(HIPCC) $(HIPCC_FLAGS) $< -o $@
+# Clean
+.PHONY: clean
+clean:
+	@echo "Cleaning build artifacts..."
+	rm -rf build profiles
 
-03_texture_memory_cuda: 03_texture_memory_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
+# Help
+.PHONY: help
+help:
+	@echo "Module 2: Advanced Memory Management"
+	@echo "Available targets:"
+	@echo "  all     - Build all examples for detected GPU vendor"
+	@echo "  cuda    - Build CUDA examples (requires NVIDIA GPU)"
+	@echo "  hip     - Build HIP examples (requires AMD GPU)"
+	@echo "  debug   - Build with debug flags"
+	@echo "  clean   - Remove build artifacts"
+	@echo "  help    - Show this help message"
 
-04_unified_memory_cuda: 04_unified_memory_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
+# Legacy target mappings for convenience
+.PHONY: shared_memory coalescing texture unified bandwidth
+shared_memory: $(BUILD_DIR)/01_shared_memory_transpose_cuda
+coalescing: $(BUILD_DIR)/02_memory_coalescing_cuda
+texture: $(BUILD_DIR)/03_texture_memory_cuda
+unified: $(BUILD_DIR)/04_unified_memory_cuda
+bandwidth: $(BUILD_DIR)/05_memory_bandwidth_optimization_cuda
 
-05_memory_bandwidth_optimization_cuda: 05_memory_bandwidth_optimization_cuda.cu
-	$(NVCC) $(NVCC_FLAGS) $< -o $@
 
-# Legacy targets for backward compatibility
-shared_memory_cuda: 01_shared_memory_transpose_cuda
-shared_memory_hip: 01_shared_memory_transpose_hip
-coalescing_cuda: 02_memory_coalescing_cuda
-coalescing_hip: 02_memory_coalescing_hip
-texture_cuda: 03_texture_memory_cuda
-unified_cuda: 04_unified_memory_cuda
-bandwidth_cuda: 05_memory_bandwidth_optimization_cuda
-
-# Generic legacy targets (default to CUDA)
-shared_memory: 01_shared_memory_transpose_cuda
-coalescing: 02_memory_coalescing_cuda
-texture: 03_texture_memory_cuda
-unified: 04_unified_memory_cuda
-bandwidth: 05_memory_bandwidth_optimization_cuda
 
 # Test targets
 test: test_cuda
@@ -137,16 +235,7 @@ profile_memory: cuda
 	@echo "Legacy nvprof (if available):"
 	@echo "  nvprof --metrics achieved_occupancy,gld_efficiency,gst_efficiency ./03_texture_memory_cuda"
 
-# Clean targets
-clean:
-	rm -f $(CUDA_EXECUTABLES) $(HIP_EXECUTABLES)
-	rm -f 01_shared_memory_transpose_cuda 01_shared_memory_transpose_hip
-	rm -f 02_memory_coalescing_cuda 02_memory_coalescing_hip  
-	rm -f 03_texture_memory_cuda 04_unified_memory_cuda
-	rm -f 05_memory_bandwidth_optimization_cuda
-	rm -f shared_memory_cuda shared_memory_hip coalescing_cuda coalescing_hip
-	rm -f texture_cuda unified_cuda bandwidth_cuda
-	rm -f shared_memory coalescing texture unified bandwidth
+
 
 # List available examples
 list:
@@ -159,58 +248,10 @@ list:
 	@echo "HIP Examples:"
 	@ls -1 *_hip.cpp 2>/dev/null | sed 's/_hip.cpp//' | nl -w2 -s'. '
 
-# Help target
-help:
-	@echo "GPU Programming 101 - Module 2 Examples Makefile"
-	@echo "================================================"
-	@echo ""
+# Extended help for module 2 specifics
+help_extended:
 	@echo "Module 2: Advanced GPU Memory Management and Optimization"
-	@echo ""
-	@echo "Build Targets:"
-	@echo "  all               - Build all CUDA examples (default)"
-	@echo "  cuda              - Build all CUDA examples"
-	@echo "  hip               - Build all HIP examples"
-	@echo ""
-	@echo "Test Targets:"
-	@echo "  test              - Run CUDA tests"
-	@echo "  test_cuda         - Run CUDA tests"
-	@echo "  test_hip          - Run HIP tests"
-	@echo "  test_all          - Run both CUDA and HIP tests"
-	@echo "  test_compile      - Test compilation only"
-	@echo "  test_performance  - Run performance benchmarks"
-	@echo ""
-	@echo "Individual Examples (CUDA):"
-	@echo "  01_shared_memory_transpose_cuda    - Shared memory matrix transpose"
-	@echo "  02_memory_coalescing_cuda          - Memory coalescing analysis"
-	@echo "  03_texture_memory_cuda             - Texture memory examples"
-	@echo "  04_unified_memory_cuda             - Unified memory demonstrations"
-	@echo "  05_memory_bandwidth_optimization_cuda - Bandwidth optimization techniques"
-	@echo ""
-	@echo "Individual Examples (HIP):"
-	@echo "  01_shared_memory_transpose_hip     - Shared memory matrix transpose"
-	@echo "  02_memory_coalescing_hip           - Memory coalescing analysis"
-	@echo ""
-	@echo "Legacy Targets:"
-	@echo "  shared_memory, coalescing, texture, unified, bandwidth"
-	@echo "  (These default to CUDA versions)"
-	@echo ""
-	@echo "Utility Targets:"
-	@echo "  list              - List all available examples"
-	@echo "  clean             - Remove all executables"
-	@echo "  help              - Show this help"
-	@echo "  profile_memory    - Show memory profiling commands"
-	@echo ""
-	@echo "Example Usage:"
-	@echo "  make cuda                              # Build all CUDA examples"
-	@echo "  make hip                               # Build all HIP examples"
-	@echo "  make 01_shared_memory_transpose_cuda   # Build specific example"
-	@echo "  make test_performance                  # Run performance tests"
-	@echo "  make profile_memory                    # Show profiling commands"
-	@echo ""
-	@echo "Requirements:"
-	@echo "  CUDA: nvcc compiler and NVIDIA GPU"
-	@echo "  HIP:  hipcc compiler and AMD/NVIDIA GPU"
-	@echo ""
+	@echo "========================================================"
 	@echo "Learning Objectives:"
 	@echo "  - Master shared memory optimization techniques"
 	@echo "  - Understand memory coalescing impact on performance"

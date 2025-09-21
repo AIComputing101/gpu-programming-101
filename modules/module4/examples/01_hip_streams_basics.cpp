@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <chrono>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 
 #define NUM_STREAMS 4
 #define CHUNK_SIZE (1024 * 1024)  // 1M elements per chunk

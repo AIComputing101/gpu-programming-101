@@ -184,9 +184,9 @@ public:
     }
     
     ~MemoryBenchmark() {
-        hipFree(d_data);
-        hipEventDestroy(start);
-        hipEventDestroy(stop);
+        HIP_CHECK(hipFree(d_data));
+        HIP_CHECK(hipEventDestroy(start));
+        HIP_CHECK(hipEventDestroy(stop));
     }
     
     float testCoalesced(int blocks, int threads) {
@@ -382,10 +382,10 @@ void runParticleBenchmarks() {
 #endif
     
     // Cleanup
-    hipFree(soa.x); hipFree(soa.y); hipFree(soa.z);
-    hipFree(soa.vx); hipFree(soa.vy); hipFree(soa.vz);
-    hipFree(soa.mass); hipFree(aos);
-    hipEventDestroy(start); hipEventDestroy(stop);
+    HIP_CHECK(hipFree(soa.x)); HIP_CHECK(hipFree(soa.y)); HIP_CHECK(hipFree(soa.z));
+    HIP_CHECK(hipFree(soa.vx)); HIP_CHECK(hipFree(soa.vy)); HIP_CHECK(hipFree(soa.vz));
+    HIP_CHECK(hipFree(soa.mass)); HIP_CHECK(hipFree(aos));
+    HIP_CHECK(hipEventDestroy(start)); HIP_CHECK(hipEventDestroy(stop));
 }
 
 void runVectorizationBenchmark() {
@@ -439,10 +439,10 @@ void runVectorizationBenchmark() {
     printf("Vector bandwidth: %.2f GB/s\n", 
            (bytes_transferred / (1024.0 * 1024.0 * 1024.0)) / (vector_time / 1000.0));
     
-    hipFree(d_float_data);
-    hipFree(d_float4_data);
-    hipEventDestroy(start);
-    hipEventDestroy(stop);
+    HIP_CHECK(hipFree(d_float_data));
+    HIP_CHECK(hipFree(d_float4_data));
+    HIP_CHECK(hipEventDestroy(start));
+    HIP_CHECK(hipEventDestroy(stop));
 }
 
 int main() {

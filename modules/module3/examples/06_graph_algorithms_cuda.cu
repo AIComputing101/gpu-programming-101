@@ -7,6 +7,29 @@
 #define MAX_THREADS_PER_BLOCK 256
 #define WARP_SIZE 32
 
+// Custom atomicMin for float (if not available)
+__device__ float atomicMinFloat(float* address, float val) {
+    int* address_as_i = (int*) address;
+    int old = *address_as_i, assumed;
+    do {
+        assumed = old;
+        old = atomicCAS(address_as_i, assumed,
+            __float_as_int(fminf(val, __int_as_float(assumed))));
+    } while (assumed != old);
+    return __int_as_float(old);
+}
+
+// Custom atomicAdd for long long (for older compute capabilities)
+__device__ long long atomicAddLongLong(long long* address, long long val) {
+    unsigned long long* address_as_ull = (unsigned long long*)address;
+    unsigned long long old = *address_as_ull, assumed;
+    do {
+        assumed = old;
+        old = atomicCAS(address_as_ull, assumed, (unsigned long long)(val + (long long)assumed));
+    } while (assumed != old);
+    return (long long)old;
+}
+
 // Graph representation using compressed sparse row (CSR)
 struct CSRGraph {
     int *row_ptr;       // Row pointers
@@ -57,18 +80,6 @@ __global__ void sssp_kernel(int *row_ptr, int *col_indices, float *edge_weights,
             }
         }
     }
-}
-
-// Custom atomicMin for float (if not available)
-__device__ float atomicMinFloat(float* address, float val) {
-    int* address_as_i = (int*) address;
-    int old = *address_as_i, assumed;
-    do {
-        assumed = old;
-        old = atomicCAS(address_as_i, assumed,
-            __float_as_int(fminf(val, __int_as_float(assumed))));
-    } while (assumed != old);
-    return __int_as_float(old);
 }
 
 // PageRank algorithm using power iteration
@@ -159,7 +170,7 @@ __global__ void triangle_count_kernel(int *row_ptr, int *col_indices,
     }
     
     if (threadIdx.x == 0) {
-        atomicAdd(triangle_count, shared_count[0]);
+        atomicAddLongLong(triangle_count, shared_count[0]);
     }
 }
 

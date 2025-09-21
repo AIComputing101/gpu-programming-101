@@ -354,7 +354,7 @@ __global__ void stencil_3d_shared(float *input, float *output, int width, int he
     
     int shared_width = blockDim.x + 2;
     int shared_height = blockDim.y + 2;
-    int shared_depth = blockDim.z + 2;
+    // int shared_depth = blockDim.z + 2; // Unused, commented out
     int shared_slice_size = shared_width * shared_height;
     
     // Load data into shared memory (simplified version - load central region)

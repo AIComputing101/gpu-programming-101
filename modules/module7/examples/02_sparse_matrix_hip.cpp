@@ -1,6 +1,12 @@
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
+
+// Conditional rocsparse support - disabled by default since rocsparse may not be available
+// #define HAS_ROCSPARSE
+#ifdef HAS_ROCSPARSE
 #include <rocsparse/rocsparse.h>
 #include <rocblas/rocblas.h>
+#endif
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -16,6 +22,7 @@
     } \
 } while(0)
 
+#ifdef HAS_ROCSPARSE
 #define CHECK_ROCSPARSE(call) do { \
     rocsparse_status status = call; \
     if (status != rocsparse_status_success) { \
@@ -23,6 +30,7 @@
         exit(1); \
     } \
 } while(0)
+#endif
 
 class Timer {
 private:
@@ -197,22 +205,31 @@ __global__ void spmv_csr_lds_optimized_kernel(const float* values, const int* ro
 
 class SparseMatrixMultiplier {
 private:
+#ifdef HAS_ROCSPARSE
     rocsparse_handle rocsparse_handle;
+#endif
     hipStream_t stream;
     
 public:
     SparseMatrixMultiplier() {
+#ifdef HAS_ROCSPARSE
         CHECK_ROCSPARSE(rocsparse_create_handle(&rocsparse_handle));
+#endif
         CHECK_HIP(hipStreamCreate(&stream));
+#ifdef HAS_ROCSPARSE
         CHECK_ROCSPARSE(rocsparse_set_stream(rocsparse_handle, stream));
+#endif
     }
     
     ~SparseMatrixMultiplier() {
+#ifdef HAS_ROCSPARSE
         rocsparse_destroy_handle(rocsparse_handle);
-        hipStreamDestroy(stream);
+#endif
+        HIP_CHECK(hipStreamDestroy(stream));
     }
     
     void spmv_rocsparse(const CSRMatrix& matrix, const float* d_x, float* d_y) {
+#ifdef HAS_ROCSPARSE
         const float alpha = 1.0f, beta = 0.0f;
         
         rocsparse_mat_descr descr;
@@ -244,10 +261,14 @@ public:
         CHECK_HIP(hipStreamSynchronize(stream));
         
         // Cleanup
-        CHECK_HIP(hipFree(d_values));
-        CHECK_HIP(hipFree(d_row_ptr));
-        CHECK_HIP(hipFree(d_col_idx));
+        HIP_CHECK(hipFree(d_values));
+        HIP_CHECK(hipFree(d_row_ptr));
+        HIP_CHECK(hipFree(d_col_idx));
         rocsparse_destroy_mat_descr(descr);
+#else
+        std::cout << "ROCsparse not available. Using custom implementation.\n";
+        spmv_custom(matrix, d_x, d_y, 0);
+#endif
     }
     
     void spmv_custom(const CSRMatrix& matrix, const float* d_x, float* d_y, int kernel_type = 0) {
@@ -291,9 +312,9 @@ public:
         CHECK_HIP(hipStreamSynchronize(stream));
         
         // Cleanup
-        CHECK_HIP(hipFree(d_values));
-        CHECK_HIP(hipFree(d_row_ptr));
-        CHECK_HIP(hipFree(d_col_idx));
+        HIP_CHECK(hipFree(d_values));
+        HIP_CHECK(hipFree(d_row_ptr));
+        HIP_CHECK(hipFree(d_col_idx));
     }
 };
 
@@ -431,11 +452,12 @@ void demonstrateSparseOperations() {
     std::cout << "Memory Intensity (FLOPS/Byte): " << memory_intensity << std::endl;
     
     // Cleanup
-    hipFree(d_x);
-    hipFree(d_y1);
-    hipFree(d_y2);
+    HIP_CHECK(hipFree(d_x));
+    HIP_CHECK(hipFree(d_y1));
+    HIP_CHECK(hipFree(d_y2));
 }
 
+#ifdef HAS_ROCSPARSE
 void demonstrateAdvancedSparseOperations() {
     std::cout << "\n=== Advanced AMD Sparse Operations ===" << std::endl;
     
@@ -509,25 +531,37 @@ void demonstrateAdvancedSparseOperations() {
     std::cout << "- Bank conflict avoidance: 32 banks in LDS" << std::endl;
     
     // Cleanup
-    if (temp_buffer) hipFree(temp_buffer);
+    if (temp_buffer) HIP_CHECK(hipFree(temp_buffer));
     rocsparse_destroy_mat_descr(descr_A);
     rocsparse_destroy_mat_descr(descr_B);
     rocsparse_destroy_handle(handle);
     
-    hipFree(d_A_vals);
-    hipFree(d_A_row_ptr);
-    hipFree(d_A_col_idx);
-    hipFree(d_B_vals);
-    hipFree(d_B_row_ptr);
-    hipFree(d_B_col_idx);
+    HIP_CHECK(hipFree(d_A_vals));
+    HIP_CHECK(hipFree(d_A_row_ptr));
+    HIP_CHECK(hipFree(d_A_col_idx));
+    HIP_CHECK(hipFree(d_B_vals));
+    HIP_CHECK(hipFree(d_B_row_ptr));
+    HIP_CHECK(hipFree(d_B_col_idx));
 }
+#endif
 
 int main() {
     std::cout << "HIP/ROCm Sparse Matrix Operations Demo" << std::endl;
     std::cout << "======================================" << std::endl;
     
+#ifdef HAS_ROCSPARSE
     demonstrateSparseOperations();
     demonstrateAdvancedSparseOperations();
     
     return 0;
+#else
+    std::cout << "Note: This example requires rocSPARSE library which is not available." << std::endl;
+    std::cout << "To enable this example:" << std::endl;
+    std::cout << "1. Install rocSPARSE: sudo apt install rocsparse-dev" << std::endl;
+    std::cout << "2. Compile with -DHAS_ROCSPARSE flag" << std::endl;
+    std::cout << "3. Link with -lrocsparse -lrocblas" << std::endl;
+    std::cout << std::endl;
+    std::cout << "Skipping sparse matrix operations..." << std::endl;
+    return 0;
+#endif
 }

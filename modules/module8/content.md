@@ -1,5 +1,7 @@
 # Module 8: Domain-Specific Applications - Comprehensive Guide
 
+> Environment note: The examples and integrations in this module assume Docker images with CUDA 12.9.1 (Ubuntu 22.04) and ROCm 7.0 (Ubuntu 24.04) are used for consistent library/tool availability. Includes Thrust and MIOpen support.
+
 ## Introduction
 
 Domain-specific GPU applications represent the practical implementation of GPU computing principles in real-world scenarios. This module explores how GPU acceleration transforms computational workflows across diverse fields including deep learning, scientific computing, image processing, computational finance, and data analytics.

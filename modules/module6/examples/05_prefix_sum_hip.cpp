@@ -20,6 +20,7 @@
  */
 
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -29,16 +30,6 @@
 #include <iomanip>
 #include <numeric>
 #include <functional>
-
-// Utility macros and functions
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            std::cerr << "HIP error at " << __FILE__ << ":" << __LINE__ << " - " << hipGetErrorString(error) << std::endl; \
-            exit(1); \
-        } \
-    } while(0)
 
 // AMD GPU typically has 64-thread wavefronts
 constexpr int WAVEFRONT_SIZE = 64;
@@ -191,7 +182,7 @@ __global__ void blelloch_scan_exclusive(float* input, float* output, int n) {
 // LDS bank conflict free optimization for AMD GPUs
 #define NUM_BANKS 32
 #define LOG_NUM_BANKS 5
-#define CONFLICT_FREE_OFFSET(n) ((n) >> NUM_BANKS + (n) >> (2 * NUM_BANKS))
+#define CONFLICT_FREE_OFFSET(n) (((n) >> LOG_NUM_BANKS) + ((n) >> (2 * LOG_NUM_BANKS)))
 
 __global__ void blelloch_scan_lds_optimized(float* input, float* output, int n) {
     __shared__ float temp[512 + 512/NUM_BANKS];  // Extra space for conflict avoidance
@@ -376,8 +367,8 @@ public:
     }
     
     ~PerformanceTimer() {
-        hipEventDestroy(start_event);
-        hipEventDestroy(stop_event);
+        HIP_CHECK(hipEventDestroy(start_event));
+        HIP_CHECK(hipEventDestroy(stop_event));
     }
     
     void start() {
@@ -475,8 +466,8 @@ void test_scan_correctness() {
     }
     std::cout << " -> " << (correct ? "PASS" : "FAIL") << "\n";
     
-    hipFree(d_input);
-    hipFree(d_output);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_output));
 }
 
 void run_scan_benchmarks() {
@@ -587,8 +578,8 @@ void run_scan_benchmarks() {
             }
         }
         
-        hipFree(d_input);
-        hipFree(d_output);
+        HIP_CHECK(hipFree(d_input));
+        HIP_CHECK(hipFree(d_output));
     }
 }
 
@@ -662,10 +653,10 @@ void demonstrate_stream_compaction() {
     std::cout << "Valid elements - Expected: " << expected_count << ", GPU: " << gpu_count << "\n";
     std::cout << "Compaction " << (expected_count == gpu_count ? "PASSED" : "FAILED") << "\n";
     
-    hipFree(d_input);
-    hipFree(d_output);
-    hipFree(d_marks);
-    hipFree(d_scan);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(hipFree(d_marks));
+    HIP_CHECK(hipFree(d_scan));
 }
 
 int main() {
@@ -674,9 +665,9 @@ int main() {
     
     // Check HIP device properties
     int device;
-    hipGetDevice(&device);
+    HIP_CHECK(hipGetDevice(&device));
     hipDeviceProp_t props;
-    hipGetDeviceProperties(&props, device);
+    HIP_CHECK(hipGetDeviceProperties(&props, device));
     
     std::cout << "GPU: " << props.name << "\n";
     std::cout << "Compute Capability: " << props.major << "." << props.minor << "\n";

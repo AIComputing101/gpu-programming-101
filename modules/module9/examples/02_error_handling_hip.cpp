@@ -1,4 +1,5 @@
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <rocm_smi/rocm_smi.h>
 #include <iostream>
 #include <memory>
@@ -10,6 +11,7 @@
 #include <map>
 #include <mutex>
 #include <thread>
+#include <iomanip>
 
 #define CHECK_HIP(call) do { \
     hipError_t error = call; \
@@ -195,7 +197,7 @@ public:
 class SafeMemoryManager {
 private:
     std::map<void*, size_t> allocated_ptrs_;
-    std::mutex alloc_mutex_;
+    mutable std::mutex alloc_mutex_;
     size_t total_allocated_;
     ErrorLogger& logger_;
     
@@ -232,7 +234,7 @@ public:
         auto it = allocated_ptrs_.find(ptr);
         if (it != allocated_ptrs_.end()) {
             try {
-                CHECK_HIP(hipFree(ptr));
+                HIP_CHECK(hipFree(ptr));
                 total_allocated_ -= it->second;
                 allocated_ptrs_.erase(it);
                 
@@ -253,7 +255,7 @@ public:
         
         for (auto& pair : allocated_ptrs_) {
             try {
-                CHECK_HIP(hipFree(pair.first));
+                HIP_CHECK(hipFree(pair.first));
                 logger_.logInfo("Cleaned up " + std::to_string(pair.second) + " bytes");
             } catch (const GPUException& e) {
                 logger_.logError(e);

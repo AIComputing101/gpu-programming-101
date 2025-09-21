@@ -1,5 +1,17 @@
 /**
- * Module 8: Domain-Specific Applications - Deep Learning Inference Kernels (HIP)
+ * Module 8: Domain-Specific Applicatio
+#ifdef HAS_ROC_LIBRARIES
+#define ROCBLAS_CHECK(call) \
+    do { \
+        rocblas_status status = call; \
+        if (status != rocblas_status_success) { \
+            std::cerr << "rocBLAS error at " << __FILE__ << ":" << __LINE__ << std::endl; \
+            exit(1); \
+        } \
+    } while(0)
+#endif
+
+const int WAVEFRONT_SIZE = 64;earning Inference Kernels (HIP)
  * 
  * Production-quality neural network inference implementations optimized for AMD GPU architectures.
  * This example demonstrates deep learning kernels adapted for ROCm/HIP with wavefront-aware
@@ -14,9 +26,32 @@
  */
 
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <hip/hip_fp16.h>
+
+// Conditional ROC library support with specific library detection
+#ifdef HAS_ROCBLAS
+#include <rocblas/rocblas.h>
+#endif
+
+#ifdef HAS_ROCRAND
+#include <rocrand/rocrand.h>
+#endif
+
+#ifdef HAS_ROCFFT
+#include <rocfft/rocfft.h>
+#endif
+
+#ifdef HAS_MIOPEN
+#include <miopen/miopen.h>
+#endif
+
+// Legacy support for generic HAS_ROC_LIBRARIES flag
+#ifdef HAS_ROC_LIBRARIES
 #include <rocblas.h>
 #include <rocrand.h>
+#endif
+
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -26,15 +61,9 @@
 #include <iomanip>
 #include <memory>
 
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            std::cerr << "HIP error at " << __FILE__ << ":" << __LINE__ << " - " << hipGetErrorString(error) << std::endl; \
-            exit(1); \
-        } \
-    } while(0)
+// HIP_CHECK is now provided by rocm7_utils.h
 
+#ifdef HAS_ROCBLAS
 #define ROCBLAS_CHECK(call) \
     do { \
         rocblas_status status = call; \
@@ -43,6 +72,40 @@
             exit(1); \
         } \
     } while(0)
+#endif
+
+#ifdef HAS_ROCRAND
+#define ROCRAND_CHECK(call) \
+    do { \
+        rocrand_status status = call; \
+        if (status != ROCRAND_STATUS_SUCCESS) { \
+            std::cerr << "rocRAND error at " << __FILE__ << ":" << __LINE__ << std::endl; \
+            exit(1); \
+        } \
+    } while(0)
+#endif
+
+#ifdef HAS_ROCFFT
+#define ROCFFT_CHECK(call) \
+    do { \
+        rocfft_status status = call; \
+        if (status != rocfft_status_success) { \
+            std::cerr << "rocFFT error at " << __FILE__ << ":" << __LINE__ << std::endl; \
+            exit(1); \
+        } \
+    } while(0)
+#endif
+
+#ifdef HAS_MIOPEN
+#define MIOPEN_CHECK(call) \
+    do { \
+        miopenStatus_t status = call; \
+        if (status != miopenStatusSuccess) { \
+            std::cerr << "MIOpen error at " << __FILE__ << ":" << __LINE__ << std::endl; \
+            exit(1); \
+        } \
+    } while(0)
+#endif
 
 constexpr int WAVEFRONT_SIZE = 64;
 
@@ -268,8 +331,8 @@ public:
     }
     
     ~PerformanceTimer() {
-        hipEventDestroy(start_event);
-        hipEventDestroy(stop_event);
+        HIP_CHECK(hipEventDestroy(start_event));
+        HIP_CHECK(hipEventDestroy(stop_event));
     }
     
     void start() {
@@ -305,16 +368,24 @@ public:
         HIP_CHECK(hipMalloc(&d_bias, bias_size));
         
         // Initialize with random weights
+#ifdef HAS_ROCRAND
         rocrand_generator gen;
-        rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW);
-        rocrand_generate_normal(gen, d_weights, weights_size / sizeof(float), 0.0f, 0.1f);
-        rocrand_generate_normal(gen, d_bias, bias_size / sizeof(float), 0.0f, 0.1f);
-        rocrand_destroy_generator(gen);
+        ROCRAND_CHECK(rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW));
+        ROCRAND_CHECK(rocrand_generate_normal(gen, d_weights, weights_size / sizeof(float), 0.0f, 0.1f));
+        ROCRAND_CHECK(rocrand_generate_normal(gen, d_bias, bias_size / sizeof(float), 0.0f, 0.1f));
+        ROCRAND_CHECK(rocrand_destroy_generator(gen));
+#else
+        // Initialize with simple pattern since rocrand is not available
+        std::vector<float> h_weights(weights_size / sizeof(float), 0.1f);
+        std::vector<float> h_bias(bias_size / sizeof(float), 0.0f);
+        HIP_CHECK(hipMemcpy(d_weights, h_weights.data(), weights_size, hipMemcpyHostToDevice));
+        HIP_CHECK(hipMemcpy(d_bias, h_bias.data(), bias_size, hipMemcpyHostToDevice));
+#endif
     }
     
     ~ConvolutionLayerAMD() {
-        hipFree(d_weights);
-        hipFree(d_bias);
+        HIP_CHECK(hipFree(d_weights));
+        HIP_CHECK(hipFree(d_bias));
     }
     
     void forward(const float* input, float* output, int batch_size) {
@@ -338,9 +409,10 @@ public:
     }
 };
 
+#ifdef HAS_ROCBLAS
 class FullyConnectedLayerAMD {
 private:
-    rocblas_handle rocblas_handle;
+    rocblas_handle rocblas_handle_;
     float *d_weights, *d_bias;
     int input_size, output_size;
     
@@ -348,30 +420,37 @@ public:
     FullyConnectedLayerAMD(int in_size, int out_size) 
         : input_size(in_size), output_size(out_size) {
         
-        ROCBLAS_CHECK(rocblas_create_handle(&rocblas_handle));
+        ROCBLAS_CHECK(rocblas_create_handle(&rocblas_handle_));
         
         HIP_CHECK(hipMalloc(&d_weights, input_size * output_size * sizeof(float)));
         HIP_CHECK(hipMalloc(&d_bias, output_size * sizeof(float)));
         
         // Initialize with random weights
+#ifdef HAS_ROCRAND
         rocrand_generator gen;
-        rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW);
-        rocrand_generate_normal(gen, d_weights, input_size * output_size, 0.0f, 0.1f);
-        rocrand_generate_normal(gen, d_bias, output_size, 0.0f, 0.1f);
-        rocrand_destroy_generator(gen);
+        ROCRAND_CHECK(rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW));
+        ROCRAND_CHECK(rocrand_generate_normal(gen, d_weights, input_size * output_size, 0.0f, 0.1f));
+        ROCRAND_CHECK(rocrand_generate_normal(gen, d_bias, output_size, 0.0f, 0.1f));
+        ROCRAND_CHECK(rocrand_destroy_generator(gen));
+#else
+        std::vector<float> h_weights(input_size * output_size, 0.1f);
+        std::vector<float> h_bias(output_size, 0.0f);
+        HIP_CHECK(hipMemcpy(d_weights, h_weights.data(), input_size * output_size * sizeof(float), hipMemcpyHostToDevice));
+        HIP_CHECK(hipMemcpy(d_bias, h_bias.data(), output_size * sizeof(float), hipMemcpyHostToDevice));
+#endif
     }
     
     ~FullyConnectedLayerAMD() {
-        rocblas_destroy_handle(rocblas_handle);
-        hipFree(d_weights);
-        hipFree(d_bias);
+        rocblas_destroy_handle(rocblas_handle_);
+        HIP_CHECK(hipFree(d_weights));
+        HIP_CHECK(hipFree(d_bias));
     }
     
     void forward(const float* input, float* output, int batch_size) {
         const float alpha = 1.0f, beta = 0.0f;
         
         // Perform GEMM using rocBLAS
-        ROCBLAS_CHECK(rocblas_sgemm(rocblas_handle,
+        ROCBLAS_CHECK(rocblas_sgemm(rocblas_handle_,
                                    rocblas_operation_none, rocblas_operation_transpose,
                                    batch_size, output_size, input_size,
                                    &alpha,
@@ -381,6 +460,7 @@ public:
                                    output, batch_size));
     }
 };
+#endif
 
 // Benchmark suite
 void benchmark_convolution_kernels() {
@@ -402,11 +482,19 @@ void benchmark_convolution_kernels() {
     HIP_CHECK(hipMalloc(&d_output, output_size));
     
     // Initialize with random data
+#ifdef HAS_ROCRAND
     rocrand_generator gen;
-    rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW);
-    rocrand_generate_normal(gen, d_input, input_size / sizeof(float), 0.0f, 1.0f);
-    rocrand_generate_normal(gen, d_weights, weights_size / sizeof(float), 0.0f, 0.1f);
-    rocrand_destroy_generator(gen);
+    ROCRAND_CHECK(rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW));
+    ROCRAND_CHECK(rocrand_generate_normal(gen, d_input, input_size / sizeof(float), 0.0f, 1.0f));
+    ROCRAND_CHECK(rocrand_generate_normal(gen, d_weights, weights_size / sizeof(float), 0.0f, 0.1f));
+    ROCRAND_CHECK(rocrand_destroy_generator(gen));
+#else
+    // Initialize with simple pattern since rocrand is not available
+    std::vector<float> h_input(input_size / sizeof(float), 1.0f);
+    std::vector<float> h_weights(weights_size / sizeof(float), 0.1f);
+    HIP_CHECK(hipMemcpy(d_input, h_input.data(), input_size, hipMemcpyHostToDevice));
+    HIP_CHECK(hipMemcpy(d_weights, h_weights.data(), weights_size, hipMemcpyHostToDevice));
+#endif
     
     PerformanceTimer timer;
     
@@ -440,11 +528,12 @@ void benchmark_convolution_kernels() {
     std::cout << "  Performance: " << std::setprecision(1) << gflops << " GFLOPS\n";
     std::cout << "  Bandwidth: " << std::setprecision(1) << bandwidth << " GB/s\n";
     
-    hipFree(d_input);
-    hipFree(d_weights);
-    hipFree(d_output);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_weights));
+    HIP_CHECK(hipFree(d_output));
 }
 
+#ifdef HAS_ROC_LIBRARIES
 void benchmark_rocblas_gemm() {
     std::cout << "\n=== rocBLAS GEMM Benchmarks ===\n";
     
@@ -456,11 +545,19 @@ void benchmark_rocblas_gemm() {
     HIP_CHECK(hipMalloc(&d_C, M * N * sizeof(float)));
     
     // Initialize data
+#ifdef HAS_ROCRAND
     rocrand_generator gen;
-    rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW);
-    rocrand_generate_normal(gen, d_A, M * K, 0.0f, 1.0f);
-    rocrand_generate_normal(gen, d_B, K * N, 0.0f, 1.0f);
-    rocrand_destroy_generator(gen);
+    ROCRAND_CHECK(rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW));
+    ROCRAND_CHECK(rocrand_generate_normal(gen, d_A, M * K, 0.0f, 1.0f));
+    ROCRAND_CHECK(rocrand_generate_normal(gen, d_B, K * N, 0.0f, 1.0f));
+    ROCRAND_CHECK(rocrand_destroy_generator(gen));
+#else
+    // Initialize with simple pattern since rocrand is not available
+    std::vector<float> h_A(M * K, 1.0f);
+    std::vector<float> h_B(K * N, 1.0f);
+    HIP_CHECK(hipMemcpy(d_A, h_A.data(), M * K * sizeof(float), hipMemcpyHostToDevice));
+    HIP_CHECK(hipMemcpy(d_B, h_B.data(), K * N * sizeof(float), hipMemcpyHostToDevice));
+#endif
     
     PerformanceTimer timer;
     const int iterations = 10;
@@ -508,8 +605,9 @@ void benchmark_rocblas_gemm() {
     std::cout << "  rocBLAS Advantage: " << std::setprecision(2) << custom_time / rocblas_time << "x\n";
     
     rocblas_destroy_handle(handle);
-    hipFree(d_A); hipFree(d_B); hipFree(d_C);
+    HIP_CHECK(hipFree(d_A)); HIP_CHECK(hipFree(d_B)); HIP_CHECK(hipFree(d_C));
 }
+#endif
 
 void benchmark_activation_functions() {
     std::cout << "\n=== AMD-Optimized Activation Function Benchmarks ===\n";
@@ -520,10 +618,16 @@ void benchmark_activation_functions() {
     HIP_CHECK(hipMalloc(&d_data, n * sizeof(float)));
     
     // Initialize with random data
+#ifdef HAS_ROCRAND
     rocrand_generator gen;
-    rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW);
-    rocrand_generate_normal(gen, d_data, n, 0.0f, 1.0f);
-    rocrand_destroy_generator(gen);
+    ROCRAND_CHECK(rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW));
+    ROCRAND_CHECK(rocrand_generate_normal(gen, d_data, n, 0.0f, 1.0f));
+    ROCRAND_CHECK(rocrand_destroy_generator(gen));
+#else
+    // Initialize with simple pattern since rocrand is not available
+    std::vector<float> h_data(n, 1.0f);
+    HIP_CHECK(hipMemcpy(d_data, h_data.data(), n * sizeof(float), hipMemcpyHostToDevice));
+#endif
     
     PerformanceTimer timer;
     const int iterations = 100;
@@ -558,8 +662,25 @@ void benchmark_activation_functions() {
               << " (Bandwidth: " << std::setprecision(1) << relu_wf_bandwidth << " GB/s)\n";
     std::cout << "  Speedup: " << std::setprecision(2) << relu_time / relu_wf_time << "x\n";
     
-    hipFree(d_data);
+    HIP_CHECK(hipFree(d_data));
 }
+
+#ifdef HAS_MIOPEN
+void demo_miopen_integration() {
+    std::cout << "\\n=== MIOpen Integration Demo ===\\n";
+    
+    // Initialize MIOpen handle
+    miopenHandle_t miopen_handle;
+    MIOPEN_CHECK(miopenCreate(&miopen_handle));
+    
+    std::cout << "MIOpen handle created successfully\\n";
+    std::cout << "MIOpen is available for production neural network layers\\n";
+    std::cout << "Supported operations: Convolution, Pooling, Activation, BatchNorm, RNN\\n";
+    
+    // Cleanup
+    MIOPEN_CHECK(miopenDestroy(miopen_handle));
+}
+#endif
 
 int main() {
     std::cout << "HIP Deep Learning Inference Kernels - AMD GPU Optimized Implementation\n";
@@ -567,9 +688,9 @@ int main() {
     
     // Check HIP device properties
     int device;
-    hipGetDevice(&device);
+    HIP_CHECK(hipGetDevice(&device));
     hipDeviceProp_t props;
-    hipGetDeviceProperties(&props, device);
+    HIP_CHECK(hipGetDeviceProperties(&props, device));
     
     std::cout << "GPU: " << props.name << "\n";
     std::cout << "Compute Capability: " << props.major << "." << props.minor << "\n";
@@ -580,8 +701,20 @@ int main() {
     
     try {
         benchmark_convolution_kernels();
+#ifdef HAS_ROCBLAS
         benchmark_rocblas_gemm();
+#else
+        std::cout << "\n=== rocBLAS GEMM Benchmarks ===\n";
+        std::cout << "rocBLAS library not available. Install rocblas-dev package.\n";
+#endif
         benchmark_activation_functions();
+        
+#ifdef HAS_MIOPEN
+        demo_miopen_integration();
+#else
+        std::cout << "\n=== MIOpen Integration ===\n";
+        std::cout << "MIOpen library not available. Install miopen-hip-dev package.\n";
+#endif
         
         std::cout << "\n=== AMD Deep Learning Optimization Summary ===\n";
         std::cout << "1. LDS optimization crucial for convolution performance on AMD GPUs\n";

@@ -1,6 +1,17 @@
 #include <hip/hip_runtime.h>
 #include <stdio.h>
 
+// HIP error checking macro
+#define HIP_CHECK(call) \
+    do { \
+        hipError_t error = call; \
+        if (error != hipSuccess) { \
+            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
+                    hipGetErrorString(error)); \
+            exit(EXIT_FAILURE); \
+        } \
+    } while(0)
+
 int main() {
     int deviceCount;
     hipError_t error = hipGetDeviceCount(&deviceCount);
@@ -14,7 +25,7 @@ int main() {
     
     for (int i = 0; i < deviceCount; i++) {
         hipDeviceProp_t props;
-        hipGetDeviceProperties(&props, i);
+        HIP_CHECK(hipGetDeviceProperties(&props, i));
         
         printf("Device %d: %s\n", i, props.name);
         printf("  Compute Capability: %d.%d\n", props.major, props.minor);
@@ -48,8 +59,8 @@ int main() {
         
         // Check current memory usage
         size_t free_mem, total_mem;
-        hipSetDevice(i);
-        hipMemGetInfo(&free_mem, &total_mem);
+        HIP_CHECK(hipSetDevice(i));
+        HIP_CHECK(hipMemGetInfo(&free_mem, &total_mem));
         printf("  Current Memory Usage: %.2f GB free of %.2f GB total\n", 
                free_mem / (1024.0 * 1024.0 * 1024.0), 
                total_mem / (1024.0 * 1024.0 * 1024.0));

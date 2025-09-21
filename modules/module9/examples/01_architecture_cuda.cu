@@ -17,7 +17,9 @@
 
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
+#ifdef USE_NVML
 #include <nvml.h>
+#endif
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -47,6 +49,7 @@
         } \
     } while(0)
 
+#ifdef USE_NVML
 #define NVML_CHECK_PROD(call, context) \
     do { \
         nvmlReturn_t result = call; \
@@ -57,6 +60,9 @@
             throw NVMLProductionException(result, context); \
         } \
     } while(0)
+#else
+#define NVML_CHECK_PROD(call, context) do { } while(0)
+#endif
 
 // Production exception classes
 class GPUProductionException : public std::exception {
@@ -76,6 +82,7 @@ public:
     const std::string& getContext() const { return context; }
 };
 
+#ifdef USE_NVML
 class NVMLProductionException : public std::exception {
 private:
     nvmlReturn_t result_code;
@@ -91,6 +98,7 @@ public:
     const char* what() const noexcept override { return message.c_str(); }
     nvmlReturn_t getResultCode() const { return result_code; }
 };
+#endif
 
 // Production logging system
 class ProductionLogger {
@@ -177,7 +185,14 @@ private:
     std::unordered_map<std::string, std::string> config_values;
     mutable std::mutex config_mutex;
     
+    // Private constructor for singleton
+    ProductionConfig() = default;
+    
 public:
+    // Delete copy constructor and assignment operator
+    ProductionConfig(const ProductionConfig&) = delete;
+    ProductionConfig& operator=(const ProductionConfig&) = delete;
+    
     static ProductionConfig& getInstance() {
         static ProductionConfig instance;
         return instance;
@@ -381,6 +396,7 @@ private:
     
 public:
     GPUHealthMonitor() : monitoring_active(false) {
+#ifdef USE_NVML
         // Initialize NVML
         try {
             NVML_CHECK_PROD(nvmlInit(), "NVML initialization");
@@ -390,11 +406,16 @@ public:
                 "Failed to initialize NVML: " + std::string(e.what()));
             throw;
         }
+#else
+        ProductionLogger::getInstance().logInfo("HEALTH_MONITOR", "NVML not available - basic monitoring only");
+#endif
     }
     
     ~GPUHealthMonitor() {
         stopMonitoring();
+#ifdef USE_NVML
         nvmlShutdown();
+#endif
     }
     
     void startMonitoring() {
@@ -427,6 +448,7 @@ public:
     }
     
     bool performHealthCheck() {
+#ifdef USE_NVML
         try {
             nvmlDevice_t device;
             NVML_CHECK_PROD(nvmlDeviceGetHandleByIndex(0, &device), "Get device handle");
@@ -473,11 +495,44 @@ public:
             current_metrics.is_healthy = false;
             return false;
         }
+#else
+        // Fallback health check without NVML
+        try {
+            // Basic CUDA runtime checks
+            int device_count;
+            CUDA_CHECK_PROD(cudaGetDeviceCount(&device_count), "Get device count");
+            
+            // Get basic memory info
+            size_t free_mem, total_mem;
+            CUDA_CHECK_PROD(cudaMemGetInfo(&free_mem, &total_mem), "Get memory info");
+            
+            std::lock_guard<std::mutex> lock(metrics_mutex);
+            current_metrics.gpu_utilization = 0.0f;  // Not available without NVML
+            current_metrics.memory_utilization = 
+                100.0f * (float)(total_mem - free_mem) / (float)total_mem;
+            current_metrics.temperature = 0.0f;  // Not available without NVML
+            current_metrics.power_usage = 0.0f;  // Not available without NVML
+            current_metrics.timestamp = std::chrono::system_clock::now();
+            
+            // Basic health check - just memory threshold
+            current_metrics.is_healthy = (current_metrics.memory_utilization < 95.0f);
+            
+            return current_metrics.is_healthy;
+            
+        } catch (const GPUProductionException& e) {
+            ProductionLogger::getInstance().logError("HEALTH_MONITOR", 
+                "Basic health check failed: " + std::string(e.what()));
+            
+            std::lock_guard<std::mutex> lock(metrics_mutex);
+            current_metrics.is_healthy = false;
+            return false;
+        }
+#endif
     }
     
 private:
     void monitoringLoop() {
-        auto config = ProductionConfig::getInstance();
+        auto& config = ProductionConfig::getInstance();
         int monitoring_interval = config.getInt("health_check_interval", 30);  // Default 30 seconds
         
         while (monitoring_active.load()) {

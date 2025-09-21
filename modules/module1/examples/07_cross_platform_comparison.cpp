@@ -299,10 +299,10 @@ int main() {
     // Cleanup
     free(h_input);
     free(h_output);
-    hipFree(d_input);
-    hipFree(d_output);
-    hipEventDestroy(start);
-    hipEventDestroy(stop);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(hipEventDestroy(start));
+    HIP_CHECK(hipEventDestroy(stop));
     
     printf("\n=== Summary ===\n");
     printf("This example demonstrates:\n");

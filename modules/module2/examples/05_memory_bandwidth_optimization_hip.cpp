@@ -215,7 +215,7 @@ __global__ void amdOptimizedTranspose(float *input, float *output, int width, in
     } while(0)
 
 class BandwidthTester {
-private:
+public:
     size_t size;
     size_t elements;
     float *d_input, *d_output;
@@ -235,18 +235,16 @@ public:
     }
     
     ~BandwidthTester() {
-        hipFree(d_input);
-        hipFree(d_output);
+        HIP_CHECK(hipFree(d_input));
+        HIP_CHECK(hipFree(d_output));
     }
     
-    double testBandwidth(const char* test_name, void (*kernel)(float*, float*, size_t), 
-                        int blockSize = 256, int elementsPerThread = 1) {
+    double testSimpleCopy(const char* test_name, int blockSize = 256, int elementsPerThread = 1) {
         int gridSize = (elements + blockSize * elementsPerThread - 1) / (blockSize * elementsPerThread);
         
         // Warm up
         for (int i = 0; i < 3; i++) {
-            hipLaunchKernelGGL((void*)kernel, gridSize, blockSize, 0, 0, 
-                              d_input, d_output, elements);
+            simpleCopy<<<gridSize, blockSize>>>(d_input, d_output, elements);
         }
         HIP_CHECK(hipDeviceSynchronize());
         
@@ -259,8 +257,7 @@ public:
         HIP_CHECK(hipEventRecord(start));
         
         for (int i = 0; i < num_iterations; i++) {
-            hipLaunchKernelGGL((void*)kernel, gridSize, blockSize, 0, 0, 
-                              d_input, d_output, elements);
+            simpleCopy<<<gridSize, blockSize>>>(d_input, d_output, elements);
         }
         
         HIP_CHECK(hipEventRecord(stop));
@@ -281,15 +278,13 @@ public:
         return bandwidth_gb_s;
     }
     
-    double testVectorizedBandwidth(const char* test_name, 
-                                  void (*kernel)(float4*, float4*, size_t)) {
+    double testVectorizedCopy(const char* test_name) {
         int blockSize = 256;
         int gridSize = (elements / 4 + blockSize - 1) / blockSize;
         
         // Warm up
         for (int i = 0; i < 3; i++) {
-            hipLaunchKernelGGL((void*)kernel, gridSize, blockSize, 0, 0, 
-                              (float4*)d_input, (float4*)d_output, elements / 4);
+            vectorizedCopy<<<gridSize, blockSize>>>((float4*)d_input, (float4*)d_output, elements / 4);
         }
         HIP_CHECK(hipDeviceSynchronize());
         
@@ -302,8 +297,7 @@ public:
         HIP_CHECK(hipEventRecord(start));
         
         for (int i = 0; i < num_iterations; i++) {
-            hipLaunchKernelGGL((void*)kernel, gridSize, blockSize, 0, 0, 
-                              (float4*)d_input, (float4*)d_output, elements / 4);
+            vectorizedCopy<<<gridSize, blockSize>>>((float4*)d_input, (float4*)d_output, elements / 4);
         }
         
         HIP_CHECK(hipEventRecord(stop));
@@ -371,8 +365,7 @@ void analyzeAccessPatterns() {
         int gridSize = (n / stride + blockSize - 1) / blockSize;
         
         HIP_CHECK(hipEventRecord(start));
-        hipLaunchKernelGGL(stridedRead, gridSize, blockSize, 0, 0, 
-                          tester.d_input, d_temp, n, stride);
+        stridedRead<<<gridSize, blockSize>>>(tester.d_input, d_temp, n, stride);
         HIP_CHECK(hipEventRecord(stop));
         HIP_CHECK(hipEventSynchronize(stop));
         
@@ -388,7 +381,7 @@ void analyzeAccessPatterns() {
         HIP_CHECK(hipEventDestroy(stop));
     }
     
-    hipFree(d_temp);
+    HIP_CHECK(hipFree(d_temp));
 }
 
 void demonstrateBandwidthOptimization() {
@@ -402,11 +395,11 @@ void demonstrateBandwidthOptimization() {
     printf("\n=== Copy Kernel Performance ===\n");
     
     // Test different copy strategies
-    tester.testBandwidth("Simple Copy", simpleCopy);
-    tester.testVectorizedBandwidth("Vectorized Copy (float4)", vectorizedCopy);
+    tester.testSimpleCopy("Simple Copy");
+    tester.testVectorizedCopy("Vectorized Copy (float4)");
     
 #ifdef __HIP_PLATFORM_AMD__
-    tester.testVectorizedBandwidth("AMD Optimized Copy", amdVectorizedCopy);
+    tester.testVectorizedCopy("AMD Optimized Copy");
 #endif
     
     // Test streaming with different elements per thread
@@ -426,8 +419,7 @@ void demonstrateBandwidthOptimization() {
         HIP_CHECK(hipEventRecord(start));
         
         for (int i = 0; i < num_iterations; i++) {
-            hipLaunchKernelGGL(streamingCopy, gridSize, blockSize, 0, 0, 
-                              tester.d_input, tester.d_output, n, ept);
+            streamingCopy<<<gridSize, blockSize>>>(tester.d_input, tester.d_output, n, ept);
         }
         
         HIP_CHECK(hipEventRecord(stop));

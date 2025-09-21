@@ -312,9 +312,9 @@ public:
         CHECK_HIP(hipStreamSynchronize(stream));
         
         // Cleanup
-        CHECK_HIP(HIP_CHECK(hipFree(d_values));
-        CHECK_HIP(HIP_CHECK(hipFree(d_row_ptr));
-        CHECK_HIP(HIP_CHECK(hipFree(d_col_idx));
+        HIP_CHECK(hipFree(d_values));
+        HIP_CHECK(hipFree(d_row_ptr));
+        HIP_CHECK(hipFree(d_col_idx));
     }
 };
 
@@ -457,6 +457,7 @@ void demonstrateSparseOperations() {
     HIP_CHECK(hipFree(d_y2));
 }
 
+#ifdef HAS_ROCSPARSE
 void demonstrateAdvancedSparseOperations() {
     std::cout << "\n=== Advanced AMD Sparse Operations ===" << std::endl;
     
@@ -542,6 +543,7 @@ void demonstrateAdvancedSparseOperations() {
     HIP_CHECK(hipFree(d_B_row_ptr));
     HIP_CHECK(hipFree(d_B_col_idx));
 }
+#endif
 
 int main() {
     std::cout << "HIP/ROCm Sparse Matrix Operations Demo" << std::endl;

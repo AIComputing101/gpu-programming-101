@@ -27,7 +27,7 @@ endif
 # Compiler flags for production-quality applications
 CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo --use_fast_math
 CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70
-HIP_FLAGS = -std=c++17 -O3 --fast-math
+HIP_FLAGS = -std=c++17 -O3 -ffast-math
 HIP_DEBUG_FLAGS = -std=c++17 -g
 
 # Library flags for domain-specific libraries

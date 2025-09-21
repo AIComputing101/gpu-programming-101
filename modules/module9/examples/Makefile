@@ -34,7 +34,7 @@ CXX_FLAGS = -std=c++17 -O3 -DPRODUCTION_BUILD
 
 # Library flags for production dependencies
 CUDA_LIBS = -lcublas -lcurand -lcufft
-HIP_LIBS = -lrocblas -lrocrand -lrocfft
+HIP_LIBS = -lrocblas -lrocrand -lrocfft -lrocm_smi64
 COMMON_LIBS = -lpthread -ldl
 
 # Optional libraries (check for availability)

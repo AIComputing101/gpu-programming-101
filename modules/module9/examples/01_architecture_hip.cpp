@@ -504,7 +504,7 @@ public:
     
 private:
     void monitoringLoop() {
-        auto config = ProductionConfig::getInstance();
+        auto& config = ProductionConfig::getInstance();
         int monitoring_interval = config.getInt("health_check_interval", 30);  // Default 30 seconds
         
         while (monitoring_active.load()) {

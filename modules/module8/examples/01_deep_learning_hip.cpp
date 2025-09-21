@@ -15,7 +15,27 @@ const int WAVEFRONT_SIZE = 64;earning Inference Kernels (HIP)
  * 
  * Production-quality neural network inference implementations optimized for AMD GPU architectures.
  * This example demonstrates deep learning kernels adapted for ROCm/HIP with wavefront-aware
- * optimizations and LDS utilization patterns specific to AMD hardware.
+ * optimizations and LDS utilization patterns spec    HIP_CHECK(hipFree(d_data));
+}
+
+#ifdef HAS_MIOPEN
+void demo_miopen_integration() {
+    std::cout << "\n=== MIOpen Integration Demo ===\n";
+    
+    // Initialize MIOpen handle
+    miopenHandle_t miopen_handle;
+    MIOPEN_CHECK(miopenCreate(&miopen_handle));
+    
+    std::cout << "MIOpen handle created successfully\n";
+    std::cout << "MIOpen is available for production neural network layers\n";
+    std::cout << "Supported operations: Convolution, Pooling, Activation, BatchNorm, RNN\n";
+    
+    // Cleanup
+    MIOPEN_CHECK(miopenDestroy(miopen_handle));
+}
+#endif
+
+int main() {fic to AMD hardware.
  * 
  * Topics Covered:
  * - Wavefront-optimized convolution kernels for AMD GPUs
@@ -617,7 +637,12 @@ void benchmark_activation_functions() {
     float* d_data;
     HIP_CHECK(hipMalloc(&d_data, n * sizeof(float)));
     
-        // Initialize with random data\n#ifdef HAS_ROCRAND\n    rocrand_generator gen;\n    ROCRAND_CHECK(rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW));\n    ROCRAND_CHECK(rocrand_generate_normal(gen, d_data, n, 0.0f, 1.0f));\n    ROCRAND_CHECK(rocrand_destroy_generator(gen));
+    // Initialize with random data
+#ifdef HAS_ROCRAND
+    rocrand_generator gen;
+    ROCRAND_CHECK(rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW));
+    ROCRAND_CHECK(rocrand_generate_normal(gen, d_data, n, 0.0f, 1.0f));
+    ROCRAND_CHECK(rocrand_destroy_generator(gen));
 #else
     // Initialize with simple pattern since rocrand is not available
     std::vector<float> h_data(n, 1.0f);
@@ -657,7 +682,25 @@ void benchmark_activation_functions() {
               << " (Bandwidth: " << std::setprecision(1) << relu_wf_bandwidth << " GB/s)\n";
     std::cout << "  Speedup: " << std::setprecision(2) << relu_time / relu_wf_time << "x\n";
     
-    HIP_CHECK(hipFree(d_data));\n}\n\n#ifdef HAS_MIOPEN\nvoid demo_miopen_integration() {\n    std::cout << \"\\n=== MIOpen Integration Demo ===\\n\";\n    \n    // Initialize MIOpen handle\n    miopenHandle_t miopen_handle;\n    MIOPEN_CHECK(miopenCreate(&miopen_handle));\n    \n    std::cout << \"MIOpen handle created successfully\\n\";\n    std::cout << \"MIOpen is available for production neural network layers\\n\";\n    std::cout << \"Supported operations: Convolution, Pooling, Activation, BatchNorm, RNN\\n\";\n    \n    // Cleanup\n    MIOPEN_CHECK(miopenDestroy(miopen_handle));\n}\n#endif\n\nint main() {
+    HIP_CHECK(hipFree(d_data));
+}
+
+#ifdef HAS_MIOPEN
+void demo_miopen_integration() {
+    std::cout << "\n=== MIOpen Integration Demo ===\n";
+    
+    // Initialize MIOpen handle
+    miopenHandle_t miopen_handle;
+    MIOPEN_CHECK(miopenCreate(&miopen_handle));
+    
+    std::cout << "MIOpen handle created successfully\n";
+    std::cout << "MIOpen is available for production neural network layers\n";
+    std::cout << "Supported operations: Convolution, Pooling, Activation, BatchNorm, RNN\n";
+    
+    // Cleanup
+    MIOPEN_CHECK(miopenDestroy(miopen_handle));
+}
+#endif\n\nint main() {
 #ifdef HAS_ROC_LIBRARIES
     std::cout << "HIP Deep Learning Inference Kernels - AMD GPU Optimized Implementation\n";
     std::cout << "======================================================================\n";
@@ -713,6 +756,57 @@ void benchmark_activation_functions() {
     
     return 0;
 #else
-        // Note: Individual ROCm libraries are detected automatically by the Makefile\n    // The main functionality will run with whatever libraries are available\n    \n    // Check HIP device properties\n    int device;\n    hipGetDevice(&device);\n    hipDeviceProp_t props;\n    hipGetDeviceProperties(&props, device);\n    \n    std::cout << \"GPU: \" << props.name << \"\\n\";\n    std::cout << \"Compute Capability: \" << props.major << \".\" << props.minor << \"\\n\";\n    std::cout << \"Memory: \" << props.totalGlobalMem / (1024*1024) << \" MB\\n\";\n    std::cout << \"Wavefront Size: \" << WAVEFRONT_SIZE << \"\\n\";\n    std::cout << \"LDS Size per Workgroup: \" << props.sharedMemPerBlock << \" bytes\\n\";\n    std::cout << \"Max Threads per Block: \" << props.maxThreadsPerBlock << \"\\n\\n\";\n    \n    // Print available ROCm libraries\n    std::cout << \"Available ROCm Libraries:\\n\";\n#ifdef HAS_ROCBLAS\n    std::cout << \"  ✓ rocBLAS\\n\";\n#else\n    std::cout << \"  ✗ rocBLAS (install rocblas-dev)\\n\";\n#endif\n#ifdef HAS_ROCRAND\n    std::cout << \"  ✓ rocRAND\\n\";\n#else\n    std::cout << \"  ✗ rocRAND (install rocrand-dev)\\n\";\n#endif\n#ifdef HAS_ROCFFT\n    std::cout << \"  ✓ rocFFT\\n\";\n#else\n    std::cout << \"  ✗ rocFFT (install rocfft-dev)\\n\";\n#endif\n#ifdef HAS_MIOPEN\n    std::cout << \"  ✓ MIOpen\\n\";\n#else\n    std::cout << \"  ✗ MIOpen (install miopen-hip-dev)\\n\";\n#endif\n    std::cout << \"\\n\";\n    \n    try {\n        benchmark_convolution_kernels();
+    // Note: Individual ROCm libraries are detected automatically by the Makefile
+    // The main functionality will run with whatever libraries are available
+    
+    // Check HIP device properties
+    int device;
+    hipGetDevice(&device);
+    hipDeviceProp_t props;
+    hipGetDeviceProperties(&props, device);
+    
+    std::cout << "GPU: " << props.name << "\n";
+    std::cout << "Compute Capability: " << props.major << "." << props.minor << "\n";
+    std::cout << "Memory: " << props.totalGlobalMem / (1024*1024) << " MB\n";
+    std::cout << "Wavefront Size: " << WAVEFRONT_SIZE << "\n";
+    std::cout << "LDS Size per Workgroup: " << props.sharedMemPerBlock << " bytes\n";
+    std::cout << "Max Threads per Block: " << props.maxThreadsPerBlock << "\n\n";
+    
+    // Print available ROCm libraries
+    std::cout << "Available ROCm Libraries:\n";
+#ifdef HAS_ROCBLAS
+    std::cout << "  ✓ rocBLAS\n";
+#else
+    std::cout << "  ✗ rocBLAS (install rocblas-dev)\n";
+#endif
+#ifdef HAS_ROCRAND
+    std::cout << "  ✓ rocRAND\n";
+#else
+    std::cout << "  ✗ rocRAND (install rocrand-dev)\n";
+#endif
+#ifdef HAS_ROCFFT
+    std::cout << "  ✓ rocFFT\n";
+#else
+    std::cout << "  ✗ rocFFT (install rocfft-dev)\n";
+#endif
+#ifdef HAS_MIOPEN
+    std::cout << "  ✓ MIOpen\n";
+#else
+    std::cout << "  ✗ MIOpen (install miopen-hip-dev)\n";
+#endif
+    std::cout << "\n";
+    
+    try {
+        benchmark_convolution_kernels();
+        
+        std::cout << "\n=== Note: Install ROCm libraries for full functionality ===\n";
+        std::cout << "  sudo apt install rocblas-dev rocrand-dev rocfft-dev miopen-hip-dev\n";
+        
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return -1;
+    }
+    
+    return 0;
 #endif
 }

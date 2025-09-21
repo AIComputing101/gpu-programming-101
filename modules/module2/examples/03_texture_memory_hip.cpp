@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <cstring>  // For std::memset
+#include "rocm7_utils.h"
 
 // HIP texture object approach
 __global__ void textureFilterKernel(hipTextureObject_t texObj, float *output, 
@@ -21,7 +23,7 @@ __global__ void textureFilterKernel(hipTextureObject_t texObj, float *output,
                 float v = (float)(y + fy + 0.5f) / height;
                 
                 // Texture automatically handles boundary conditions and interpolation
-                float value = hipTex2D<float>(texObj, u, v);
+                float value = tex2D<float>(texObj, u, v);
                 sum += value;
             }
         }
@@ -42,7 +44,7 @@ __global__ void textureTranspose(hipTextureObject_t texObj, float *output,
         float v = (y + 0.5f) / height;
         
         // Fetch using texture cache
-        float value = hipTex2D<float>(texObj, u, v);
+        float value = tex2D<float>(texObj, u, v);
         
         // Write transposed
         if (y < width && x < height) {
@@ -71,7 +73,7 @@ __global__ void bilinearInterpolation(hipTextureObject_t texObj, float *output,
         float v = src_y / in_height;
         
         // Hardware bilinear interpolation
-        float interpolated = hipTex2D<float>(texObj, u, v);
+        float interpolated = tex2D<float>(texObj, u, v);
         
         output[y * out_width + x] = interpolated;
     }
@@ -153,7 +155,7 @@ __global__ void amdOptimizedTextureAccess(hipTextureObject_t texObj, float *outp
 hipTextureObject_t createTextureObject(float *d_data, int width, int height) {
     // Create resource descriptor
     hipResourceDesc resDesc;
-    memset(&resDesc, 0, sizeof(resDesc));
+    std::memset(&resDesc, 0, sizeof(resDesc));
     resDesc.resType = hipResourceTypePitch2D;
     resDesc.res.pitch2D.devPtr = d_data;
     resDesc.res.pitch2D.desc = hipCreateChannelDesc<float>();
@@ -163,7 +165,7 @@ hipTextureObject_t createTextureObject(float *d_data, int width, int height) {
     
     // Create texture descriptor
     hipTextureDesc texDesc;
-    memset(&texDesc, 0, sizeof(texDesc));
+    std::memset(&texDesc, 0, sizeof(texDesc));
     texDesc.addressMode[0] = hipAddressModeClamp;
     texDesc.addressMode[1] = hipAddressModeClamp;
     texDesc.filterMode = hipFilterModeLinear;

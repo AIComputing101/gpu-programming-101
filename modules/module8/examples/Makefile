@@ -32,7 +32,32 @@ HIP_DEBUG_FLAGS = -std=c++17 -g
 
 # Library flags for domain-specific libraries
 CUDA_LIBS = -lcublas -lcurand -lcufft
-HIP_LIBS = -lrocblas -lrocrand -lrocfft -lMIOpen
+
+# Check for optional ROC libraries and set flags accordingly
+HAS_ROCBLAS := $(shell pkg-config --exists rocblas && echo 1 || echo 0)
+HAS_ROCRAND := $(shell pkg-config --exists rocrand && echo 1 || echo 0)
+HAS_ROCFFT := $(shell pkg-config --exists rocfft && echo 1 || echo 0)
+HAS_MIOPEN := $(shell pkg-config --exists MIOpen && echo 1 || echo 0)
+
+# Build HIP_LIBS conditionally
+HIP_LIBS = 
+ifeq ($(HAS_ROCBLAS),1)
+    HIP_LIBS += -lrocblas
+endif
+ifeq ($(HAS_ROCRAND),1)
+    HIP_LIBS += -lrocrand
+endif
+ifeq ($(HAS_ROCFFT),1)
+    HIP_LIBS += -lrocfft
+endif
+ifeq ($(HAS_MIOPEN),1)
+    HIP_LIBS += -lMIOpen
+endif
+
+# Set compilation flag if any ROC libraries are available
+ifneq ($(HIP_LIBS),)
+    HIP_FLAGS += -DHAS_ROC_LIBRARIES
+endif
 
 # Directories
 BUILD_DIR = build

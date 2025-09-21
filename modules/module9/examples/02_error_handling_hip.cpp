@@ -233,7 +233,7 @@ public:
         auto it = allocated_ptrs_.find(ptr);
         if (it != allocated_ptrs_.end()) {
             try {
-                CHECK_HIP(HIP_CHECK(hipFree(ptr));
+                HIP_CHECK(hipFree(ptr));
                 total_allocated_ -= it->second;
                 allocated_ptrs_.erase(it);
                 
@@ -254,7 +254,7 @@ public:
         
         for (auto& pair : allocated_ptrs_) {
             try {
-                CHECK_HIP(HIP_CHECK(hipFree(pair.first));
+                HIP_CHECK(hipFree(pair.first));
                 logger_.logInfo("Cleaned up " + std::to_string(pair.second) + " bytes");
             } catch (const GPUException& e) {
                 logger_.logError(e);

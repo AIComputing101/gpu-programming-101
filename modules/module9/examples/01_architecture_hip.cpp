@@ -311,7 +311,7 @@ public:
                 throw std::runtime_error("Access denied: memory not owned by tenant");
             }
             
-            HIP_CHECK_PROD(HIP_CHECK(hipFree(device_ptr), "Memory deallocation for " + tenant_id);
+            HIP_CHECK(hipFree(device_ptr));
             
             total_allocated -= it->size;
             allocated_resources.erase(it);

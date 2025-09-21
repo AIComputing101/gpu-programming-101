@@ -45,14 +45,7 @@ const int WAVEFRONT_SIZE = 64;earning Inference Kernels (HIP)
 #include <iomanip>
 #include <memory>
 
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            std::cerr << "HIP error at " << __FILE__ << ":" << __LINE__ << " - " << hipGetErrorString(error) << std::endl; \
-            exit(1); \
-        } \
-    } while(0)
+// HIP_CHECK is now provided by rocm7_utils.h
 
 #define ROCBLAS_CHECK(call) \
     do { \
@@ -324,11 +317,19 @@ public:
         HIP_CHECK(hipMalloc(&d_bias, bias_size));
         
         // Initialize with random weights
+#ifdef HAS_ROC_LIBRARIES
         rocrand_generator gen;
         rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW);
         rocrand_generate_normal(gen, d_weights, weights_size / sizeof(float), 0.0f, 0.1f);
         rocrand_generate_normal(gen, d_bias, bias_size / sizeof(float), 0.0f, 0.1f);
         rocrand_destroy_generator(gen);
+#else
+        // Initialize with simple pattern since rocrand is not available
+        std::vector<float> h_weights(weights_size / sizeof(float), 0.1f);
+        std::vector<float> h_bias(bias_size / sizeof(float), 0.0f);
+        HIP_CHECK(hipMemcpy(d_weights, h_weights.data(), weights_size, hipMemcpyHostToDevice));
+        HIP_CHECK(hipMemcpy(d_bias, h_bias.data(), bias_size, hipMemcpyHostToDevice));
+#endif
     }
     
     ~ConvolutionLayerAMD() {
@@ -357,6 +358,7 @@ public:
     }
 };
 
+#ifdef HAS_ROC_LIBRARIES
 class FullyConnectedLayerAMD {
 private:
     rocblas_handle rocblas_handle;
@@ -400,6 +402,7 @@ public:
                                    output, batch_size));
     }
 };
+#endif
 
 // Benchmark suite
 void benchmark_convolution_kernels() {
@@ -421,11 +424,19 @@ void benchmark_convolution_kernels() {
     HIP_CHECK(hipMalloc(&d_output, output_size));
     
     // Initialize with random data
+#ifdef HAS_ROC_LIBRARIES
     rocrand_generator gen;
     rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW);
     rocrand_generate_normal(gen, d_input, input_size / sizeof(float), 0.0f, 1.0f);
     rocrand_generate_normal(gen, d_weights, weights_size / sizeof(float), 0.0f, 0.1f);
     rocrand_destroy_generator(gen);
+#else
+    // Initialize with simple pattern since rocrand is not available
+    std::vector<float> h_input(input_size / sizeof(float), 1.0f);
+    std::vector<float> h_weights(weights_size / sizeof(float), 0.1f);
+    HIP_CHECK(hipMemcpy(d_input, h_input.data(), input_size, hipMemcpyHostToDevice));
+    HIP_CHECK(hipMemcpy(d_weights, h_weights.data(), weights_size, hipMemcpyHostToDevice));
+#endif
     
     PerformanceTimer timer;
     
@@ -476,11 +487,19 @@ void benchmark_rocblas_gemm() {
     HIP_CHECK(hipMalloc(&d_C, M * N * sizeof(float)));
     
     // Initialize data
+#ifdef HAS_ROC_LIBRARIES
     rocrand_generator gen;
     rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW);
     rocrand_generate_normal(gen, d_A, M * K, 0.0f, 1.0f);
     rocrand_generate_normal(gen, d_B, K * N, 0.0f, 1.0f);
     rocrand_destroy_generator(gen);
+#else
+    // Initialize with simple pattern since rocrand is not available
+    std::vector<float> h_A(M * K, 1.0f);
+    std::vector<float> h_B(K * N, 1.0f);
+    HIP_CHECK(hipMemcpy(d_A, h_A.data(), M * K * sizeof(float), hipMemcpyHostToDevice));
+    HIP_CHECK(hipMemcpy(d_B, h_B.data(), K * N * sizeof(float), hipMemcpyHostToDevice));
+#endif
     
     PerformanceTimer timer;
     const int iterations = 10;
@@ -541,10 +560,16 @@ void benchmark_activation_functions() {
     HIP_CHECK(hipMalloc(&d_data, n * sizeof(float)));
     
     // Initialize with random data
+#ifdef HAS_ROC_LIBRARIES
     rocrand_generator gen;
     rocrand_create_generator(&gen, ROCRAND_RNG_PSEUDO_XORWOW);
     rocrand_generate_normal(gen, d_data, n, 0.0f, 1.0f);
     rocrand_destroy_generator(gen);
+#else
+    // Initialize with simple pattern since rocrand is not available
+    std::vector<float> h_data(n, 1.0f);
+    HIP_CHECK(hipMemcpy(d_data, h_data.data(), n * sizeof(float), hipMemcpyHostToDevice));
+#endif
     
     PerformanceTimer timer;
     const int iterations = 100;
@@ -582,7 +607,10 @@ void benchmark_activation_functions() {
     HIP_CHECK(hipFree(d_data));
 }
 
-int main() {\n#ifdef HAS_ROC_LIBRARIES\n    std::cout << \"HIP Deep Learning Inference Kernels - AMD GPU Optimized Implementation\\n\";\n    std::cout << \"======================================================================\\n\";
+int main() {
+#ifdef HAS_ROC_LIBRARIES
+    std::cout << "HIP Deep Learning Inference Kernels - AMD GPU Optimized Implementation\n";
+    std::cout << "======================================================================\n";
     
     // Check HIP device properties
     int device;
@@ -621,4 +649,20 @@ int main() {\n#ifdef HAS_ROC_LIBRARIES\n    std::cout << \"HIP Deep Learning Inf
         std::cout << "Target: Production inference - Optimized for AMD GPU architecture\n";
         std::cout << "Target: Sub-millisecond latency - Achieved for small to medium models\n";
         
-        } catch (const std::exception& e) {\n        std::cerr << \"Error: \" << e.what() << std::endl;\n        return -1;\n    }\n    \n    return 0;\n#else\n    std::cout << \"Note: This example requires ROC libraries (rocBLAS, rocRAND) which are not available.\" << std::endl;\n    std::cout << \"To enable this example:\" << std::endl;\n    std::cout << \"1. Install ROC libraries: sudo apt install rocblas-dev rocrand-dev\" << std::endl;\n    std::cout << \"2. Compile with -DHAS_ROC_LIBRARIES flag\" << std::endl;\n    std::cout << \"3. Link with -lrocblas -lrocrand\" << std::endl;\n    std::cout << std::endl;\n    std::cout << \"Skipping deep learning operations...\" << std::endl;\n    return 0;\n#endif\n}
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return -1;
+    }
+    
+    return 0;
+#else
+    std::cout << "Note: This example requires ROC libraries (rocBLAS, rocRAND) which are not available." << std::endl;
+    std::cout << "To enable this example:" << std::endl;
+    std::cout << "1. Install ROC libraries: sudo apt install rocblas-dev rocrand-dev" << std::endl;
+    std::cout << "2. Compile with -DHAS_ROC_LIBRARIES flag" << std::endl;
+    std::cout << "3. Link with -lrocblas -lrocrand" << std::endl;
+    std::cout << std::endl;
+    std::cout << "Skipping deep learning operations..." << std::endl;
+    return 0;
+#endif
+}

@@ -1,5 +1,17 @@
 /**
- * Module 8: Domain-Specific Applications - Deep Learning Inference Kernels (HIP)
+ * Module 8: Domain-Specific Applicatio
+#ifdef HAS_ROC_LIBRARIES
+#define ROCBLAS_CHECK(call) \
+    do { \
+        rocblas_status status = call; \
+        if (status != rocblas_status_success) { \
+            std::cerr << "rocBLAS error at " << __FILE__ << ":" << __LINE__ << std::endl; \
+            exit(1); \
+        } \
+    } while(0)
+#endif
+
+const int WAVEFRONT_SIZE = 64;earning Inference Kernels (HIP)
  * 
  * Production-quality neural network inference implementations optimized for AMD GPU architectures.
  * This example demonstrates deep learning kernels adapted for ROCm/HIP with wavefront-aware
@@ -16,8 +28,14 @@
 #include <hip/hip_runtime.h>
 #include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <hip/hip_fp16.h>
+
+// Conditional ROC library support - disabled by default since they may not be available
+// #define HAS_ROC_LIBRARIES
+#ifdef HAS_ROC_LIBRARIES
 #include <rocblas.h>
 #include <rocrand.h>
+#endif
+
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -446,6 +464,7 @@ void benchmark_convolution_kernels() {
     HIP_CHECK(hipFree(d_output));
 }
 
+#ifdef HAS_ROC_LIBRARIES
 void benchmark_rocblas_gemm() {
     std::cout << "\n=== rocBLAS GEMM Benchmarks ===\n";
     
@@ -511,6 +530,7 @@ void benchmark_rocblas_gemm() {
     rocblas_destroy_handle(handle);
     HIP_CHECK(hipFree(d_A)); HIP_CHECK(hipFree(d_B)); HIP_CHECK(hipFree(d_C));
 }
+#endif
 
 void benchmark_activation_functions() {
     std::cout << "\n=== AMD-Optimized Activation Function Benchmarks ===\n";
@@ -562,9 +582,7 @@ void benchmark_activation_functions() {
     HIP_CHECK(hipFree(d_data));
 }
 
-int main() {
-    std::cout << "HIP Deep Learning Inference Kernels - AMD GPU Optimized Implementation\n";
-    std::cout << "======================================================================\n";
+int main() {\n#ifdef HAS_ROC_LIBRARIES\n    std::cout << \"HIP Deep Learning Inference Kernels - AMD GPU Optimized Implementation\\n\";\n    std::cout << \"======================================================================\\n\";
     
     // Check HIP device properties
     int device;
@@ -581,7 +599,12 @@ int main() {
     
     try {
         benchmark_convolution_kernels();
+#ifdef HAS_ROC_LIBRARIES
         benchmark_rocblas_gemm();
+#else
+        std::cout << "\n=== rocBLAS GEMM Benchmarks ===\n";
+        std::cout << "rocBLAS library not available. Install rocblas-dev package.\n";
+#endif
         benchmark_activation_functions();
         
         std::cout << "\n=== AMD Deep Learning Optimization Summary ===\n";
@@ -598,10 +621,4 @@ int main() {
         std::cout << "Target: Production inference - Optimized for AMD GPU architecture\n";
         std::cout << "Target: Sub-millisecond latency - Achieved for small to medium models\n";
         
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return -1;
-    }
-    
-    return 0;
-}
+        } catch (const std::exception& e) {\n        std::cerr << \"Error: \" << e.what() << std::endl;\n        return -1;\n    }\n    \n    return 0;\n#else\n    std::cout << \"Note: This example requires ROC libraries (rocBLAS, rocRAND) which are not available.\" << std::endl;\n    std::cout << \"To enable this example:\" << std::endl;\n    std::cout << \"1. Install ROC libraries: sudo apt install rocblas-dev rocrand-dev\" << std::endl;\n    std::cout << \"2. Compile with -DHAS_ROC_LIBRARIES flag\" << std::endl;\n    std::cout << \"3. Link with -lrocblas -lrocrand\" << std::endl;\n    std::cout << std::endl;\n    std::cout << \"Skipping deep learning operations...\" << std::endl;\n    return 0;\n#endif\n}

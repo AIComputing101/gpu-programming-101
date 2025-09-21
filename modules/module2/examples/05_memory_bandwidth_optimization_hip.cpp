@@ -235,8 +235,8 @@ public:
     }
     
     ~BandwidthTester() {
-        hipFree(d_input);
-        hipFree(d_output);
+        HIP_CHECK(hipFree(d_input));
+        HIP_CHECK(hipFree(d_output));
     }
     
     double testBandwidth(const char* test_name, void (*kernel)(float*, float*, size_t), 
@@ -388,7 +388,7 @@ void analyzeAccessPatterns() {
         HIP_CHECK(hipEventDestroy(stop));
     }
     
-    hipFree(d_temp);
+    HIP_CHECK(hipFree(d_temp));
 }
 
 void demonstrateBandwidthOptimization() {

@@ -21,7 +21,7 @@ __global__ void textureFilterKernel(hipTextureObject_t texObj, float *output,
                 float v = (float)(y + fy + 0.5f) / height;
                 
                 // Texture automatically handles boundary conditions and interpolation
-                float value = tex2D<float>(texObj, u, v);
+                float value = hipTex2D<float>(texObj, u, v);
                 sum += value;
             }
         }
@@ -42,7 +42,7 @@ __global__ void textureTranspose(hipTextureObject_t texObj, float *output,
         float v = (y + 0.5f) / height;
         
         // Fetch using texture cache
-        float value = tex2D<float>(texObj, u, v);
+        float value = hipTex2D<float>(texObj, u, v);
         
         // Write transposed
         if (y < width && x < height) {
@@ -71,7 +71,7 @@ __global__ void bilinearInterpolation(hipTextureObject_t texObj, float *output,
         float v = src_y / in_height;
         
         // Hardware bilinear interpolation
-        float interpolated = tex2D<float>(texObj, u, v);
+        float interpolated = hipTex2D<float>(texObj, u, v);
         
         output[y * out_width + x] = interpolated;
     }
@@ -134,7 +134,7 @@ __global__ void amdOptimizedTextureAccess(hipTextureObject_t texObj, float *outp
             float u = (x + 0.5f) / width;
             float v = (y + 0.5f) / height;
             
-            float value = tex2D<float>(texObj, u, v);
+            float value = hipTex2D<float>(texObj, u, v);
             output[pixel_id] = value;
         }
     }
@@ -293,10 +293,10 @@ void demonstrateTextureMemory() {
     HIP_CHECK(hipEventDestroy(start));
     HIP_CHECK(hipEventDestroy(stop));
     
-    hipFree(d_input);
-    hipFree(d_output_texture);
-    hipFree(d_output_manual);
-    hipFree(d_resized);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_output_texture));
+    HIP_CHECK(hipFree(d_output_manual));
+    HIP_CHECK(hipFree(d_resized));
     
     free(h_input);
     free(h_output_texture);

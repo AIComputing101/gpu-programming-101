@@ -10,6 +10,7 @@
  */
 
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -508,9 +509,9 @@ void benchmark_conv1d() {
     delete[] h_output_naive;
     delete[] h_output_shared;
     delete[] h_output_cpu;
-    HIP_CHECK(hipFree(d_input));
-    HIP_CHECK(hipFree(d_kernel));
-    HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(HIP_CHECK(hipFree(d_kernel));
+    HIP_CHECK(HIP_CHECK(hipFree(d_output));
 }
 
 /**
@@ -614,9 +615,9 @@ void benchmark_conv2d() {
     delete[] h_output_naive;
     delete[] h_output_shared;
     delete[] h_output_cpu;
-    HIP_CHECK(hipFree(d_input));
-    HIP_CHECK(hipFree(d_kernel));
-    HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(HIP_CHECK(hipFree(d_kernel));
+    HIP_CHECK(HIP_CHECK(hipFree(d_output));
 }
 
 /**
@@ -709,10 +710,10 @@ void benchmark_separable_conv() {
     delete[] h_output_separable;
     delete[] h_output_cpu;
     delete[] h_temp;
-    HIP_CHECK(hipFree(d_input));
-    HIP_CHECK(hipFree(d_kernel));
-    HIP_CHECK(hipFree(d_output));
-    HIP_CHECK(hipFree(d_temp));
+    HIP_CHECK(HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(HIP_CHECK(hipFree(d_kernel));
+    HIP_CHECK(HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(HIP_CHECK(hipFree(d_temp));
 }
 
 /**

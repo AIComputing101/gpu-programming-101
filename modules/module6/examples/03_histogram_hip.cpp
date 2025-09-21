@@ -19,6 +19,7 @@
  */
 
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -247,8 +248,8 @@ public:
     }
     
     ~PerformanceTimer() {
-        hipEventDestroy(start_event);
-        hipEventDestroy(stop_event);
+        HIP_CHECK(hipEventDestroy(start_event));
+        HIP_CHECK(hipEventDestroy(stop_event));
     }
     
     void start() {
@@ -387,8 +388,8 @@ void run_histogram_benchmarks() {
             }
         }
         
-        hipFree(d_input);
-        hipFree(d_histogram);
+        HIP_CHECK(hipFree(d_input));
+        HIP_CHECK(hipFree(d_histogram));
     }
 }
 
@@ -468,8 +469,8 @@ void test_data_distributions() {
                   << ", Min count: " << min_count
                   << ", Ratio: " << std::setprecision(1) << (float)max_count/min_count << "\n";
         
-        hipFree(d_input);
-        hipFree(d_histogram);
+        HIP_CHECK(hipFree(d_input));
+        HIP_CHECK(hipFree(d_histogram));
     }
 }
 

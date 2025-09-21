@@ -87,8 +87,8 @@ public:
     }
     
     ~PerformanceTimer() {
-        hipEventDestroy(start_event);
-        hipEventDestroy(stop_event);
+        HIP_CHECK(hipEventDestroy(start_event));
+        HIP_CHECK(hipEventDestroy(stop_event));
     }
     
     void start() {
@@ -150,8 +150,8 @@ void test_memory_coalescing() {
               << " (Bandwidth: " << std::setprecision(1) << non_coalesced_bandwidth << " GB/s)\n";
     std::cout << "Performance ratio: " << std::setprecision(2) << non_coalesced_time / coalesced_time << "x\n";
     
-    hipFree(d_input);
-    hipFree(d_output);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_output));
 }
 
 void test_matrix_transpose() {

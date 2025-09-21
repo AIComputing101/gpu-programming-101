@@ -1,4 +1,5 @@
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <hiprand/hiprand.h>
 #include <hiprand/hiprand_kernel.h>
 #include <hipfft/hipfft.h>
@@ -386,9 +387,9 @@ public:
         double gflops_optimized = total_flops / (optimized_time * 1e6);
         std::cout << "AMD GPU Performance: " << gflops_optimized << " GFLOPS" << std::endl;
         
-        hipFree(d_positions);
-        hipFree(d_velocities);
-        hipFree(d_forces);
+        HIP_CHECK(hipFree(d_positions));
+        HIP_CHECK(hipFree(d_velocities));
+        HIP_CHECK(hipFree(d_forces));
     }
     
     void demonstrateMonteCarloPi() {
@@ -437,8 +438,8 @@ public:
         std::cout << "Time: " << elapsed << " ms" << std::endl;
         std::cout << "AMD GPU Samples per second: " << total_samples / (elapsed / 1000.0) / 1e9 << " billion" << std::endl;
         
-        hipFree(d_states);
-        hipFree(d_hits);
+        HIP_CHECK(hipFree(d_states));
+        HIP_CHECK(hipFree(d_hits));
     }
     
     void demonstratePDESolver() {
@@ -501,8 +502,8 @@ public:
         double updates_per_second = total_grid_updates / (elapsed / 1000.0);
         std::cout << "AMD GPU Grid point updates per second: " << updates_per_second / 1e9 << " billion" << std::endl;
         
-        hipFree(d_u);
-        hipFree(d_u_new);
+        HIP_CHECK(hipFree(d_u));
+        HIP_CHECK(hipFree(d_u_new));
     }
     
     void demonstrateFFT() {
@@ -562,7 +563,7 @@ public:
         std::cout << "- Memory coalescing for 64-byte cache lines" << std::endl;
         
         hipfftDestroy(plan);
-        hipFree(d_data);
+        HIP_CHECK(hipFree(d_data));
     }
 };
 

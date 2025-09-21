@@ -1,4 +1,5 @@
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <rocsparse/rocsparse.h>
 #include <rocblas/rocblas.h>
 #include <iostream>
@@ -244,9 +245,9 @@ public:
         CHECK_HIP(hipStreamSynchronize(stream));
         
         // Cleanup
-        CHECK_HIP(hipFree(d_values));
-        CHECK_HIP(hipFree(d_row_ptr));
-        CHECK_HIP(hipFree(d_col_idx));
+        CHECK_HIP(HIP_CHECK(hipFree(d_values));
+        CHECK_HIP(HIP_CHECK(hipFree(d_row_ptr));
+        CHECK_HIP(HIP_CHECK(hipFree(d_col_idx));
         rocsparse_destroy_mat_descr(descr);
     }
     
@@ -291,9 +292,9 @@ public:
         CHECK_HIP(hipStreamSynchronize(stream));
         
         // Cleanup
-        CHECK_HIP(hipFree(d_values));
-        CHECK_HIP(hipFree(d_row_ptr));
-        CHECK_HIP(hipFree(d_col_idx));
+        CHECK_HIP(HIP_CHECK(hipFree(d_values));
+        CHECK_HIP(HIP_CHECK(hipFree(d_row_ptr));
+        CHECK_HIP(HIP_CHECK(hipFree(d_col_idx));
     }
 };
 
@@ -431,9 +432,9 @@ void demonstrateSparseOperations() {
     std::cout << "Memory Intensity (FLOPS/Byte): " << memory_intensity << std::endl;
     
     // Cleanup
-    hipFree(d_x);
-    hipFree(d_y1);
-    hipFree(d_y2);
+    HIP_CHECK(hipFree(d_x));
+    HIP_CHECK(hipFree(d_y1));
+    HIP_CHECK(hipFree(d_y2));
 }
 
 void demonstrateAdvancedSparseOperations() {
@@ -509,17 +510,17 @@ void demonstrateAdvancedSparseOperations() {
     std::cout << "- Bank conflict avoidance: 32 banks in LDS" << std::endl;
     
     // Cleanup
-    if (temp_buffer) hipFree(temp_buffer);
+    if (temp_buffer) HIP_CHECK(hipFree(temp_buffer));
     rocsparse_destroy_mat_descr(descr_A);
     rocsparse_destroy_mat_descr(descr_B);
     rocsparse_destroy_handle(handle);
     
-    hipFree(d_A_vals);
-    hipFree(d_A_row_ptr);
-    hipFree(d_A_col_idx);
-    hipFree(d_B_vals);
-    hipFree(d_B_row_ptr);
-    hipFree(d_B_col_idx);
+    HIP_CHECK(hipFree(d_A_vals));
+    HIP_CHECK(hipFree(d_A_row_ptr));
+    HIP_CHECK(hipFree(d_A_col_idx));
+    HIP_CHECK(hipFree(d_B_vals));
+    HIP_CHECK(hipFree(d_B_row_ptr));
+    HIP_CHECK(hipFree(d_B_col_idx));
 }
 
 int main() {

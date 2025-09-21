@@ -14,6 +14,7 @@
  */
 
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <hip/hip_cooperative_groups.h>
 #include <iostream>
 #include <vector>
@@ -240,8 +241,8 @@ public:
     }
     
     ~PerformanceTimer() {
-        hipEventDestroy(start_event);
-        hipEventDestroy(stop_event);
+        HIP_CHECK(hipEventDestroy(start_event));
+        HIP_CHECK(hipEventDestroy(stop_event));
     }
     
     void start() {
@@ -329,9 +330,9 @@ void radix_sort_amd(int* d_data, int n) {
         HIP_CHECK(hipMemcpy(d_data, current_input, n * sizeof(int), hipMemcpyDeviceToDevice));
     }
     
-    hipFree(d_temp);
-    hipFree(d_histogram);
-    hipFree(d_prefix_sum);
+    HIP_CHECK(hipFree(d_temp));
+    HIP_CHECK(hipFree(d_histogram));
+    HIP_CHECK(hipFree(d_prefix_sum));
 }
 
 // Test framework
@@ -435,7 +436,7 @@ void run_sorting_benchmarks() {
                       << ", " << (correct ? "PASS" : "FAIL") << ")\n";
         }
         
-        hipFree(d_data);
+        HIP_CHECK(hipFree(d_data));
     }
 }
 
@@ -477,7 +478,7 @@ void test_wavefront_optimization() {
               << std::fixed << std::setprecision(3) << gpu_time << " ms"
               << " (" << (correct ? "PASS" : "FAIL") << ")\n";
     
-    hipFree(d_data);
+    HIP_CHECK(hipFree(d_data));
 }
 
 int main() {

@@ -14,6 +14,7 @@
  */
 
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <hip/hip_fp16.h>
 #include <rocblas.h>
 #include <rocrand.h>
@@ -268,8 +269,8 @@ public:
     }
     
     ~PerformanceTimer() {
-        hipEventDestroy(start_event);
-        hipEventDestroy(stop_event);
+        HIP_CHECK(hipEventDestroy(start_event));
+        HIP_CHECK(hipEventDestroy(stop_event));
     }
     
     void start() {
@@ -313,8 +314,8 @@ public:
     }
     
     ~ConvolutionLayerAMD() {
-        hipFree(d_weights);
-        hipFree(d_bias);
+        HIP_CHECK(hipFree(d_weights));
+        HIP_CHECK(hipFree(d_bias));
     }
     
     void forward(const float* input, float* output, int batch_size) {
@@ -363,8 +364,8 @@ public:
     
     ~FullyConnectedLayerAMD() {
         rocblas_destroy_handle(rocblas_handle);
-        hipFree(d_weights);
-        hipFree(d_bias);
+        HIP_CHECK(hipFree(d_weights));
+        HIP_CHECK(hipFree(d_bias));
     }
     
     void forward(const float* input, float* output, int batch_size) {
@@ -440,9 +441,9 @@ void benchmark_convolution_kernels() {
     std::cout << "  Performance: " << std::setprecision(1) << gflops << " GFLOPS\n";
     std::cout << "  Bandwidth: " << std::setprecision(1) << bandwidth << " GB/s\n";
     
-    hipFree(d_input);
-    hipFree(d_weights);
-    hipFree(d_output);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_weights));
+    HIP_CHECK(hipFree(d_output));
 }
 
 void benchmark_rocblas_gemm() {
@@ -508,7 +509,7 @@ void benchmark_rocblas_gemm() {
     std::cout << "  rocBLAS Advantage: " << std::setprecision(2) << custom_time / rocblas_time << "x\n";
     
     rocblas_destroy_handle(handle);
-    hipFree(d_A); hipFree(d_B); hipFree(d_C);
+    HIP_CHECK(hipFree(d_A)); HIP_CHECK(hipFree(d_B)); HIP_CHECK(hipFree(d_C));
 }
 
 void benchmark_activation_functions() {
@@ -558,7 +559,7 @@ void benchmark_activation_functions() {
               << " (Bandwidth: " << std::setprecision(1) << relu_wf_bandwidth << " GB/s)\n";
     std::cout << "  Speedup: " << std::setprecision(2) << relu_time / relu_wf_time << "x\n";
     
-    hipFree(d_data);
+    HIP_CHECK(hipFree(d_data));
 }
 
 int main() {

@@ -10,6 +10,7 @@
  */
 
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -580,8 +581,8 @@ void benchmark_stencil_1d() {
     delete[] h_output_shared;
     delete[] h_output_coarsened;
     delete[] h_output_cpu;
-    HIP_CHECK(hipFree(d_input));
-    HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(HIP_CHECK(hipFree(d_output));
 }
 
 /**
@@ -683,8 +684,8 @@ void benchmark_stencil_2d() {
     delete[] h_output_shared;
     delete[] h_output_register;
     delete[] h_output_cpu;
-    HIP_CHECK(hipFree(d_input));
-    HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(HIP_CHECK(hipFree(d_output));
 }
 
 /**
@@ -740,8 +741,8 @@ void benchmark_stencil_3d() {
     // Cleanup
     delete[] h_input;
     delete[] h_output_naive;
-    HIP_CHECK(hipFree(d_input));
-    HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(HIP_CHECK(hipFree(d_output));
 }
 
 /**

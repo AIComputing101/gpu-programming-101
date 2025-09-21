@@ -15,6 +15,7 @@
  */
 
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <rocm_smi/rocm_smi.h>
 #include <iostream>
 #include <vector>
@@ -310,7 +311,7 @@ public:
                 throw std::runtime_error("Access denied: memory not owned by tenant");
             }
             
-            HIP_CHECK_PROD(hipFree(device_ptr), "Memory deallocation for " + tenant_id);
+            HIP_CHECK_PROD(HIP_CHECK(hipFree(device_ptr), "Memory deallocation for " + tenant_id);
             
             total_allocated -= it->size;
             allocated_resources.erase(it);
@@ -361,7 +362,7 @@ public:
                 ProductionLogger::getInstance().logInfo("GPU_MEMORY", 
                     "Garbage collecting unused memory for tenant " + it->tenant_id);
                 
-                hipFree(it->device_ptr);  // Don't throw on GC failure
+                HIP_CHECK(hipFree(it->device_ptr));  // Don't throw on GC failure
                 total_allocated -= it->size;
                 it = allocated_resources.erase(it);
                 cleaned_count++;

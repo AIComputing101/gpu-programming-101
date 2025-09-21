@@ -20,6 +20,7 @@
  */
 
 #include <hip/hip_runtime.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 #include <iostream>
 #include <vector>
 #include <chrono>
@@ -376,8 +377,8 @@ public:
     }
     
     ~PerformanceTimer() {
-        hipEventDestroy(start_event);
-        hipEventDestroy(stop_event);
+        HIP_CHECK(hipEventDestroy(start_event));
+        HIP_CHECK(hipEventDestroy(stop_event));
     }
     
     void start() {
@@ -475,8 +476,8 @@ void test_scan_correctness() {
     }
     std::cout << " -> " << (correct ? "PASS" : "FAIL") << "\n";
     
-    hipFree(d_input);
-    hipFree(d_output);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_output));
 }
 
 void run_scan_benchmarks() {
@@ -587,8 +588,8 @@ void run_scan_benchmarks() {
             }
         }
         
-        hipFree(d_input);
-        hipFree(d_output);
+        HIP_CHECK(hipFree(d_input));
+        HIP_CHECK(hipFree(d_output));
     }
 }
 
@@ -662,10 +663,10 @@ void demonstrate_stream_compaction() {
     std::cout << "Valid elements - Expected: " << expected_count << ", GPU: " << gpu_count << "\n";
     std::cout << "Compaction " << (expected_count == gpu_count ? "PASSED" : "FAILED") << "\n";
     
-    hipFree(d_input);
-    hipFree(d_output);
-    hipFree(d_marks);
-    hipFree(d_scan);
+    HIP_CHECK(hipFree(d_input));
+    HIP_CHECK(hipFree(d_output));
+    HIP_CHECK(hipFree(d_marks));
+    HIP_CHECK(hipFree(d_scan));
 }
 
 int main() {

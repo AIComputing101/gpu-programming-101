@@ -28,7 +28,7 @@ endif
 # Compiler flags for production-ready applications
 CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo --use_fast_math -DPRODUCTION_BUILD
 CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70 -DDEBUG_BUILD
-HIP_FLAGS = -std=c++17 -O3 --fast-math -DPRODUCTION_BUILD
+HIP_FLAGS = -std=c++17 -O3 -ffast-math -DPRODUCTION_BUILD
 HIP_DEBUG_FLAGS = -std=c++17 -g -DDEBUG_BUILD
 CXX_FLAGS = -std=c++17 -O3 -DPRODUCTION_BUILD
 

@@ -57,17 +57,35 @@ endif
 
 # Build HIP_LIBS conditionally
 HIP_LIBS = 
+
+# ROCm path detection for ROCm 7 compatibility  
+ROCM_PATH ?= $(shell ls -d /opt/rocm-7.0.0 2>/dev/null || ls -d /opt/rocm* 2>/dev/null | head -1)
+
+# Add ROCm include path and rocThrust if available
+ifneq ($(ROCM_PATH),)
+    HIP_FLAGS += -I$(ROCM_PATH)/include
+    # Check if rocThrust is available
+    HAS_ROCTHRUST := $(shell test -d $(ROCM_PATH)/include/thrust && echo 1 || echo 0)
+    ifeq ($(HAS_ROCTHRUST),1)
+        HIP_FLAGS += -DHAS_ROCTHRUST
+    endif
+endif
+
 ifeq ($(HAS_ROCBLAS),1)
     HIP_LIBS += -lrocblas
+    HIP_FLAGS += -DHAS_ROCBLAS
 endif
 ifeq ($(HAS_ROCRAND),1)
     HIP_LIBS += -lrocrand
+    HIP_FLAGS += -DHAS_ROCRAND
 endif
 ifeq ($(HAS_ROCFFT),1)
     HIP_LIBS += -lrocfft
+    HIP_FLAGS += -DHAS_ROCFFT
 endif
 ifeq ($(HAS_MIOPEN),1)
     HIP_LIBS += -lMIOpen
+    HIP_FLAGS += -DHAS_MIOPEN
 endif
 
 # Set compilation flag if any ROC libraries are available

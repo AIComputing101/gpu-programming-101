@@ -33,8 +33,8 @@ HIP_DEBUG_FLAGS = -std=c++17 -g
 
 # ROCm 7 note: hipcc may require explicit --rocm-path when HIP runtime/version files
 # aren't in legacy locations. See ROCm docs on file structure reorg.
-# Prefer environment ROCM_PATH if set; fall back to /opt/rocm.
-ROCM_PATH ?= /opt/rocm
+# Prefer environment ROCM_PATH if set; prefer ROCm 7.0.0, fall back to any ROCm installation.
+ROCM_PATH ?= $(shell ls -d /opt/rocm-7.0.0 2>/dev/null || ls -d /opt/rocm* 2>/dev/null | head -1 || echo /opt/rocm)
 # Prefer hipconfig (ROCm 7) to locate ROCm root, then fall back to hipcc path.
 HIPCONFIG_BIN := $(shell command -v hipconfig 2>/dev/null)
 ifneq ($(HIPCONFIG_BIN),)

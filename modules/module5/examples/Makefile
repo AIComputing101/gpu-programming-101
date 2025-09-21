@@ -32,7 +32,7 @@ HIP_FLAGS = -std=c++17 -O3
 HIP_DEBUG_FLAGS = -std=c++17 -g
 
 # ROCm 7: Ensure hipcc can find HIP runtime by passing --rocm-path
-ROCM_PATH ?= /opt/rocm
+ROCM_PATH ?= $(shell ls -d /opt/rocm-7.0.0 2>/dev/null || ls -d /opt/rocm* 2>/dev/null | head -1 || echo /opt/rocm)
 # Auto-detect ROCm path from hipcc if headers not found
 ifeq ($(wildcard $(ROCM_PATH)/include/hip/hip_runtime.h),)
 	HIPCC_BIN := $(shell command -v hipcc 2>/dev/null)

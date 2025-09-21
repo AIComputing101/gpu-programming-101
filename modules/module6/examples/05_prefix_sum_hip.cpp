@@ -182,7 +182,7 @@ __global__ void blelloch_scan_exclusive(float* input, float* output, int n) {
 // LDS bank conflict free optimization for AMD GPUs
 #define NUM_BANKS 32
 #define LOG_NUM_BANKS 5
-#define CONFLICT_FREE_OFFSET(n) (((n) >> NUM_BANKS) + ((n) >> (2 * NUM_BANKS)))
+#define CONFLICT_FREE_OFFSET(n) (((n) >> LOG_NUM_BANKS) + ((n) >> (2 * LOG_NUM_BANKS)))
 
 __global__ void blelloch_scan_lds_optimized(float* input, float* output, int n) {
     __shared__ float temp[512 + 512/NUM_BANKS];  // Extra space for conflict avoidance

@@ -431,7 +431,7 @@ public:
                           d_states, d_hits, n_samples_per_thread);
         CHECK_HIP(hipDeviceSynchronize());
         
-        // Reduce results using Thrust
+        // Reduce results using rocThrust (ROCm 7 compatible)
         thrust::device_ptr<int> thrust_hits(d_hits);
         int total_hits = thrust::reduce(thrust_hits, thrust_hits + n_threads);
         

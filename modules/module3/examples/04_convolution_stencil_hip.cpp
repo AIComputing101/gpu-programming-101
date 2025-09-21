@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <chrono>
+#include "rocm7_utils.h"
 
 #define RADIUS 3
 #define BLOCK_SIZE 16
@@ -524,10 +525,10 @@ int main() {
     free(h_input2d); free(h_output2d); free(h_temp2d);
     free(h_input3d); free(h_output3d);
     
-    hipFree(d_input1d); hipFree(d_output1d);
-    hipFree(d_input2d); hipFree(d_output2d); hipFree(d_temp2d); hipFree(d_kernel);
-    hipFree(d_gaussian1d);
-    hipFree(d_input3d); hipFree(d_output3d);
+    HIP_CHECK(hipFree(d_input1d)); HIP_CHECK(hipFree(d_output1d));
+    HIP_CHECK(hipFree(d_input2d)); HIP_CHECK(hipFree(d_output2d)); HIP_CHECK(hipFree(d_temp2d)); HIP_CHECK(hipFree(d_kernel));
+    HIP_CHECK(hipFree(d_gaussian1d));
+    HIP_CHECK(hipFree(d_input3d)); HIP_CHECK(hipFree(d_output3d));
     
     printf("\nHIP convolution and stencil operations completed!\n");
     return 0;

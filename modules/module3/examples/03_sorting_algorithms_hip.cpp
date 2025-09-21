@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <chrono>
 #include <algorithm>
+#include "rocm7_utils.h"
 
 // Bitonic sorting network optimized for AMD GPUs
 __global__ void bitonicSortHIP(float *data, int n, int k, int j) {
@@ -389,7 +390,7 @@ int main() {
                test_n, gpu_time, cpu_time_test, speedup);
         
         free(h_test);
-        hipFree(d_test);
+        HIP_CHECK(hipFree(d_test));
     }
     
     // 5. Memory bandwidth analysis
@@ -428,7 +429,7 @@ int main() {
     
     // Cleanup
     free(h_data); free(h_sorted); free(h_reference);
-    hipFree(d_data); hipFree(d_temp);
+    HIP_CHECK(hipFree(d_data)); HIP_CHECK(hipFree(d_temp));
     
     printf("\nHIP sorting algorithms demonstration completed!\n");
     return 0;

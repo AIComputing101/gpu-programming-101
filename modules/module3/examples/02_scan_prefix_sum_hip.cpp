@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <chrono>
+#include "rocm7_utils.h"
 
 #define BLOCK_SIZE 256
 #define WARP_SIZE 64  // AMD wavefront size
@@ -234,8 +235,8 @@ void largeScan(float *input, float *output, int n) {
     // Phase 2: Scan the block sums (recursive call for simplicity)
     // Phase 3: Add scanned block sums to each block's results
     
-    hipFree(block_sums);
-    hipFree(block_scan_sums);
+    HIP_CHECK(hipFree(block_sums));
+    HIP_CHECK(hipFree(block_scan_sums));
 }
 
 #define HIP_CHECK(call) \
@@ -460,7 +461,7 @@ int main() {
     
     // Cleanup
     free(h_input); free(h_output); free(h_reference); free(h_flags);
-    hipFree(d_input); hipFree(d_output); hipFree(d_flags);
+    HIP_CHECK(hipFree(d_input)); HIP_CHECK(hipFree(d_output)); HIP_CHECK(hipFree(d_flags));
     
     printf("\nHIP scan algorithms completed successfully!\n");
     return 0;

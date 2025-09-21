@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <chrono>
 #include <algorithm>
+#include <float.h>
+#include "rocm7_utils.h"
 
 // Naive reduction - inefficient but educational
 __global__ void naiveReduction(float *input, float *output, int n) {
@@ -266,11 +268,11 @@ public:
     }
     
     ~ReductionBenchmark() {
-        hipFree(d_input);
-        hipFree(d_output);
-        hipFree(d_temp);
-        hipEventDestroy(start);
-        hipEventDestroy(stop);
+        HIP_CHECK(hipFree(d_input));
+        HIP_CHECK(hipFree(d_output));
+        HIP_CHECK(hipFree(d_temp));
+        HIP_CHECK(hipEventDestroy(start));
+        HIP_CHECK(hipEventDestroy(stop));
     }
     
     void initializeData() {
@@ -411,8 +413,8 @@ public:
     }
     
     ~MultiPassReduction() {
-        hipFree(d_temp1);
-        hipFree(d_temp2);
+        HIP_CHECK(hipFree(d_temp1));
+        HIP_CHECK(hipFree(d_temp2));
     }
     
     float reduce(float *input, size_t n) {
@@ -493,7 +495,7 @@ void demonstrateMultiPassReduction() {
     double bandwidth = (bytes_read / (1024.0 * 1024.0 * 1024.0)) / (time / 1000.0);
     printf("Effective bandwidth: %.2f GB/s\n", bandwidth);
     
-    hipFree(d_large_data);
+    HIP_CHECK(hipFree(d_large_data));
 }
 
 int main() {

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <chrono>
+#include "rocm7_utils.h"
 
 #define TILE_SIZE 16
 #define BLOCK_SIZE 256
@@ -391,7 +392,7 @@ public:
         HIP_CHECK(hipEventDestroy(stop));
         
         free(h_A); free(h_B); free(h_C_custom); free(h_C_rocblas);
-        hipFree(d_A); hipFree(d_B); hipFree(d_C_custom); hipFree(d_C_rocblas);
+        HIP_CHECK(hipFree(d_A)); HIP_CHECK(hipFree(d_B)); HIP_CHECK(hipFree(d_C_custom)); HIP_CHECK(hipFree(d_C_rocblas));
     }
     
     void testMatrixTranspose() {
@@ -460,7 +461,7 @@ public:
         HIP_CHECK(hipEventDestroy(start));
         HIP_CHECK(hipEventDestroy(stop));
         free(h_input); free(h_output);
-        hipFree(d_input); hipFree(d_output);
+        HIP_CHECK(hipFree(d_input)); HIP_CHECK(hipFree(d_output));
     }
     
     void testMatrixVectorMultiplication() {
@@ -529,7 +530,7 @@ public:
         HIP_CHECK(hipEventDestroy(start));
         HIP_CHECK(hipEventDestroy(stop));
         free(h_matrix); free(h_vector); free(h_result);
-        hipFree(d_matrix); hipFree(d_vector); hipFree(d_result);
+        HIP_CHECK(hipFree(d_matrix)); HIP_CHECK(hipFree(d_vector)); HIP_CHECK(hipFree(d_result));
     }
 };
 

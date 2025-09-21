@@ -350,8 +350,11 @@ int main() {
     
     // Cleanup
     free(h_A); free(h_B); free(h_C); free(h_C_ref);
-    hipFree(d_A); hipFree(d_B); hipFree(d_C);
-    hipEventDestroy(start); hipEventDestroy(stop);
+    HIP_CHECK(hipFree(d_A)); 
+    HIP_CHECK(hipFree(d_B)); 
+    HIP_CHECK(hipFree(d_C));
+    HIP_CHECK(hipEventDestroy(start)); 
+    HIP_CHECK(hipEventDestroy(stop));
     
     printf("\nHIP matrix multiplication completed successfully!\n");
     return 0;

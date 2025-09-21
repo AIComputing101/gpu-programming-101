@@ -25,25 +25,25 @@ class HipTimer {
     float elapsedTime;
 public:
     HipTimer() {
-        hipEventCreate(&start);
-        hipEventCreate(&stop);
+        HIP_CHECK(hipEventCreate(&start));
+        HIP_CHECK(hipEventCreate(&stop));
     }
     
     void startTimer() {
-        hipEventRecord(start, 0);
+        HIP_CHECK(hipEventRecord(start, 0));
     }
     
     void stopTimer() {
-        hipEventRecord(stop, 0);
-        hipEventSynchronize(stop);
-        hipEventElapsedTime(&elapsedTime, start, stop);
+        HIP_CHECK(hipEventRecord(stop, 0));
+        HIP_CHECK(hipEventSynchronize(stop));
+        HIP_CHECK(hipEventElapsedTime(&elapsedTime, start, stop));
     }
     
     float getElapsedMs() { return elapsedTime; }
     
     ~HipTimer() {
-        hipEventDestroy(start);
-        hipEventDestroy(stop);
+        HIP_CHECK(hipEventDestroy(start));
+        HIP_CHECK(hipEventDestroy(stop));
     }
 };
 
@@ -174,7 +174,9 @@ int main() {
         
         // Cleanup
         free(h_a); free(h_b); free(h_c_cpu); free(h_c_gpu);
-        hipFree(d_a); hipFree(d_b); hipFree(d_c);
+        HIP_CHECK(hipFree(d_a)); 
+        HIP_CHECK(hipFree(d_b)); 
+        HIP_CHECK(hipFree(d_c));
     }
     
     // Additional GPU information
@@ -212,7 +214,7 @@ int main() {
         
         // Calculate occupancy
         int maxActiveBlocks;
-        hipOccupancyMaxActiveBlocksPerMultiprocessor(&maxActiveBlocks, addVectorsGPU, blockSize, 0);
+        HIP_CHECK(hipOccupancyMaxActiveBlocksPerMultiprocessor(&maxActiveBlocks, addVectorsGPU, blockSize, 0));
         float occupancy = (maxActiveBlocks * blockSize / (float)props.maxThreadsPerMultiProcessor) * 100.0f;
         
         HipTimer timer;
@@ -226,7 +228,9 @@ int main() {
         printf("%d\t\t%.3f\t\t%.2f\t\t%.1f%%\n", blockSize, time_ms, bandwidth, occupancy);
     }
     
-    hipFree(d_test_a); hipFree(d_test_b); hipFree(d_test_c);
+    HIP_CHECK(hipFree(d_test_a)); 
+    HIP_CHECK(hipFree(d_test_b)); 
+    HIP_CHECK(hipFree(d_test_c));
     
     // Suggest optimal configuration
     int optimalBlockSize;

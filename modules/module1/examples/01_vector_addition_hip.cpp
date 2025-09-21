@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "rocm7_utils.h"  // ROCm 7.0 enhanced utilities
 
 // HIP kernel - runs on GPU (AMD or NVIDIA)
 __global__ void addVectors(float *a, float *b, float *c, int n) {
@@ -14,18 +15,12 @@ __global__ void addVectors(float *a, float *b, float *c, int n) {
     }
 }
 
-// HIP error checking macro
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
-                    hipGetErrorString(error)); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0)
-
 int main() {
+    printf("=== ROCm 7.0 Enhanced Vector Addition Example ===\n");
+    
+    // Display ROCm 7.0 device information
+    printROCm7DeviceInfo();
+    
     const int N = 1024;
     const int bytes = N * sizeof(float);
     
@@ -68,6 +63,10 @@ int main() {
     
     printf("Launching kernel with %d blocks of %d threads each\n", gridSize, blockSize);
     
+    // Use ROCm 7.0 enhanced timer
+    ROCm7Timer timer;
+    timer.startTiming();
+    
     // Method 1: Modern HIP kernel launch (recommended)
     addVectors<<<gridSize, blockSize>>>(d_a, d_b, d_c, N);
     
@@ -80,6 +79,9 @@ int main() {
     // Wait for GPU to finish
     HIP_CHECK(hipDeviceSynchronize());
     
+    float kernel_time = timer.stopTiming();
+    printf("Kernel execution time: %.3f ms\n", kernel_time);
+    
     // Copy result back to host
     HIP_CHECK(hipMemcpy(h_c, d_c, bytes, hipMemcpyDeviceToHost));
     
@@ -91,7 +93,9 @@ int main() {
     
     // Clean up memory
     free(h_a); free(h_b); free(h_c);
-    hipFree(d_a); hipFree(d_b); hipFree(d_c);
+    HIP_CHECK(hipFree(d_a)); 
+    HIP_CHECK(hipFree(d_b)); 
+    HIP_CHECK(hipFree(d_c));
     
     printf("HIP vector addition completed successfully!\n");
     return 0;

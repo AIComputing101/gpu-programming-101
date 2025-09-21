@@ -223,8 +223,8 @@ void largeScan(float *input, float *output, int n) {
     
     // Multi-block approach
     float *block_sums, *block_scan_sums;
-    hipMalloc(&block_sums, blocks_per_grid * sizeof(float));
-    hipMalloc(&block_scan_sums, blocks_per_grid * sizeof(float));
+    HIP_CHECK(hipMalloc(&block_sums, blocks_per_grid * sizeof(float)));
+    HIP_CHECK(hipMalloc(&block_scan_sums, blocks_per_grid * sizeof(float)));
     
     // Phase 1: Scan each block independently and collect block sums
     // (This would require a modified kernel to collect sums - simplified here)
@@ -238,16 +238,6 @@ void largeScan(float *input, float *output, int n) {
     HIP_CHECK(hipFree(block_sums));
     HIP_CHECK(hipFree(block_scan_sums));
 }
-
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
-                    hipGetErrorString(error)); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0)
 
 void printArray(float *arr, int n, const char *name, int max_print = 10) {
     printf("%s: ", name);
@@ -326,6 +316,9 @@ int main() {
     // Kernel launch parameters
     dim3 block(BLOCK_SIZE);
     dim3 grid((N + BLOCK_SIZE - 1) / BLOCK_SIZE);
+    
+    // Timing variables
+    double naive_time = 0.0, hillis_time, blelloch_time;
     
     // 1. Naive Scan (for small arrays only)
     if (N <= 1024) {

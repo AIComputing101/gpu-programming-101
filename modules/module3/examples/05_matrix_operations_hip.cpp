@@ -271,15 +271,10 @@ __global__ void strassenMatrixMul(float *A, float *B, float *C, int N, int level
     }
 }
 
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
-                    hipGetErrorString(error)); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0)
+    }
+}
+
+// Matrix multiplication demonstration
 
 class MatrixOperations {
 private:

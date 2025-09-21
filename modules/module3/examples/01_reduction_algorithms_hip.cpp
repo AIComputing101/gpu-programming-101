@@ -235,16 +235,6 @@ __global__ void maxReduction(float *input, float *output, int n) {
     }
 }
 
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
-                    hipGetErrorString(error)); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0)
-
 class ReductionBenchmark {
 private:
     float *d_input, *d_output, *d_temp;

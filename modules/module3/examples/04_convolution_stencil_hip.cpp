@@ -271,15 +271,10 @@ __global__ void separableConvCol(float *input, float *output, float *kernel,
     }
 }
 
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
-                    hipGetErrorString(error)); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0)
+    }
+}
+
+// 1D Convolution demonstration
 
 void printImage(float *image, int width, int height, const char *name, int max_show = 8) {
     printf("%s (%dx%d):\n", name, width, height);

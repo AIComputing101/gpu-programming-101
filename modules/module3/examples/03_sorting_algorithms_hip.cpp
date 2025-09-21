@@ -191,16 +191,6 @@ __global__ void oddEvenSortHIP(float *data, int n, int phase) {
     }
 }
 
-#define HIP_CHECK(call) \
-    do { \
-        hipError_t error = call; \
-        if (error != hipSuccess) { \
-            fprintf(stderr, "HIP error at %s:%d - %s\n", __FILE__, __LINE__, \
-                    hipGetErrorString(error)); \
-            exit(EXIT_FAILURE); \
-        } \
-    } while(0)
-
 void launchBitonicSortHIP(float *d_data, int n) {
     int threads = 256;
     int blocks = (n + threads - 1) / threads;

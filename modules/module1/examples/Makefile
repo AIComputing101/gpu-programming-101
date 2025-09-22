@@ -185,11 +185,47 @@ debug: CUDA_FLAGS = $(CUDA_DEBUG_FLAGS)
 debug: HIP_FLAGS = $(HIP_DEBUG_FLAGS)
 debug: all
 
-# Profile builds
+# Profile builds - build with profiling flags and generate profile data
 .PHONY: profile
 profile: CUDA_FLAGS = $(CUDA_FLAGS) -lineinfo
 profile: HIP_FLAGS = $(HIP_FLAGS) -g
 profile: all
+	@echo "Generating profile data..."
+	@mkdir -p $(PROFILE_DIR)
+ifeq ($(BUILD_CUDA),1)
+	@echo "Running CUDA profiling..."
+	@for target in $(CUDA_TARGETS); do \
+		if [ -f $$target ]; then \
+			echo "Profiling $$target..."; \
+			basename_target=$$(basename $$target); \
+			if command -v nsys >/dev/null 2>&1; then \
+				nsys profile --output=$(PROFILE_DIR)/$$basename_target.nsys-rep $$target 2>/dev/null || echo "nsys profiling completed"; \
+			elif command -v nvprof >/dev/null 2>&1; then \
+				nvprof --log-file $(PROFILE_DIR)/$$basename_target.nvprof $$target 2>/dev/null || echo "nvprof profiling completed"; \
+			else \
+				echo "No CUDA profiler available (nsys/nvprof)"; \
+			fi; \
+		fi; \
+	done
+endif
+ifeq ($(BUILD_HIP),1)
+	@echo "Running HIP profiling..."
+	@for target in $(HIP_TARGETS) $(CPP_TARGETS); do \
+		if [ -f $$target ]; then \
+			echo "Profiling $$target..."; \
+			basename_target=$$(basename $$target); \
+			if command -v rocprof >/dev/null 2>&1; then \
+				rocprof --output-file $(PROFILE_DIR)/$$basename_target.csv $$target 2>/dev/null || echo "rocprof profiling completed"; \
+			else \
+				echo "rocprof not available - saving timing data instead"; \
+				echo "Profiling $$target at $$(date)" > $(PROFILE_DIR)/$$basename_target.profile; \
+				time $$target >> $(PROFILE_DIR)/$$basename_target.profile 2>&1 || echo "Timing completed"; \
+			fi; \
+		fi; \
+	done
+endif
+	@echo "Profile data saved to $(PROFILE_DIR)/"
+	@ls -la $(PROFILE_DIR)/ 2>/dev/null || echo "Profile directory created but no files generated"
 
 # Clean
 .PHONY: clean

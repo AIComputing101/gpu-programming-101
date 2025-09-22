@@ -470,11 +470,14 @@ __global__ void processData(float *data, size_t n) {
 ```cuda
 void optimizedUnifiedMemory(float *data, size_t n, int device) {
     // Prefetch data to GPU before kernel launch
-    cudaMemPrefetchAsync(data, n * sizeof(float), device);
+    cudaMemLocation loc{};
+    loc.type = cudaMemLocationTypeDevice;
+    loc.id = device;
+    cudaMemPrefetchAsync(data, n * sizeof(float), loc, /*stream=*/0);
     
     // Set memory usage hints
-    cudaMemAdvise(data, n * sizeof(float), cudaMemAdviseSetReadMostly, device);
-    cudaMemAdvise(data, n * sizeof(float), cudaMemAdviseSetPreferredLocation, device);
+    cudaMemAdvise(data, n * sizeof(float), cudaMemAdviseSetReadMostly, loc);
+    cudaMemAdvise(data, n * sizeof(float), cudaMemAdviseSetPreferredLocation, loc);
     
     // Launch kernel
     int blockSize = 256;
@@ -482,7 +485,10 @@ void optimizedUnifiedMemory(float *data, size_t n, int device) {
     processData<<<gridSize, blockSize>>>(data, n);
     
     // Prefetch back to CPU if needed
-    cudaMemPrefetchAsync(data, n * sizeof(float), cudaCpuDeviceId);
+    cudaMemLocation hostLoc{};
+    hostLoc.type = cudaMemLocationTypeHost;
+    hostLoc.id = 0;
+    cudaMemPrefetchAsync(data, n * sizeof(float), hostLoc, /*stream=*/0);
 }
 ```
 

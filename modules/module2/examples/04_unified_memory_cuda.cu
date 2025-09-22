@@ -222,16 +222,23 @@ void demonstrateMemoryMigration() {
     }
     
     int device = 0;
+    // CUDA 13 updated UM APIs use cudaMemLocation instead of raw int device IDs
+    cudaMemLocation locDevice{};
+    locDevice.type = cudaMemLocationTypeDevice;
+    locDevice.id = device;
+    cudaMemLocation locHost{};
+    locHost.type = cudaMemLocationTypeHost;
+    locHost.id = 0; // host id is unused
     
     printf("Testing memory migration with prefetching and hints...\n");
     
-    // Set memory advice
-    CUDA_CHECK(cudaMemAdvise(data, bytes, cudaMemAdviseSetReadMostly, device));
-    CUDA_CHECK(cudaMemAdvise(data, bytes, cudaMemAdviseSetPreferredLocation, device));
+    // Set memory advice (location-aware in CUDA 13)
+    CUDA_CHECK(cudaMemAdvise(data, bytes, cudaMemAdviseSetReadMostly, locDevice));
+    CUDA_CHECK(cudaMemAdvise(data, bytes, cudaMemAdviseSetPreferredLocation, locDevice));
     
-    // Prefetch to GPU
+    // Prefetch to GPU (location-aware + explicit stream)
     printf("Prefetching to GPU...\n");
-    CUDA_CHECK(cudaMemPrefetchAsync(data, bytes, device));
+    CUDA_CHECK(cudaMemPrefetchAsync(data, bytes, locDevice, 0));
     CUDA_CHECK(cudaDeviceSynchronize());
     
     int blockSize = 256;
@@ -250,9 +257,9 @@ void demonstrateMemoryMigration() {
     float gpu_time;
     CUDA_CHECK(cudaEventElapsedTime(&gpu_time, start, stop));
     
-    // Prefetch to CPU
+    // Prefetch to CPU (location-aware + explicit stream)
     printf("Prefetching to CPU...\n");
-    CUDA_CHECK(cudaMemPrefetchAsync(data, bytes, cudaCpuDeviceId));
+    CUDA_CHECK(cudaMemPrefetchAsync(data, bytes, locHost, 0));
     CUDA_CHECK(cudaDeviceSynchronize());
     
     // CPU computation (data already on CPU)
@@ -274,9 +281,9 @@ void demonstrateMemoryMigration() {
     // Test without prefetching for comparison
     printf("\nTesting without prefetching...\n");
     
-    // Reset memory advice
-    CUDA_CHECK(cudaMemAdvise(data, bytes, cudaMemAdviseUnsetReadMostly, device));
-    CUDA_CHECK(cudaMemAdvise(data, bytes, cudaMemAdviseUnsetPreferredLocation, device));
+    // Reset memory advice (location-aware in CUDA 13)
+    CUDA_CHECK(cudaMemAdvise(data, bytes, cudaMemAdviseUnsetReadMostly, locDevice));
+    CUDA_CHECK(cudaMemAdvise(data, bytes, cudaMemAdviseUnsetPreferredLocation, locDevice));
     
     CUDA_CHECK(cudaEventRecord(start));
     computeIntensive<<<gridSize, blockSize>>>(data, n);

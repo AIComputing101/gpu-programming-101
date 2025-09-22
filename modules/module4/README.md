@@ -262,12 +262,15 @@ for (int chunk = 0; chunk < numChunks; chunk++) {
 
 **Memory Hints:**
 ```cuda
-// Guide data placement
-cudaMemAdvise(data, size, cudaMemAdviseSetReadMostly, deviceId);
-cudaMemAdvise(data, size, cudaMemAdviseSetPreferredLocation, deviceId);
+// Guide data placement (CUDA 13+)
+cudaMemLocation loc{};
+loc.type = cudaMemLocationTypeDevice;
+loc.id = deviceId;
+cudaMemAdvise(data, size, cudaMemAdviseSetReadMostly, loc);
+cudaMemAdvise(data, size, cudaMemAdviseSetPreferredLocation, loc);
 
-// Prefetch data proactively
-cudaMemPrefetchAsync(data, size, deviceId);
+// Prefetch data proactively (CUDA 13+)
+cudaMemPrefetchAsync(data, size, loc, /*stream=*/0);
 ```
 
 ### 4. P2P Communication Patterns

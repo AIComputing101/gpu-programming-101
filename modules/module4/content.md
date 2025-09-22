@@ -135,11 +135,14 @@ kernel<<<grid, block>>>(data, n);
 #### Memory Access Patterns
 
 ```cuda
-// Prefetch data to GPU
-cudaMemPrefetchAsync(data, size, deviceId);
+// Prefetch data to GPU (CUDA 13+)
+cudaMemLocation loc{};
+loc.type = cudaMemLocationTypeDevice;
+loc.id = deviceId;
+cudaMemPrefetchAsync(data, size, loc, /*stream=*/0);
 
-// Provide memory access hints
-cudaMemAdvise(data, size, cudaMemAdviseSetReadMostly, deviceId);
+// Provide memory access hints (CUDA 13+)
+cudaMemAdvise(data, size, cudaMemAdviseSetReadMostly, loc);
 ```
 
 #### Unified Memory Best Practices

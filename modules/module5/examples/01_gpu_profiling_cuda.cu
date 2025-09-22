@@ -271,7 +271,9 @@ void analyzeDeviceProperties() {
     printf("Multiprocessors: %d\n", prop.multiProcessorCount);
     printf("Cores per MP: %d (estimated)\n", _ConvertSMVer2Cores(prop.major, prop.minor));
     printf("Total Cores: %d (estimated)\n", prop.multiProcessorCount * _ConvertSMVer2Cores(prop.major, prop.minor));
-    printf("GPU Clock Rate: %.2f GHz\n", prop.clockRate / 1e6);
+    int gpuClockKHz = 0;
+    cudaDeviceGetAttribute(&gpuClockKHz, cudaDevAttrClockRate, device);
+    printf("GPU Clock Rate: %.2f GHz\n", gpuClockKHz / 1e6);
     int memClockKHz = 0, busWidthBits = 0;
     cudaDeviceGetAttribute(&memClockKHz, cudaDevAttrMemoryClockRate, device);
     cudaDeviceGetAttribute(&busWidthBits, cudaDevAttrGlobalMemoryBusWidth, device);
@@ -421,7 +423,9 @@ void calculateTheoreticalLimits() {
     // Compute throughput estimation
     int coresPerSM = _ConvertSMVer2Cores(prop.major, prop.minor);
     int totalCores = prop.multiProcessorCount * coresPerSM;
-    double computeThroughput = totalCores * prop.clockRate / 1e6; // GFLOPS (single precision)
+    int gpuClockKHz = 0;
+    cudaDeviceGetAttribute(&gpuClockKHz, cudaDevAttrClockRate, device);
+    double computeThroughput = totalCores * gpuClockKHz / 1e6; // GFLOPS (single precision)
     printf("Estimated Peak Compute (SP): %.1f GFLOPS\n", computeThroughput);
     
     // Roofline model breakpoint

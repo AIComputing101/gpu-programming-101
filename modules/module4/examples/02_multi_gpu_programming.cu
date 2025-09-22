@@ -209,7 +209,9 @@ double runMultiGPUWeighted(float *h_data, int size, int numGPUs) {
         CUDA_CHECK(cudaGetDeviceProperties(&prop, gpu));
         
         // Simple weight based on SM count and clock rate
-        weights[gpu] = prop.multiProcessorCount * (prop.clockRate / 1000.0);
+        int gpuClockKHz = 0;
+        cudaDeviceGetAttribute(&gpuClockKHz, cudaDevAttrClockRate, gpu);
+        weights[gpu] = prop.multiProcessorCount * (gpuClockKHz / 1000.0);
         totalWeight += weights[gpu];
     }
     

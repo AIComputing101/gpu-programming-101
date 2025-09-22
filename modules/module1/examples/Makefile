@@ -197,7 +197,7 @@ ifeq ($(BUILD_HIP),1)
 	@for target in $(HIP_TARGETS); do \
 		if [ -f $$target ]; then \
 			echo "Profiling $$target..."; \
-			rocprof -o $(PROFILE_DIR)/$$(basename $$target).csv $$target 2>/dev/null || echo "rocprof completed"; \
+			rocprofv3 --runtime-trace --output-format csv -d $(PROFILE_DIR) -o $$(basename $$target).csv -- $$target 2>/dev/null || echo "rocprofv3 completed"; \
 		fi; \
 	done
 endif

@@ -157,6 +157,26 @@ debug: all
 profile: CUDA_FLAGS = $(CUDA_FLAGS) -lineinfo
 profile: HIP_FLAGS = $(HIP_FLAGS) -g
 profile: all
+	@echo "Generating profile data..."
+	@mkdir -p $(PROFILE_DIR)
+ifeq ($(BUILD_HIP),1)
+	@echo "Running HIP profiling..."
+	@for target in $(HIP_TARGETS); do \
+		if [ -f $$target ]; then \
+			echo "Profiling $$target..."; \
+			rocprofv3 --runtime-trace --output-format csv -d $(PROFILE_DIR) -o $$(basename $$target).csv -- $$target 2>/dev/null || echo "rocprofv3 completed"; \
+		fi; \
+	done
+endif
+ifeq ($(BUILD_CUDA),1)
+	@echo "Running CUDA profiling..."
+	@for target in $(CUDA_TARGETS); do \
+		if [ -f $$target ]; then \
+			echo "Profiling $$target..."; \
+			nvprof --csv -o $(PROFILE_DIR)/$$(basename $$target).csv $$target 2>/dev/null || echo "nvprof completed"; \
+		fi; \
+	done
+endif
 
 # Clean
 .PHONY: clean

@@ -159,7 +159,7 @@ ifeq ($(BUILD_CUDA),1)
 	@for target in $(CUDA_TARGETS); do \
 		if [ -f $$target ]; then \
 			echo "Profiling $$target..."; \
-			nvprof --csv -o $(PROFILE_DIR)/$$(basename $$target).csv $$target 2>/dev/null || echo "nvprof completed"; \
+			nsys profile --cuda-event-trace=false -o $(PROFILE_DIR)/$$(basename $$target).nsys-rep $$target 2>/dev/null || echo "nsys completed"; \
 		fi; \
 	done
 endif
@@ -260,8 +260,8 @@ profile_memory: cuda
 	@echo "  ncu --metrics l1tex__throughput.avg.pct_of_peak_sustained_elapsed ./02_memory_coalescing_cuda"
 	@echo "  ncu --metrics dram__bytes_read.sum,dram__bytes_write.sum ./05_memory_bandwidth_optimization_cuda"
 	@echo ""
-	@echo "Legacy nvprof (if available):"
-	@echo "  nvprof --metrics achieved_occupancy,gld_efficiency,gst_efficiency ./03_texture_memory_cuda"
+	@echo "Modern NVIDIA Nsight Systems:"
+	@echo "  nsys profile --cuda-event-trace=false -o profile.nsys-rep ./03_texture_memory_cuda"
 
 
 

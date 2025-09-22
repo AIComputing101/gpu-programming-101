@@ -57,7 +57,7 @@ HIP_DEBUG_FLAGS += --offload-arch=$(GPU_ARCH)
 CXX_FLAGS = -std=c++17 -O3 -fopenmp
 
 # Profiling flags
-NVPROF_FLAGS = --print-gpu-trace --log-file %s.nvprof
+NSYS_FLAGS = --cuda-event-trace=false --force-overwrite
 ROCPROF_FLAGS = --hip-trace --stats --output-file %s.csv
 
 # Directories
@@ -144,7 +144,7 @@ ifeq ($(BUILD_CUDA),1)
 	@for target in $(CUDA_TARGETS); do \
 		if [ -f $$target ]; then \
 			echo "Profiling $$target..."; \
-			nvprof --csv -o $(PROFILE_DIR)/$$(basename $$target).csv $$target 2>/dev/null || echo "nvprof completed"; \
+			nsys profile --cuda-event-trace=false -o $(PROFILE_DIR)/$$(basename $$target).nsys-rep $$target 2>/dev/null || echo "nsys completed"; \
 		fi; \
 	done
 endif
@@ -171,11 +171,12 @@ run: all
 # Performance profiling targets
 .PHONY: profile-cuda
 profile-cuda: $(CUDA_TARGETS)
-	@echo "Profiling CUDA examples with nvprof..."
+	@echo "Profiling CUDA examples with nsys..."
+	@mkdir -p $(PROFILE_DIR)
 	@for target in $(CUDA_TARGETS); do \
 		if [ -f $$target ]; then \
 			echo "Profiling $$target..."; \
-			nvprof $(NVPROF_FLAGS) $$target > $(PROFILE_DIR)/$$(basename $$target).nvprof 2>&1; \
+			nsys profile $(NSYS_FLAGS) -o $(PROFILE_DIR)/$$(basename $$target).nsys-rep $$target > $(PROFILE_DIR)/$$(basename $$target).nsys.log 2>&1; \
 		fi; \
 	done
 
@@ -330,7 +331,7 @@ help:
 	@echo "  validate           - Validate optimization correctness"
 	@echo ""
 	@echo "Profiling Targets:"
-	@echo "  profile-cuda       - Profile CUDA examples with nvprof"
+	@echo "  profile-cuda       - Profile CUDA examples with nsys"
 	@echo "  profile-hip        - Profile HIP examples with rocprof"
 	@echo "  profile-detailed-cuda - Detailed profiling with Nsight Compute"
 	@echo "  memcheck-cuda      - Run CUDA memory checker"

@@ -206,7 +206,7 @@ ifeq ($(BUILD_CUDA),1)
 	@for target in $(CUDA_TARGETS); do \
 		if [ -f $$target ]; then \
 			echo "Profiling $$target..."; \
-			nvprof --csv -o $(PROFILE_DIR)/$$(basename $$target).csv $$target 2>/dev/null || echo "nvprof completed"; \
+			nsys profile --cuda-event-trace=false -o $(PROFILE_DIR)/$$(basename $$target).nsys-rep $$target 2>/dev/null || echo "nsys completed"; \
 		fi; \
 	done
 endif

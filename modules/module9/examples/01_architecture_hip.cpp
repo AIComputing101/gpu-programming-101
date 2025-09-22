@@ -1,7 +1,7 @@
 /**
  * Module 9: Production GPU Programming - Production Architecture Patterns (HIP)
  * 
- * Enterprise-grade GPU application architecture demonstrating production-ready patterns
+ * Enterprise-grade GPU application architecture demonstrating professional patterns
  * adapted for AMD GPU architectures using ROCm/HIP. This example showcases real-world
  * production requirements optimized for AMD hardware and ROCm ecosystem.
  * 
@@ -34,7 +34,7 @@
 #include <random>
 #include <functional>
 
-// Production-grade error handling macros for HIP
+// Professional-grade error handling macros for HIP
 #define HIP_CHECK_PROD(call, context) \
     do { \
         hipError_t error = call; \
@@ -828,7 +828,7 @@ int main(int argc, char* argv[]) {
     std::cout << "• Wavefront-aware resource management (64-thread wavefronts)\n";
     std::cout << "• NUMA-aware memory allocation for multi-GPU systems\n";
     std::cout << "• AMD GPU specific error handling and recovery\n";
-    std::cout << "• Production-grade logging optimized for ROCm ecosystem\n";
+    std::cout << "• Professional-grade logging optimized for ROCm ecosystem\n";
     std::cout << "• Multi-tenant resource isolation for AMD GPUs\n";
     std::cout << "• Real-time health monitoring with AMD-specific thresholds\n";
     

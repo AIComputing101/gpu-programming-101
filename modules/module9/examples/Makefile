@@ -25,7 +25,7 @@ BUILD_HIP = 0
 GPU_VENDOR = NONE
 endif
 
-# Compiler flags for production-ready applications
+# Compiler flags for professional applications
 CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo --use_fast_math -DPRODUCTION_BUILD
 CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70 -DDEBUG_BUILD
 HIP_FLAGS = -std=c++17 -O3 -ffast-math -DPRODUCTION_BUILD
@@ -659,7 +659,7 @@ help:
 	@echo ""
 	@echo "Build Targets:"
 	@echo "  all              - Build all production applications"
-	@echo "  production       - Build with production optimization and hardening"
+	@echo "  professional     - Build with professional optimization and hardening"
 	@echo "  debug            - Build with debug information"
 	@echo "  clean            - Remove all build artifacts"
 	@echo ""

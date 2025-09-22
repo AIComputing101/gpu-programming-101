@@ -334,4 +334,4 @@ ncu --metrics l1tex__data_bank_conflicts_pipe_lsu_mem_shared_op_ld.sum ./02_scan
 
 ---
 
-**Note**: This module provides both educational implementations (showing algorithm progression) and production-ready optimized versions. Focus on understanding the concepts before optimizing for specific use cases.
+**Note**: This module provides both educational implementations (showing algorithm progression) and optimized versions. Focus on understanding the concepts before optimizing for specific use cases.

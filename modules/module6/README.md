@@ -367,4 +367,4 @@ These algorithms form the foundation for more complex applications covered in su
 **Difficulty**: Intermediate-Advanced  
 **Prerequisites**: Modules 1-5 completion, parallel algorithm concepts
 
-**Note**: This module emphasizes both educational understanding and production-ready implementations. Focus on mastering the algorithmic concepts before diving into platform-specific optimizations.
+**Note**: This module emphasizes both educational understanding and optimized implementations. Focus on mastering the algorithmic concepts before diving into platform-specific optimizations.

@@ -160,8 +160,11 @@ int main() {
     cudaDeviceProp props;
     CUDA_CHECK(cudaGetDeviceProperties(&props, 0));
     printf("GPU: %s\n", props.name);
+    int memClockKHz = 0, busWidthBits = 0;
+    cudaDeviceGetAttribute(&memClockKHz, cudaDevAttrMemoryClockRate, 0);
+    cudaDeviceGetAttribute(&busWidthBits, cudaDevAttrGlobalMemoryBusWidth, 0);
     printf("Peak Memory Bandwidth: %.2f GB/s\n", 
-           2.0 * props.memoryClockRate * (props.memoryBusWidth / 8) / 1.0e6);
+        2.0 * (memClockKHz / 1e6) * (busWidthBits / 8.0));
     
     return 0;
 }

@@ -83,10 +83,13 @@ void printDeviceInfo() {
         printf("Device %d: %s\n", i, prop.name);
         printf("  Compute Capability: %d.%d\n", prop.major, prop.minor);
         printf("  Global Memory: %.2f GB\n", prop.totalGlobalMem / (1024.0*1024.0*1024.0));
-        printf("  Memory Clock Rate: %.2f MHz\n", prop.memoryClockRate / 1000.0);
-        printf("  Memory Bus Width: %d bits\n", prop.memoryBusWidth);
-        printf("  Peak Memory Bandwidth: %.2f GB/s\n", 
-               2.0 * prop.memoryClockRate * (prop.memoryBusWidth / 8) / 1.0e6);
+     int memClockKHz = 0, busWidthBits = 0;
+     cudaDeviceGetAttribute(&memClockKHz, cudaDevAttrMemoryClockRate, i);
+     cudaDeviceGetAttribute(&busWidthBits, cudaDevAttrGlobalMemoryBusWidth, i);
+     printf("  Memory Clock Rate: %.2f MHz\n", memClockKHz / 1000.0);
+     printf("  Memory Bus Width: %d bits\n", busWidthBits);
+     printf("  Peak Memory Bandwidth: %.2f GB/s\n", 
+         2.0 * (memClockKHz / 1e6) * (busWidthBits / 8.0));
         printf("  Multiprocessors: %d\n", prop.multiProcessorCount);
         printf("  Concurrent Kernels: %s\n", prop.concurrentKernels ? "Yes" : "No");
         

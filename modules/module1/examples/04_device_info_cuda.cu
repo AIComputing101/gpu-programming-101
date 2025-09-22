@@ -27,10 +27,14 @@ int main() {
                props.maxThreadsDim[0], props.maxThreadsDim[1], props.maxThreadsDim[2]);
         printf("  Max Grid Size: (%d, %d, %d)\n", 
                props.maxGridSize[0], props.maxGridSize[1], props.maxGridSize[2]);
-        printf("  Memory Clock Rate: %.2f GHz\n", props.memoryClockRate / 1e6);
-        printf("  Memory Bus Width: %d bits\n", props.memoryBusWidth);
+        int memClockKHz = 0;
+        int busWidthBits = 0;
+        cudaDeviceGetAttribute(&memClockKHz, cudaDevAttrMemoryClockRate, i);
+        cudaDeviceGetAttribute(&busWidthBits, cudaDevAttrGlobalMemoryBusWidth, i);
+        printf("  Memory Clock Rate: %.2f GHz\n", memClockKHz / 1e6);
+        printf("  Memory Bus Width: %d bits\n", busWidthBits);
         printf("  Peak Memory Bandwidth: %.2f GB/s\n", 
-               2.0 * props.memoryClockRate * (props.memoryBusWidth / 8) / 1.0e6);
+               2.0 * (memClockKHz / 1e6) * (busWidthBits / 8.0));
         printf("  Multiprocessor Count: %d\n", props.multiProcessorCount);
         printf("  L2 Cache Size: %d bytes\n", props.l2CacheSize);
         printf("  Max Threads per Multiprocessor: %d\n", props.maxThreadsPerMultiProcessor);

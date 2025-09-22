@@ -210,8 +210,13 @@ int main() {
     cudaDeviceProp props;
     CUDA_CHECK(cudaGetDeviceProperties(&props, 0));
     printf("Running on: %s\n", props.name);
-    printf("Peak memory bandwidth: %.1f GB/s\n", 
-           2.0 * props.memoryClockRate * (props.memoryBusWidth / 8) / 1.0e6);
+    // CUDA 13: use cudaDeviceGetAttribute for memory metrics
+    int memClockKHz = 0;
+    int busWidthBits = 0;
+    cudaDeviceGetAttribute(&memClockKHz, cudaDevAttrMemoryClockRate, 0);
+    cudaDeviceGetAttribute(&busWidthBits, cudaDevAttrGlobalMemoryBusWidth, 0);
+    double peakGBs = 2.0 * (memClockKHz / 1e6) * (busWidthBits / 8.0);
+    printf("Peak memory bandwidth: %.1f GB/s\n", peakGBs);
     
     // Cleanup
     free(h_A); free(h_B); free(h_C); free(h_C_ref);

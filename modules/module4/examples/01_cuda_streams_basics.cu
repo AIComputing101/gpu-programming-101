@@ -330,8 +330,11 @@ int main() {
     printf("Compute Capability: %d.%d\n", prop.major, prop.minor);
     printf("Concurrent Kernels: %s\n", prop.concurrentKernels ? "Yes" : "No");
     printf("Async Engine Count: %d\n", prop.asyncEngineCount);
-    printf("Memory Bus Width: %d bits\n", prop.memoryBusWidth);
-    printf("Memory Clock Rate: %.2f MHz\n\n", prop.memoryClockRate / 1000.0f);
+    int memClockKHz = 0, busWidthBits = 0;
+    cudaDeviceGetAttribute(&memClockKHz, cudaDevAttrMemoryClockRate, 0);
+    cudaDeviceGetAttribute(&busWidthBits, cudaDevAttrGlobalMemoryBusWidth, 0);
+    printf("Memory Bus Width: %d bits\n", busWidthBits);
+    printf("Memory Clock Rate: %.2f MHz\n\n", memClockKHz / 1000.0f);
     
     // Allocate host memory
     const int totalSize = TOTAL_SIZE;

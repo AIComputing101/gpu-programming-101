@@ -302,7 +302,6 @@ Texture memory provides:
 
 ```cuda
 #include <cuda_runtime.h>
-#include <texture_fetch_functions.h>
 
 __global__ void textureKernel(cudaTextureObject_t texObj, float *output, 
                              int width, int height) {

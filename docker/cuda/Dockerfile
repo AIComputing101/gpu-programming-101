@@ -25,10 +25,6 @@ RUN apt-get update && apt-get install -y \
     nano \
     htop \
     tree \
-    # Minimal Python for basic scripting (not data science)
-    python3 \
-    python3-pip \
-    python3-dev \
     # Additional utilities
     pkg-config \
     software-properties-common \
@@ -46,10 +42,6 @@ RUN apt-get update && \
     (apt-get install -y cuda-tools-13-0 || apt-get install -y cuda-tools || true) && \
     rm -rf /var/lib/apt/lists/*
 
-# Install minimal Python packages for basic development (no heavy data science libs)
-RUN pip3 install --no-cache-dir \
-    numpy \
-    matplotlib
 
 # Set up CUDA environment variables
 ENV PATH=/usr/local/cuda/bin:${PATH}
@@ -152,9 +144,8 @@ RUN chmod +x /workspace/test-gpu.sh
 
 # Install CUDA samples for learning and reference
 RUN cd /workspace && \
-    git clone https://github.com/NVIDIA/cuda-samples.git && \
-    cd cuda-samples && \
-    git checkout v13.0
+    git clone --depth 1 --branch v13.0 https://github.com/NVIDIA/cuda-samples.git && \
+    cd cuda-samples
 
 # Default command
 CMD ["/bin/bash"]

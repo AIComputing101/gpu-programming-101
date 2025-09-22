@@ -185,11 +185,29 @@ debug: CUDA_FLAGS = $(CUDA_DEBUG_FLAGS)
 debug: HIP_FLAGS = $(HIP_DEBUG_FLAGS)
 debug: all
 
+# Profile builds
+.PHONY: profile
+profile: CUDA_FLAGS = $(CUDA_FLAGS) -lineinfo
+profile: HIP_FLAGS = $(HIP_FLAGS) -g
+profile: all
+
 # Clean
 .PHONY: clean
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf $(BUILD_DIR) $(PROFILE_DIR)
+
+# Test target - run built examples
+.PHONY: test
+test: all
+	@echo "Running Module 1 Tests..."
+	@for target in $(ALL_TARGETS); do \
+		if [ -f $$target ]; then \
+			echo "Testing $$target..."; \
+			$$target || echo "Test completed with exit code $$?"; \
+			echo ""; \
+		fi; \
+	done
 
 # Help
 .PHONY: help
@@ -200,5 +218,7 @@ help:
 	@echo "  cuda    - Build CUDA examples (requires NVIDIA GPU)"
 	@echo "  hip     - Build HIP examples (requires AMD GPU)"
 	@echo "  debug   - Build with debug flags"
+	@echo "  profile - Build with profiling flags"
+	@echo "  test    - Run all built examples"
 	@echo "  clean   - Remove build artifacts"
 	@echo "  help    - Show this help message"

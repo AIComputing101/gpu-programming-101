@@ -200,6 +200,13 @@ debug: HIP_FLAGS = $(HIP_DEBUG_FLAGS)
 debug: CXX_FLAGS = -std=c++17 -g -DDEBUG_BUILD
 debug: all
 
+# Profile builds
+.PHONY: profile
+profile: CUDA_FLAGS = $(CUDA_FLAGS) -lineinfo
+profile: HIP_FLAGS = $(HIP_FLAGS) -g
+profile: CXX_FLAGS += -g -pg
+profile: all
+
 # Production builds with security hardening
 .PHONY: production
 production: CUDA_FLAGS += -DNDEBUG -Xptxas -O3 -DSECURITY_HARDENED

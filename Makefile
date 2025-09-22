@@ -2,7 +2,7 @@
 # Builds all available modules and examples
 
 # Default target
-.PHONY: all clean test help module1 module2 module3 module4 module5 module6 module7 module8 module9
+.PHONY: all clean test debug profile help module1 module2 module3 module4 module5 module6 module7 module8 module9
 
 # Build all available modules
 all: module1 module2 module3 module4 module5 module6 module7 module8 module9
@@ -82,6 +82,84 @@ test-module8:
 test-module9:
 	@echo "Testing Module 9..."
 	@$(MAKE) -C modules/module9/examples test
+
+# Debug builds for all modules
+debug: debug-module1 debug-module2 debug-module3 debug-module4 debug-module5 debug-module6 debug-module7 debug-module8 debug-module9
+
+debug-module1:
+	@echo "Debug build Module 1..."
+	@$(MAKE) -C modules/module1/examples debug
+
+debug-module2:
+	@echo "Debug build Module 2..."
+	@$(MAKE) -C modules/module2/examples debug
+
+debug-module3:
+	@echo "Debug build Module 3..."
+	@$(MAKE) -C modules/module3/examples debug
+
+debug-module4:
+	@echo "Debug build Module 4..."
+	@$(MAKE) -C modules/module4/examples debug
+
+debug-module5:
+	@echo "Debug build Module 5..."
+	@$(MAKE) -C modules/module5/examples debug
+
+debug-module6:
+	@echo "Debug build Module 6..."
+	@$(MAKE) -C modules/module6/examples debug
+
+debug-module7:
+	@echo "Debug build Module 7..."
+	@$(MAKE) -C modules/module7/examples debug
+
+debug-module8:
+	@echo "Debug build Module 8..."
+	@$(MAKE) -C modules/module8/examples debug
+
+debug-module9:
+	@echo "Debug build Module 9..."
+	@$(MAKE) -C modules/module9/examples debug
+
+# Profile builds for all modules  
+profile: profile-module1 profile-module2 profile-module3 profile-module4 profile-module5 profile-module6 profile-module7 profile-module8 profile-module9
+
+profile-module1:
+	@echo "Profile build Module 1..."
+	@$(MAKE) -C modules/module1/examples profile
+
+profile-module2:
+	@echo "Profile build Module 2..."
+	@$(MAKE) -C modules/module2/examples profile
+
+profile-module3:
+	@echo "Profile build Module 3..."
+	@$(MAKE) -C modules/module3/examples profile
+
+profile-module4:
+	@echo "Profile build Module 4..."
+	@$(MAKE) -C modules/module4/examples profile
+
+profile-module5:
+	@echo "Profile build Module 5..."
+	@$(MAKE) -C modules/module5/examples profile
+
+profile-module6:
+	@echo "Profile build Module 6..."
+	@$(MAKE) -C modules/module6/examples profile
+
+profile-module7:
+	@echo "Profile build Module 7..."
+	@$(MAKE) -C modules/module7/examples profile
+
+profile-module8:
+	@echo "Profile build Module 8..."
+	@$(MAKE) -C modules/module8/examples profile
+
+profile-module9:
+	@echo "Profile build Module 9..."
+	@$(MAKE) -C modules/module9/examples profile
 
 # Clean all builds
 clean:
@@ -193,6 +271,8 @@ help:
 	@echo "  all          - Build all available modules"
 	@echo "  clean        - Clean all build artifacts"
 	@echo "  test         - Run all available tests"
+	@echo "  debug        - Build all modules with debug flags"
+	@echo "  profile      - Build all modules with profiling flags"
 	@echo "  help         - Show this help message"
 	@echo ""
 	@echo "Module targets:"

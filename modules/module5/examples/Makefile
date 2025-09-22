@@ -123,6 +123,12 @@ debug: CUDA_FLAGS = $(CUDA_DEBUG_FLAGS)
 debug: HIP_FLAGS = $(HIP_DEBUG_FLAGS)
 debug: all
 
+# Profile builds
+.PHONY: profile
+profile: CUDA_FLAGS = $(CUDA_FLAGS) -lineinfo
+profile: HIP_FLAGS = $(HIP_FLAGS) -g
+profile: all
+
 # Clean build artifacts
 .PHONY: clean
 clean:

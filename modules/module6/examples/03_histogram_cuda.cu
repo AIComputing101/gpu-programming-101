@@ -183,43 +183,10 @@ __global__ void histogram_warp_aggregated(unsigned char *input, int *histogram, 
 
 /**
  * Optimized warp-aggregated histogram using ballot and popc
+ * Note: This implementation has been removed due to performance issues
+ * with the nested loop over all bins. The warp aggregation approach
+ * works better with selective bin processing rather than exhaustive search.
  */
-__global__ void histogram_warp_optimized(unsigned char *input, int *histogram, int n) {
-    extern __shared__ int private_hist[];
-    
-    int tid = threadIdx.x;
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int lane_id = threadIdx.x % 32;
-    
-    // Initialize private histogram
-    for (int bin = tid; bin < NUM_BINS; bin += blockDim.x) {
-        private_hist[bin] = 0;
-    }
-    __syncthreads();
-    
-    // Process input with optimized warp aggregation
-    if (idx < n) {
-        int bin = input[idx];
-        
-        // Use ballot to find threads with same bin value
-        for (int target_bin = 0; target_bin < NUM_BINS; target_bin++) {
-            unsigned int ballot = __ballot_sync(0xffffffff, bin == target_bin);
-            int count = __popc(ballot);
-            
-            if (count > 0 && lane_id == __ffs(ballot) - 1) {
-                atomicAdd(&private_hist[target_bin], count);
-            }
-        }
-    }
-    __syncthreads();
-    
-    // Merge private histogram to global histogram
-    for (int bin = tid; bin < NUM_BINS; bin += blockDim.x) {
-        if (private_hist[bin] > 0) {
-            atomicAdd(&histogram[bin], private_hist[bin]);
-        }
-    }
-}
 
 /**
  * Multi-pass histogram for very large datasets

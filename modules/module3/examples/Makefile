@@ -203,19 +203,19 @@ test_cuda: cuda
 	@if command -v nvidia-smi > /dev/null; then \
 		echo "=== Testing Advanced Algorithm Examples ==="; \
 		echo "1. Reduction Algorithms..."; \
-		./01_reduction_algorithms_cuda || echo "✗ Reduction algorithms failed"; \
+		$(BUILD_DIR)/01_reduction_algorithms_cuda || echo "✗ Reduction algorithms failed"; \
 		echo "2. Scan (Prefix Sum)..."; \
-		./02_scan_prefix_sum_cuda || echo "✗ Scan algorithms failed"; \
+		$(BUILD_DIR)/02_scan_prefix_sum_cuda || echo "✗ Scan algorithms failed"; \
 		echo "3. Sorting Algorithms..."; \
-		./03_sorting_algorithms_cuda || echo "✗ Sorting algorithms failed"; \
+		$(BUILD_DIR)/03_sorting_algorithms_cuda || echo "✗ Sorting algorithms failed"; \
 		echo "4. Convolution/Stencil..."; \
-		./04_convolution_stencil_cuda || echo "✗ Convolution failed"; \
+		$(BUILD_DIR)/04_convolution_stencil_cuda || echo "✗ Convolution failed"; \
 		echo "5. Matrix Operations..."; \
-		./05_matrix_operations_cuda || echo "✗ Matrix operations failed"; \
+		$(BUILD_DIR)/05_matrix_operations_cuda || echo "✗ Matrix operations failed"; \
 		echo "6. Graph Algorithms..."; \
-		./06_graph_algorithms_cuda || echo "✗ Graph algorithms failed"; \
+		$(BUILD_DIR)/06_graph_algorithms_cuda || echo "✗ Graph algorithms failed"; \
 		echo "7. Cooperative Groups..."; \
-		./07_cooperative_groups_cuda || echo "✗ Cooperative groups failed"; \
+		$(BUILD_DIR)/07_cooperative_groups_cuda || echo "✗ Cooperative groups failed"; \
 		echo "✓ Module 3 CUDA tests completed"; \
 	else \
 		echo "No NVIDIA GPU detected, skipping CUDA tests"; \
@@ -226,13 +226,13 @@ test_hip: hip
 	@if command -v rocm-smi > /dev/null || command -v nvidia-smi > /dev/null; then \
 		echo "=== Testing HIP Algorithm Examples ==="; \
 		echo "1. Reduction Algorithms..."; \
-		./01_reduction_algorithms_hip || echo "✗ HIP reduction algorithms failed"; \
+		$(BUILD_DIR)/01_reduction_algorithms_hip || echo "✗ HIP reduction algorithms failed"; \
 		echo "2. Scan (Prefix Sum)..."; \
-		./02_scan_prefix_sum_hip || echo "✗ HIP scan algorithms failed"; \
+		$(BUILD_DIR)/02_scan_prefix_sum_hip || echo "✗ HIP scan algorithms failed"; \
 		echo "3. Sorting Algorithms..."; \
-		./03_sorting_algorithms_hip || echo "✗ HIP sorting algorithms failed"; \
+		$(BUILD_DIR)/03_sorting_algorithms_hip || echo "✗ HIP sorting algorithms failed"; \
 		echo "4. Convolution/Stencil..."; \
-		./04_convolution_stencil_hip || echo "✗ HIP convolution failed"; \
+		$(BUILD_DIR)/04_convolution_stencil_hip || echo "✗ HIP convolution failed"; \
 		echo "✓ Module 3 HIP tests completed"; \
 	else \
 		echo "No compatible GPU detected, skipping HIP tests"; \

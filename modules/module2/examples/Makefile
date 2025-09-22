@@ -202,15 +202,15 @@ test_cuda: cuda
 	@if command -v nvidia-smi > /dev/null; then \
 		echo "=== Testing Advanced Memory Management Examples ==="; \
 		echo "1. Shared Memory Transpose..."; \
-		./01_shared_memory_transpose_cuda || echo "✗ Shared memory transpose failed"; \
+		$(BUILD_DIR)/01_shared_memory_transpose_cuda || echo "✗ Shared memory transpose failed"; \
 		echo "2. Memory Coalescing Analysis..."; \
-		./02_memory_coalescing_cuda || echo "✗ Memory coalescing failed"; \
+		$(BUILD_DIR)/02_memory_coalescing_cuda || echo "✗ Memory coalescing failed"; \
 		echo "3. Texture Memory Examples..."; \
-		./03_texture_memory_cuda || echo "✗ Texture memory failed"; \
+		$(BUILD_DIR)/03_texture_memory_cuda || echo "✗ Texture memory failed"; \
 		echo "4. Unified Memory Examples..."; \
-		./04_unified_memory_cuda || echo "✗ Unified memory failed"; \
+		$(BUILD_DIR)/04_unified_memory_cuda || echo "✗ Unified memory failed"; \
 		echo "5. Bandwidth Optimization..."; \
-		./05_memory_bandwidth_optimization_cuda || echo "✗ Bandwidth optimization failed"; \
+		$(BUILD_DIR)/05_memory_bandwidth_optimization_cuda || echo "✗ Bandwidth optimization failed"; \
 		echo "✓ Module 2 CUDA tests completed"; \
 	else \
 		echo "No NVIDIA GPU detected, skipping CUDA tests"; \
@@ -221,9 +221,9 @@ test_hip: hip
 	@if command -v rocm-smi > /dev/null || command -v nvidia-smi > /dev/null; then \
 		echo "=== Testing HIP Memory Examples ==="; \
 		echo "1. Shared Memory Transpose..."; \
-		./01_shared_memory_transpose_hip || echo "✗ HIP shared memory transpose failed"; \
+		$(BUILD_DIR)/01_shared_memory_transpose_hip || echo "✗ HIP shared memory transpose failed"; \
 		echo "2. Memory Coalescing Analysis..."; \
-		./02_memory_coalescing_hip || echo "✗ HIP memory coalescing failed"; \
+		$(BUILD_DIR)/02_memory_coalescing_hip || echo "✗ HIP memory coalescing failed"; \
 		echo "✓ Module 2 HIP tests completed"; \
 	else \
 		echo "No compatible GPU detected, skipping HIP tests"; \

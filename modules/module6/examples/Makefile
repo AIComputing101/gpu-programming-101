@@ -24,9 +24,16 @@ BUILD_HIP = 0
 GPU_VENDOR = NONE
 endif
 
+# CUDA architecture detection (prefer actual GPU via nvidia-smi; fallback sm_90)
+CUDA_ARCH ?= $(shell nvidia-smi --query-gpu=compute_cap --format=csv,noheader,nounits 2>/dev/null | head -1 | awk -F. '/^[0-9]+\.[0-9]+$/ {printf "sm_%d%d", $$1, $$2}')
+ifeq ($(strip $(CUDA_ARCH)),)
+	CUDA_ARCH := sm_90
+endif
+CUDA_ARCH_FLAG := -arch=$(CUDA_ARCH)
+
 # Compiler flags
-CUDA_FLAGS = -std=c++17 -O3 -arch=sm_90 -lineinfo
-CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_90
+CUDA_FLAGS = -std=c++17 -O3 $(CUDA_ARCH_FLAG) -lineinfo
+CUDA_DEBUG_FLAGS = -std=c++17 -g -G $(CUDA_ARCH_FLAG)
 HIP_FLAGS = -std=c++17 -O3
 HIP_DEBUG_FLAGS = -std=c++17 -g
 

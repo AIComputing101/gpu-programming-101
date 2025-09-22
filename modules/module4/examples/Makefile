@@ -173,7 +173,7 @@ ifeq ($(BUILD_CUDA),1)
 	@for target in $(CUDA_TARGETS); do \
 		if [ -f $$target ]; then \
 			echo "Profiling $$target..."; \
-			nvprof --csv -o $(PROFILE_DIR)/$$(basename $$target).csv $$target 2>/dev/null || echo "nvprof completed"; \
+			nsys profile --cuda-event-trace=false -o $(PROFILE_DIR)/$$(basename $$target).nsys-rep $$target 2>/dev/null || echo "nsys completed"; \
 		fi; \
 	done
 endif
@@ -419,9 +419,9 @@ profile_examples: all
 	@echo "  nsys profile --trace=cuda,nvtx --stats=true ./02_multi_gpu_programming"
 	@echo "  nsys profile --trace=cuda,nvtx,osrt --stats=true ./03_unified_memory"
 	@echo ""
-	@echo "Legacy nvprof:"
-	@echo "  nvprof --print-gpu-trace ./01_cuda_streams_basics"
-	@echo "  nvprof --print-api-trace ./02_multi_gpu_programming"
+	@echo "Modern NVIDIA Nsight Systems:"
+	@echo "  nsys profile --cuda-event-trace=false -o trace.nsys-rep ./01_cuda_streams_basics"
+	@echo "  nsys profile --cuda-event-trace=false -o multi_gpu.nsys-rep ./02_multi_gpu_programming"
 	@echo ""
 	@echo "Multi-GPU Analysis:"
 	@echo "  nsys profile --trace=cuda,nvtx --stats=true -o multi_gpu_trace ./02_multi_gpu_programming"

@@ -54,6 +54,11 @@ endif
 # Add detected GPU architecture to HIP flags
 HIP_FLAGS += --offload-arch=$(GPU_ARCH)
 HIP_DEBUG_FLAGS += --offload-arch=$(GPU_ARCH)
+
+# ROCm library linking for advanced examples
+HIP_LIB_DIR := $(ROCM_PATH)/lib
+HIP_LDFLAGS := -L$(HIP_LIB_DIR) -lrocblas -Wl,-rpath,$(HIP_LIB_DIR)
+
 CXX_FLAGS = -std=c++17 -O2
 
 # Directories
@@ -129,7 +134,7 @@ endif
 ifeq ($(BUILD_HIP),1)
 $(BUILD_DIR)/%_hip: $(EXAMPLES_DIR)/%_hip.cpp
 	@echo "Building HIP example: $@"
-	$(HIPCC) $(HIP_FLAGS) $< -o $@
+	$(HIPCC) $(HIP_FLAGS) $< -o $@ $(HIP_LDFLAGS)
 endif
 
 # Debug builds

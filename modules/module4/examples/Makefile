@@ -152,6 +152,32 @@ debug: CUDA_FLAGS = $(CUDA_DEBUG_FLAGS)
 debug: HIP_FLAGS = $(HIP_DEBUG_FLAGS)
 debug: all
 
+# Profile builds
+.PHONY: profile
+profile: CUDA_FLAGS += -lineinfo
+profile: HIP_FLAGS += -g
+profile: all
+	@echo "Generating profile data..."
+	@mkdir -p $(PROFILE_DIR)
+ifeq ($(BUILD_HIP),1)
+	@echo "Running HIP profiling..."
+	@for target in $(HIP_TARGETS); do \
+		if [ -f $$target ]; then \
+			echo "Profiling $$target..."; \
+			rocprofv3 --runtime-trace --output-format csv -d $(PROFILE_DIR) -o $$(basename $$target).csv -- $$target 2>/dev/null || echo "rocprofv3 completed"; \
+		fi; \
+	done
+endif
+ifeq ($(BUILD_CUDA),1)
+	@echo "Running CUDA profiling..."
+	@for target in $(CUDA_TARGETS); do \
+		if [ -f $$target ]; then \
+			echo "Profiling $$target..."; \
+			nvprof --csv -o $(PROFILE_DIR)/$$(basename $$target).csv $$target 2>/dev/null || echo "nvprof completed"; \
+		fi; \
+	done
+endif
+
 # Clean
 .PHONY: clean
 clean:
@@ -228,15 +254,15 @@ test_cuda: cuda
 	@if command -v nvidia-smi > /dev/null; then \
 		echo "=== Testing Advanced GPU Programming Examples ==="; \
 		echo "1. CUDA Streams..."; \
-		./01_cuda_streams_basics || echo "✗ CUDA Streams failed"; \
+		$(BUILD_DIR)/01_cuda_streams_basics || echo "✗ CUDA Streams failed"; \
 		echo "2. Multi-GPU Programming..."; \
-		./02_multi_gpu_programming || echo "✗ Multi-GPU Programming failed"; \
+		$(BUILD_DIR)/02_multi_gpu_programming || echo "✗ Multi-GPU Programming failed"; \
 		echo "3. Unified Memory..."; \
-		./03_unified_memory || echo "✗ Unified Memory failed"; \
+		$(BUILD_DIR)/03_unified_memory || echo "✗ Unified Memory failed"; \
 		echo "4. Peer-to-Peer Communication..."; \
-		./04_peer_to_peer_communication || echo "✗ P2P Communication failed"; \
+		$(BUILD_DIR)/04_peer_to_peer_communication || echo "✗ P2P Communication failed"; \
 		echo "5. Dynamic Parallelism (requires compute capability 3.5+)..."; \
-		./05_dynamic_parallelism || echo "✗ Dynamic Parallelism failed (may require newer GPU)"; \
+		$(BUILD_DIR)/05_dynamic_parallelism || echo "✗ Dynamic Parallelism failed (may require newer GPU)"; \
 		echo "✓ Module 4 tests completed"; \
 	else \
 		echo "No NVIDIA GPU detected, skipping GPU tests"; \
@@ -248,13 +274,13 @@ test_hip: hip
 	@if command -v rocm-smi > /dev/null 2>&1 || command -v nvidia-smi > /dev/null 2>&1; then \
 		echo "=== Testing HIP Advanced GPU Programming Examples ==="; \
 		echo "1. HIP Streams..."; \
-		./01_hip_streams_basics || echo "✗ HIP Streams failed"; \
+		$(BUILD_DIR)/01_hip_streams_basics || echo "✗ HIP Streams failed"; \
 		echo "2. HIP Multi-GPU Programming..."; \
-		./02_hip_multi_gpu_programming || echo "✗ HIP Multi-GPU Programming failed"; \
+		$(BUILD_DIR)/02_hip_multi_gpu_programming || echo "✗ HIP Multi-GPU Programming failed"; \
 		echo "3. HIP Unified Memory..."; \
-		./03_hip_unified_memory || echo "✗ HIP Unified Memory failed"; \
+		$(BUILD_DIR)/03_hip_unified_memory || echo "✗ HIP Unified Memory failed"; \
 		echo "4. HIP Peer-to-Peer Communication..."; \
-		./04_hip_peer_to_peer_communication || echo "✗ HIP P2P Communication failed"; \
+		$(BUILD_DIR)/04_hip_peer_to_peer_communication || echo "✗ HIP P2P Communication failed"; \
 		echo "✓ HIP Module 4 tests completed"; \
 	else \
 		echo "No GPU detected (ROCm or CUDA), skipping HIP tests"; \

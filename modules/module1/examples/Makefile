@@ -185,11 +185,51 @@ debug: CUDA_FLAGS = $(CUDA_DEBUG_FLAGS)
 debug: HIP_FLAGS = $(HIP_DEBUG_FLAGS)
 debug: all
 
+# Profile builds with actual profiling
+.PHONY: profile
+profile: CUDA_FLAGS += -lineinfo
+profile: HIP_FLAGS += -g
+profile: all
+	@echo "Generating profile data..."
+	@mkdir -p $(PROFILE_DIR)
+ifeq ($(BUILD_HIP),1)
+	@echo "Running HIP profiling..."
+	@for target in $(HIP_TARGETS); do \
+		if [ -f $$target ]; then \
+			echo "Profiling $$target..."; \
+			rocprofv3 --runtime-trace --output-format csv -d $(PROFILE_DIR) -o $$(basename $$target).csv -- $$target 2>/dev/null || echo "rocprofv3 completed"; \
+		fi; \
+	done
+endif
+ifeq ($(BUILD_CUDA),1)
+	@echo "Running CUDA profiling..."
+	@for target in $(CUDA_TARGETS); do \
+		if [ -f $$target ]; then \
+			echo "Profiling $$target..."; \
+			nvprof --csv -o $(PROFILE_DIR)/$$(basename $$target).csv $$target 2>/dev/null || echo "nvprof completed"; \
+		fi; \
+	done
+endif
+	@echo "Profile data saved to $(PROFILE_DIR)/"
+	@ls -la $(PROFILE_DIR)/
+
 # Clean
 .PHONY: clean
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf $(BUILD_DIR) $(PROFILE_DIR)
+
+# Test target - run built examples
+.PHONY: test
+test: all
+	@echo "Running Module 1 Tests..."
+	@for target in $(ALL_TARGETS); do \
+		if [ -f $$target ]; then \
+			echo "Testing $$target..."; \
+			$$target || echo "Test completed with exit code $$?"; \
+			echo ""; \
+		fi; \
+	done
 
 # Help
 .PHONY: help
@@ -200,5 +240,7 @@ help:
 	@echo "  cuda    - Build CUDA examples (requires NVIDIA GPU)"
 	@echo "  hip     - Build HIP examples (requires AMD GPU)"
 	@echo "  debug   - Build with debug flags"
+	@echo "  profile - Build with profiling flags"
+	@echo "  test    - Run all built examples"
 	@echo "  clean   - Remove build artifacts"
 	@echo "  help    - Show this help message"

@@ -68,17 +68,21 @@ Highlights from AMD’s official docs (see links):
 - ROCm 7.0.1 is the latest as of 2025‑09‑17; consult the release history for point updates.
 - HIP as the primary programming model, with CUDA‑like APIs and HIP‑Clang toolchain.
 - Windows support targets HIP SDK for development; full ROCm stack targets Linux.
-- Libraries are provided under the ROCm organization (rocBLAS/hipBLAS, rocFFT/hipFFT, rocSPARSE/hipSPARSE, rocRAND/hipRAND, rocSOLVER/hipSOLVER, rocPRIM/hipCUB, rocThrust, etc.).
+- ROCm Libraries monorepo: multiple core math and support libraries are consolidated in the ROCm Libraries monorepo for unified CI/build. Projects included (as of rocm‑7.0.1): composablekernel, hipblas, hipblas-common, hipblaslt, hipcub, hipfft, hiprand, hipsolver, hipsparse, hipsparselt, miopen, rocblas, rocfft, rocprim, rocrand, rocsolver, rocsparse, rocthrust. Shared components: rocroller, tensile, mxdatagenerator. Most of these are marked “Completed” in the monorepo migration status and the monorepo is the source of truth; see its README for current status.
 - Tooling and system components: ROCr runtime, ROCm SMI, rocprof/rocprofiler, rocgdb/rocm‑debug‑agent.
+
+Nomenclature: project names in the monorepo are standardized to match released package names (for example, hipblas/hipfft/rocsparse instead of mixed casing).
 
 Architectures (illustrative, not exhaustive):
 
 - CDNA3 (MI300 family): AI training and HPC; unified memory on APUs (MI300A), large HBM configs (MI300X).
 - RDNA3 (Radeon 7000 series): workstation/gaming; AV1 encode/decode; hardware ray tracing.
 
-Common libraries (see ROCm Libraries reference):
+Common libraries (see ROCm Libraries reference and monorepo):
 
-- rocBLAS / hipBLAS; rocFFT / hipFFT; rocRAND / hipRAND; rocSPARSE / hipSPARSE; rocSOLVER / hipSOLVER; rocPRIM/hipCUB; rocThrust.
+- BLAS/solver/sparse: rocBLAS / hipBLAS, hipBLASLt, rocSOLVER / hipSOLVER, rocSPARSE / hipSPARSE, hipSPARSElt.
+- FFT/random/core: rocFFT / hipFFT, rocRAND / hipRAND, rocPRIM / hipCUB, rocThrust.
+- Kernel building blocks: composablekernel; shared dependencies like Tensile and rocRoller (used by rocBLAS/hipBLASLt).
 - ML/DL: MIOpen; framework integrations via the ROCm for AI guide.
 
 Authoritative references:
@@ -86,6 +90,7 @@ Authoritative references:
 - ROCm Docs index (What is ROCm?, install, reference)
 - ROCm Release History (7.0.1, 7.0.0, …)
 - ROCm libraries reference; tools/compilers/runtimes reference
+- ROCm Libraries monorepo (status, structure, releases): https://github.com/ROCm/rocm-libraries
 
 ---
 

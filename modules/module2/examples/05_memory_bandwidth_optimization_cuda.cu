@@ -417,10 +417,13 @@ int main() {
     CUDA_CHECK(cudaGetDeviceProperties(&props, 0));
     printf("Running on: %s\n", props.name);
     
-    double theoretical_bandwidth = 2.0 * props.memoryClockRate * (props.memoryBusWidth / 8) / 1.0e6;
+    int memClockKHz = 0, busWidthBits = 0;
+    cudaDeviceGetAttribute(&memClockKHz, cudaDevAttrMemoryClockRate, 0);
+    cudaDeviceGetAttribute(&busWidthBits, cudaDevAttrGlobalMemoryBusWidth, 0);
+    double theoretical_bandwidth = 2.0 * (memClockKHz / 1e6) * (busWidthBits / 8.0);
     printf("Theoretical peak bandwidth: %.1f GB/s\n", theoretical_bandwidth);
-    printf("Memory clock rate: %d MHz\n", props.memoryClockRate / 1000);
-    printf("Memory bus width: %d bits\n", props.memoryBusWidth);
+    printf("Memory clock rate: %d MHz\n", memClockKHz / 1000);
+    printf("Memory bus width: %d bits\n", busWidthBits);
     printf("L2 cache size: %d MB\n", props.l2CacheSize / (1024 * 1024));
     
     // Run benchmarks

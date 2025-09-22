@@ -1,6 +1,6 @@
 # GPU Programming 101 - Docker Compose Configuration
 # Supports both NVIDIA CUDA and AMD ROCm platforms
-# Updated for CUDA 12.9.1 and ROCm 7.0 (2025)
+# Updated for CUDA 13.0.1 and ROCm 7.0.x (2025)
 
 services:
   # NVIDIA CUDA Development Environment

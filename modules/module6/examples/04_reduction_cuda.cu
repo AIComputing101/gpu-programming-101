@@ -29,6 +29,7 @@
 #include <cassert>
 #include <iomanip>
 #include <float.h>
+#include <functional>
 
 namespace cg = cooperative_groups;
 

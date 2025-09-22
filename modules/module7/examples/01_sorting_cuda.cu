@@ -30,6 +30,7 @@
 #include <iomanip>
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>
+#include <functional>
 
 namespace cg = cooperative_groups;
 

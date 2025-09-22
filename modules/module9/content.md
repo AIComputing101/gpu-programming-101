@@ -1,6 +1,6 @@
 # Professional GPU Programming: Enterprise-Grade Implementation Guide
 
-> Environment note: Professional examples and deployment references assume development using Docker images with CUDA 12.9.1 (Ubuntu 22.04) and ROCm 7.0 (Ubuntu 24.04) for parity between environments. Enhanced build system supports professional-grade optimizations.
+> Environment note: Professional examples and deployment references assume development using Docker images with CUDA 13.0.1 (Ubuntu 24.04) and ROCm 7.0.1 (Ubuntu 24.04) for parity between environments. Enhanced build system supports professional-grade optimizations.
 
 This comprehensive guide covers all aspects of deploying, maintaining, and scaling GPU applications in production environments, from architecture design to operational excellence.
 
@@ -317,7 +317,7 @@ public:
 
 ```dockerfile
 # Multi-stage build for production GPU applications
-FROM nvidia/cuda:12.9.1-devel-ubuntu22.04 AS builder
+FROM nvidia/cuda:13.0.1-cudnn-devel-ubuntu24.04 AS builder
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -334,7 +334,7 @@ RUN mkdir build && cd build && \
     make -j$(nproc)
 
 # Production runtime image
-FROM nvidia/cuda:12.9.1-runtime-ubuntu22.04
+FROM nvidia/cuda:13.0.1-runtime-ubuntu24.04
 
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y \

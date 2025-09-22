@@ -354,10 +354,13 @@ int main() {
     cudaDeviceProp props;
     CUDA_CHECK(cudaGetDeviceProperties(&props, 0));
     printf("Running on: %s\n", props.name);
+    int memClockKHz = 0, busWidthBits = 0;
+    cudaDeviceGetAttribute(&memClockKHz, cudaDevAttrMemoryClockRate, 0);
+    cudaDeviceGetAttribute(&busWidthBits, cudaDevAttrGlobalMemoryBusWidth, 0);
     printf("Global memory bandwidth: %.1f GB/s\n", 
-           2.0 * props.memoryClockRate * (props.memoryBusWidth / 8) / 1.0e6);
-    printf("Memory bus width: %d bits\n", props.memoryBusWidth);
-    printf("Memory clock rate: %d MHz\n", props.memoryClockRate / 1000);
+        2.0 * (memClockKHz / 1e6) * (busWidthBits / 8.0));
+    printf("Memory bus width: %d bits\n", busWidthBits);
+    printf("Memory clock rate: %d MHz\n", memClockKHz / 1000);
     printf("Warp size: %d threads\n", props.warpSize);
     
     // Run benchmarks

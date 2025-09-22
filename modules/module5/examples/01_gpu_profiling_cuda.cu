@@ -271,11 +271,16 @@ void analyzeDeviceProperties() {
     printf("Multiprocessors: %d\n", prop.multiProcessorCount);
     printf("Cores per MP: %d (estimated)\n", _ConvertSMVer2Cores(prop.major, prop.minor));
     printf("Total Cores: %d (estimated)\n", prop.multiProcessorCount * _ConvertSMVer2Cores(prop.major, prop.minor));
-    printf("GPU Clock Rate: %.2f GHz\n", prop.clockRate / 1e6);
-    printf("Memory Clock Rate: %.2f GHz\n", prop.memoryClockRate / 1e6);
-    printf("Memory Bus Width: %d bits\n", prop.memoryBusWidth);
+    int gpuClockKHz = 0;
+    cudaDeviceGetAttribute(&gpuClockKHz, cudaDevAttrClockRate, device);
+    printf("GPU Clock Rate: %.2f GHz\n", gpuClockKHz / 1e6);
+    int memClockKHz = 0, busWidthBits = 0;
+    cudaDeviceGetAttribute(&memClockKHz, cudaDevAttrMemoryClockRate, device);
+    cudaDeviceGetAttribute(&busWidthBits, cudaDevAttrGlobalMemoryBusWidth, device);
+    printf("Memory Clock Rate: %.2f GHz\n", memClockKHz / 1e6);
+    printf("Memory Bus Width: %d bits\n", busWidthBits);
     printf("Peak Memory Bandwidth: %.1f GB/s\n", 
-           2.0 * prop.memoryClockRate * (prop.memoryBusWidth / 8) / 1.0e6);
+        2.0 * (memClockKHz / 1e6) * (busWidthBits / 8.0));
     printf("Global Memory: %.1f GB\n", prop.totalGlobalMem / (1024.0 * 1024.0 * 1024.0));
     printf("Shared Memory per Block: %zu KB\n", prop.sharedMemPerBlock / 1024);
     printf("Max Threads per Block: %d\n", prop.maxThreadsPerBlock);
@@ -409,13 +414,18 @@ void calculateTheoreticalLimits() {
     printf("=== Theoretical Performance Limits ===\n");
     
     // Memory bandwidth calculation
-    double memoryBandwidth = 2.0 * prop.memoryClockRate * (prop.memoryBusWidth / 8) / 1.0e6; // GB/s
+    int memClockKHz = 0, busWidthBits = 0;
+    cudaDeviceGetAttribute(&memClockKHz, cudaDevAttrMemoryClockRate, device);
+    cudaDeviceGetAttribute(&busWidthBits, cudaDevAttrGlobalMemoryBusWidth, device);
+    double memoryBandwidth = 2.0 * (memClockKHz / 1e6) * (busWidthBits / 8.0); // GB/s
     printf("Peak Memory Bandwidth: %.1f GB/s\n", memoryBandwidth);
     
     // Compute throughput estimation
     int coresPerSM = _ConvertSMVer2Cores(prop.major, prop.minor);
     int totalCores = prop.multiProcessorCount * coresPerSM;
-    double computeThroughput = totalCores * prop.clockRate / 1e6; // GFLOPS (single precision)
+    int gpuClockKHz = 0;
+    cudaDeviceGetAttribute(&gpuClockKHz, cudaDevAttrClockRate, device);
+    double computeThroughput = totalCores * gpuClockKHz / 1e6; // GFLOPS (single precision)
     printf("Estimated Peak Compute (SP): %.1f GFLOPS\n", computeThroughput);
     
     // Roofline model breakpoint

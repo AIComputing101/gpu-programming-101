@@ -25,9 +25,16 @@ BUILD_HIP = 0
 GPU_VENDOR = NONE
 endif
 
+# CUDA architecture detection (prefer actual GPU via nvidia-smi; fallback sm_90)
+CUDA_ARCH ?= $(shell nvidia-smi --query-gpu=compute_cap --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -dc '0-9' | sed -e 's/^/sm_/')
+ifeq ($(strip $(CUDA_ARCH)),)
+	CUDA_ARCH := sm_90
+endif
+CUDA_ARCH_FLAG := -arch=$(CUDA_ARCH)
+
 # Compiler flags for professional applications
-CUDA_FLAGS = -std=c++17 -O3 -arch=sm_70 -lineinfo --use_fast_math -DPRODUCTION_BUILD
-CUDA_DEBUG_FLAGS = -std=c++17 -g -G -arch=sm_70 -DDEBUG_BUILD
+CUDA_FLAGS = -std=c++17 -O3 $(CUDA_ARCH_FLAG) -lineinfo --use_fast_math -DPRODUCTION_BUILD
+CUDA_DEBUG_FLAGS = -std=c++17 -g -G $(CUDA_ARCH_FLAG) -DDEBUG_BUILD
 HIP_FLAGS = -std=c++17 -O3 -ffast-math -DPRODUCTION_BUILD
 HIP_DEBUG_FLAGS = -std=c++17 -g -DDEBUG_BUILD
 CXX_FLAGS = -std=c++17 -O3 -DPRODUCTION_BUILD
@@ -358,7 +365,7 @@ package_production: production
 build_containers: production
 	@echo "Building production containers..."
 	@if command -v docker > /dev/null 2>&1; then \
-		echo "FROM nvidia/cuda:11.8-runtime-ubuntu20.04" > $(DEPLOY_DIR)/Dockerfile.cuda; \
+		echo "FROM nvidia/cuda:13.0.1-runtime-ubuntu24.04" > $(DEPLOY_DIR)/Dockerfile.cuda; \
 		echo "COPY build/ /app/" >> $(DEPLOY_DIR)/Dockerfile.cuda; \
 		echo "WORKDIR /app" >> $(DEPLOY_DIR)/Dockerfile.cuda; \
 		echo "EXPOSE 8080" >> $(DEPLOY_DIR)/Dockerfile.cuda; \

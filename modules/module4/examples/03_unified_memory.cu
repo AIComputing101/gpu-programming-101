@@ -204,14 +204,21 @@ double optimizedUnifiedMemory(int n) {
     
     auto start = std::chrono::high_resolution_clock::now();
     
-    // Provide memory hints
+    // Provide memory hints (CUDA 13: use cudaMemLocation)
     int deviceId = 0;
-    CUDA_CHECK(cudaMemAdvise(a, bytes, cudaMemAdviseSetReadMostly, deviceId));
-    CUDA_CHECK(cudaMemAdvise(b, bytes, cudaMemAdviseSetReadMostly, deviceId));
+    cudaMemLocation locDevice{};
+    locDevice.type = cudaMemLocationTypeDevice;
+    locDevice.id = deviceId;
+    cudaMemLocation locHost{};
+    locHost.type = cudaMemLocationTypeHost;
+    locHost.id = 0;
+
+    CUDA_CHECK(cudaMemAdvise(a, bytes, cudaMemAdviseSetReadMostly, locDevice));
+    CUDA_CHECK(cudaMemAdvise(b, bytes, cudaMemAdviseSetReadMostly, locDevice));
     
-    // Prefetch data to GPU
-    CUDA_CHECK(cudaMemPrefetchAsync(a, bytes, deviceId));
-    CUDA_CHECK(cudaMemPrefetchAsync(b, bytes, deviceId));
+    // Prefetch data to GPU (location-aware + explicit stream)
+    CUDA_CHECK(cudaMemPrefetchAsync(a, bytes, locDevice, 0));
+    CUDA_CHECK(cudaMemPrefetchAsync(b, bytes, locDevice, 0));
     
     // Launch kernel
     dim3 block(BLOCK_SIZE);
@@ -219,8 +226,8 @@ double optimizedUnifiedMemory(int n) {
     vectorAdd<<<grid, block>>>(a, b, c, n);
     CUDA_CHECK(cudaGetLastError());
     
-    // Prefetch result back to CPU
-    CUDA_CHECK(cudaMemPrefetchAsync(c, bytes, cudaCpuDeviceId));
+    // Prefetch result back to CPU (location-aware + explicit stream)
+    CUDA_CHECK(cudaMemPrefetchAsync(c, bytes, locHost, 0));
     CUDA_CHECK(cudaDeviceSynchronize());
     
     // Access result on CPU
@@ -376,9 +383,13 @@ void multiGPUUnifiedMemory(int n) {
         int offset = gpu * chunkSize;
         int currentChunkSize = (gpu == deviceCount - 1) ? n - offset : chunkSize;
         
-        // Prefetch chunk to current GPU
-        CUDA_CHECK(cudaMemPrefetchAsync(data + offset, 
-                                       currentChunkSize * sizeof(float), gpu));
+    // Prefetch chunk to current GPU (location-aware + explicit stream)
+    cudaMemLocation locGpu{};
+    locGpu.type = cudaMemLocationTypeDevice;
+    locGpu.id = gpu;
+    CUDA_CHECK(cudaMemPrefetchAsync(data + offset,
+                       currentChunkSize * sizeof(float),
+                       locGpu, 0));
         
         // Process on this GPU
         dim3 block(BLOCK_SIZE);

@@ -1,7 +1,7 @@
 # Module 2: Advanced GPU Memory Management and Optimization
 *Mastering GPU Memory Hierarchies and Performance Optimization*
 
-> Environment note: Examples are tested in Docker containers with CUDA 12.9.1 (Ubuntu 22.04) and ROCm 7.0 (Ubuntu 24.04). The improved build system automatically optimizes memory access patterns. Prefer Docker for reproducible builds.
+> Environment note: Examples are tested in Docker containers with CUDA 13.0.1 (Ubuntu 24.04) and ROCm 7.0.1 (Ubuntu 24.04). The improved build system automatically optimizes memory access patterns. Prefer Docker for reproducible builds.
 
 ## Learning Objectives
 After completing this module, you will be able to:
@@ -302,7 +302,6 @@ Texture memory provides:
 
 ```cuda
 #include <cuda_runtime.h>
-#include <texture_fetch_functions.h>
 
 __global__ void textureKernel(cudaTextureObject_t texObj, float *output, 
                              int width, int height) {
@@ -471,11 +470,14 @@ __global__ void processData(float *data, size_t n) {
 ```cuda
 void optimizedUnifiedMemory(float *data, size_t n, int device) {
     // Prefetch data to GPU before kernel launch
-    cudaMemPrefetchAsync(data, n * sizeof(float), device);
+    cudaMemLocation loc{};
+    loc.type = cudaMemLocationTypeDevice;
+    loc.id = device;
+    cudaMemPrefetchAsync(data, n * sizeof(float), loc, /*stream=*/0);
     
     // Set memory usage hints
-    cudaMemAdvise(data, n * sizeof(float), cudaMemAdviseSetReadMostly, device);
-    cudaMemAdvise(data, n * sizeof(float), cudaMemAdviseSetPreferredLocation, device);
+    cudaMemAdvise(data, n * sizeof(float), cudaMemAdviseSetReadMostly, loc);
+    cudaMemAdvise(data, n * sizeof(float), cudaMemAdviseSetPreferredLocation, loc);
     
     // Launch kernel
     int blockSize = 256;
@@ -483,7 +485,10 @@ void optimizedUnifiedMemory(float *data, size_t n, int device) {
     processData<<<gridSize, blockSize>>>(data, n);
     
     // Prefetch back to CPU if needed
-    cudaMemPrefetchAsync(data, n * sizeof(float), cudaCpuDeviceId);
+    cudaMemLocation hostLoc{};
+    hostLoc.type = cudaMemLocationTypeHost;
+    hostLoc.id = 0;
+    cudaMemPrefetchAsync(data, n * sizeof(float), hostLoc, /*stream=*/0);
 }
 ```
 

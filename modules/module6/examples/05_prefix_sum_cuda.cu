@@ -30,6 +30,7 @@
 #include <cassert>
 #include <iomanip>
 #include <numeric>
+#include <functional>
 
 namespace cg = cooperative_groups;
 

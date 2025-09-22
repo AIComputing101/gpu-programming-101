@@ -202,8 +202,8 @@ debug: all
 
 # Profile builds
 .PHONY: profile
-profile: CUDA_FLAGS = $(CUDA_FLAGS) -lineinfo
-profile: HIP_FLAGS = $(HIP_FLAGS) -g
+profile: CUDA_FLAGS += -lineinfo
+profile: HIP_FLAGS += -g
 profile: CXX_FLAGS += -g -pg
 profile: all
 	@echo "Generating profile data..."

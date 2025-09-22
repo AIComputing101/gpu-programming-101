@@ -358,7 +358,7 @@ package_production: production
 build_containers: production
 	@echo "Building production containers..."
 	@if command -v docker > /dev/null 2>&1; then \
-		echo "FROM nvidia/cuda:11.8-runtime-ubuntu20.04" > $(DEPLOY_DIR)/Dockerfile.cuda; \
+		echo "FROM nvidia/cuda:13.0.1-runtime-ubuntu24.04" > $(DEPLOY_DIR)/Dockerfile.cuda; \
 		echo "COPY build/ /app/" >> $(DEPLOY_DIR)/Dockerfile.cuda; \
 		echo "WORKDIR /app" >> $(DEPLOY_DIR)/Dockerfile.cuda; \
 		echo "EXPOSE 8080" >> $(DEPLOY_DIR)/Dockerfile.cuda; \

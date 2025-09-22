@@ -1,14 +1,14 @@
 # GPU Programming 101 - CUDA Development Container
-# Based on NVIDIA's official CUDA 12.9.1 development image (latest stable as of 2025)
+# Based on NVIDIA's official CUDA 13.0.1 cuDNN development image (Ubuntu 24.04)
 
-FROM nvidia/cuda:12.9.1-devel-ubuntu22.04
+FROM nvidia/cuda:13.0.1-cudnn-devel-ubuntu24.04
 
 # Metadata
 LABEL maintainer="GPU Programming 101"
 LABEL description="CUDA development environment for GPU programming course"
 LABEL version="2.0"
-LABEL cuda.version="12.9.1"
-LABEL ubuntu.version="22.04"
+LABEL cuda.version="13.0.1"
+LABEL ubuntu.version="24.04"
 
 # Avoid interactive prompts during package installation
 ARG DEBIAN_FRONTEND=noninteractive
@@ -32,8 +32,6 @@ RUN apt-get update && apt-get install -y \
     # Additional utilities
     pkg-config \
     software-properties-common \
-    # GPU monitoring tools (installed but won't work during build)
-    nvidia-utils-535 \
     # Debugging and profiling tools
     gdb \
     valgrind \
@@ -45,7 +43,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install optional CUDA tools if available
 RUN apt-get update && \
-    (apt-get install -y cuda-tools-12-9 || apt-get install -y cuda-tools || true) && \
+    (apt-get install -y cuda-tools-13-0 || apt-get install -y cuda-tools || true) && \
     rm -rf /var/lib/apt/lists/*
 
 # Install minimal Python packages for basic development (no heavy data science libs)
@@ -58,7 +56,7 @@ ENV PATH=/usr/local/cuda/bin:${PATH}
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
 ENV CUDA_HOME=/usr/local/cuda
 ENV CUDA_ROOT=/usr/local/cuda
-ENV CUDA_VERSION=12.9.1
+ENV CUDA_VERSION=13.0.1
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
@@ -156,7 +154,7 @@ RUN chmod +x /workspace/test-gpu.sh
 RUN cd /workspace && \
     git clone https://github.com/NVIDIA/cuda-samples.git && \
     cd cuda-samples && \
-    git checkout v12.9
+    git checkout v13.0
 
 # Default command
 CMD ["/bin/bash"]

@@ -4,10 +4,10 @@ This directory contains Docker configurations for comprehensive GPU programming 
 
 ## 🚀 Latest Versions (2025)
 
-- **CUDA**: 12.9.1 (Latest stable release)
-- **ROCm**: 7.0 (Latest stable release) 
-- **Ubuntu**: 22.04 LTS
-- **Nsight Tools**: 2025.1.1
+- **CUDA**: 13.0.1 (Toolkit 13.0 U1)
+- **ROCm**: 7.0.1 (Latest stable release)
+- **Ubuntu**: 24.04 LTS
+- **Nsight Tools**: 2025.3.x
 
 ## 🚀 Quick Start
 
@@ -58,27 +58,27 @@ docker/
 
 ### CUDA Development Container
 **Image**: `gpu-programming-101:cuda`  
-**Base**: `nvidia/cuda:12.9.1-devel-ubuntu22.04`
+**Base**: `nvidia/cuda:13.0.1-cudnn-devel-ubuntu24.04`
 
 **Features**:
-- CUDA 12.9.1 with development tools
+- CUDA 13.0.1 (cuDNN devel) with development tools
 - NVIDIA Nsight Systems & Compute profilers
 - Python 3 with scientific libraries
 - GPU monitoring and debugging tools
 
 **GPU Requirements**:
-- NVIDIA GPU with compute capability 3.5+
-- NVIDIA drivers 535+
+- NVIDIA GPU supported by CUDA 13.x (Turing and newer recommended for new toolchain features)
+- NVIDIA drivers r580+
 - nvidia-container-toolkit
 
 ### ROCm Development Container
 **Image**: `gpu-programming-101:rocm`  
-**Base**: `rocm/dev-ubuntu-22.04:7.0-complete`
+**Base**: `rocm/dev-ubuntu-24.04:7.0.1-complete`
 
 **Features**:
 - ROCm 7.0 with HIP development environment
 - Cross-platform GPU programming (AMD/NVIDIA)
-- ROCm profiling tools (rocprof, roctracer)
+- ROCm profiling tools (rocprof, rocprofiler)
 - Python 3 with scientific libraries
 
 **GPU Requirements**:
@@ -282,7 +282,7 @@ nvidia-smi  # For NVIDIA
 rocm-smi   # For AMD
 
 # Verify Docker GPU support
-docker run --rm --gpus all nvidia/cuda:12.9.1-base nvidia-smi
+docker run --rm --gpus all nvidia/cuda:13.0.1-base-ubuntu24.04 nvidia-smi
 
 # Check container runtime
 docker run --rm --device=/dev/kfd rocm/dev-ubuntu-22.04:7.0 rocminfo
@@ -297,8 +297,8 @@ docker system prune -a
 sudo apt update && sudo apt upgrade docker-ce docker-compose
 
 # Check base image availability
-docker pull nvidia/cuda:12.9.1-devel-ubuntu22.04
-docker pull rocm/dev-ubuntu-22.04:7.0-complete
+docker pull nvidia/cuda:13.0.1-cudnn-devel-ubuntu24.04
+docker pull rocm/dev-ubuntu-24.04:7.0.1-complete
 ```
 
 **"Permission denied errors"**

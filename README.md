@@ -1,7 +1,7 @@
 # GPU Programming 101 🚀
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CUDA](https://img.shields.io/badge/CUDA-12.9.1-76B900?logo=nvidia)](https://developer.nvidia.com/cuda-toolkit)
+[![CUDA](https://img.shields.io/badge/CUDA-13.0.1-76B900?logo=nvidia)](https://developer.nvidia.com/cuda-toolkit)
 [![ROCm](https://img.shields.io/badge/ROCm-7.0-red?logo=amd)](https://rocmdocs.amd.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
 [![Examples](https://img.shields.io/badge/Examples-71-green)](modules/)
@@ -197,7 +197,7 @@ This architectural knowledge is essential for writing efficient GPU code and is 
 |---------|-------------|
 | 🎯 **Complete Curriculum** | 9 progressive modules from basics to advanced topics |
 | 💻 **Cross-Platform** | Full CUDA and HIP support for NVIDIA and AMD GPUs |
-| 🐳 **Docker Ready** | Complete containerized development environment with CUDA 12.9.1 & ROCm 7.0 |
+| 🐳 **Docker Ready** | Complete containerized development environment with CUDA 13.0.1 & ROCm 7.0.1 |
 | 🔧 **Professional Quality** | Professional build systems, auto-detection, testing, and profiling |
 | 📊 **Performance Focus** | Optimization techniques and benchmarking throughout |
 | 🌐 **Community Driven** | Open source with comprehensive contribution guidelines |
@@ -319,7 +319,7 @@ Module 5: Performance Tuning
 - **macOS**: macOS 12+ (Metal Performance Shaders for basic GPU compute)
 
 #### GPU Computing Platforms
-- **CUDA Toolkit**: 12.0+ (Docker uses CUDA 12.9.1)
+- **CUDA Toolkit**: 13.0+ recommended (Docker uses CUDA 13.0.1)
   - **Driver Requirements**: 
     - Linux: 550.54.14+ for CUDA 12.4+
     - Windows: 551.61+ for CUDA 12.4+
@@ -385,7 +385,7 @@ Experience the full development environment with zero setup:
 - 🧹 Easy cleanup when done
 
 **Container Specifications:**
-- **CUDA**: NVIDIA CUDA 12.9.1 on Ubuntu 22.04
+- **CUDA**: NVIDIA CUDA 13.0.1 on Ubuntu 24.04
 - **ROCm**: AMD ROCm 7.0 on Ubuntu 24.04 
 - **Libraries**: Professional toolchains with debugging support
 

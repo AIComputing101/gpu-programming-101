@@ -41,7 +41,7 @@ docker-compose up -d cuda-dev  # For NVIDIA GPUs
 docker-compose up -d rocm-dev  # For AMD GPUs
 
 # Option 2: Native development
-# Install CUDA Toolkit 12.9.1+ or ROCm latest
+# Install CUDA Toolkit 13.0.1+ or ROCm latest
 # See modules/module1/README.md for detailed setup instructions
 
 # Build all examples
@@ -242,7 +242,7 @@ When reporting bugs, please include:
 - **Operating System**: (Ubuntu 22.04, Windows 11, etc.)
 - **GPU**: (RTX 4090, RX 7900 XTX, etc.)
 - **Driver Version**: (NVIDIA 535.x, ROCm latest, etc.)
-- **CUDA/HIP Version**: (12.9.1, 7.0, etc.)
+- **CUDA/HIP Version**: (13.0.1, 7.0.1, etc.)
 - **Docker**: (if using containerized development)
 
 ### Bug Description
@@ -258,7 +258,7 @@ When reporting bugs, please include:
 **Environment:**
 - OS: Ubuntu 22.04
 - GPU: RTX 4080
-- CUDA: 12.9.1
+- CUDA: 13.0.1
 - Driver: 535.98
 
 **Description:**
@@ -314,3 +314,11 @@ By contributing, you agree that your contributions will be licensed under the MI
 ---
 
 Thank you for contributing to GPU Programming 101! Your efforts help make GPU computing more accessible to developers worldwide. 🚀
+
+## 🧩 Maintaining feature docs
+
+If you update examples or module content to use new CUDA or ROCm capabilities, please also:
+
+- Bump the versions in `CUDA_ROCM_FEATURES.md` and re‑scan the official release notes.
+- Update module READMEs to mention any new minimum driver/toolkit requirements.
+- Avoid marketing claims; prefer links to vendor docs and measured results in our own benchmarks.

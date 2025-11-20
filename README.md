@@ -49,25 +49,25 @@ Understanding how GPU programming works from high-level code to hardware executi
 ### Architecture Overview Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                                APPLICATION LAYER                                    │
-├─────────────────────────────────────────────────────────────────────────────────────┤
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│                                APPLICATION LAYER                                  │
+├───────────────────────────────────────────────────────────────────────────────────┤
 │  High-Level Code (C++/CUDA/HIP)                                                   │
 │  ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐    │
 │  │   CUDA C++ Code     │    │    HIP C++ Code     │    │   OpenCL/SYCL       │    │
-│  │   (.cu files)       │    │   (.hip files)      │    │   (Cross-platform)   │    │
+│  │   (.cu files)       │    │   (.hip files)      │    │   (Cross-platform)  │    │
 │  │                     │    │                     │    │                     │    │
 │  │ __global__ kernels  │    │ __global__ kernels  │    │ kernel functions    │    │
 │  │ cudaMalloc()        │    │ hipMalloc()         │    │ clCreateBuffer()    │    │
 │  │ cudaMemcpy()        │    │ hipMemcpy()         │    │ clEnqueueNDRange()  │    │
 │  └─────────────────────┘    └─────────────────────┘    └─────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────────────────────────────┘
                                         │
                                         ▼
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                              COMPILATION LAYER                                     │
-├─────────────────────────────────────────────────────────────────────────────────────┤
-│  Compiler Frontend                                                                 │
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│                              COMPILATION LAYER                                    │
+├───────────────────────────────────────────────────────────────────────────────────┤
+│  Compiler Frontend                                                                │
 │  ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐    │
 │  │      NVCC           │    │      HIP Clang      │    │    LLVM/Clang       │    │
 │  │  (NVIDIA Compiler)  │    │   (AMD Compiler)    │    │   (Open Standard)   │    │
@@ -76,12 +76,12 @@ Understanding how GPU programming works from high-level code to hardware executi
 │  │ • Host/Device split │    │ • Host/Device split │    │ • Generate SPIR-V   │    │
 │  │ • Generate PTX      │    │ • Generate GCN ASM  │    │ • Target backends   │    │
 │  └─────────────────────┘    └─────────────────────┘    └─────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────────────────────────────┘
                                         │
                                         ▼
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                           INTERMEDIATE REPRESENTATION                               │
-├─────────────────────────────────────────────────────────────────────────────────────┤
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│                           INTERMEDIATE REPRESENTATION                             │
+├───────────────────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐    │
 │  │        PTX          │    │      GCN ASM        │    │      SPIR-V         │    │
 │  │ (Parallel Thread    │    │  (Graphics Core     │    │  (Standard Portable │    │
@@ -91,12 +91,12 @@ Understanding how GPU programming works from high-level code to hardware executi
 │  │ • Device agnostic   │    │ • RDNA/CDNA arch    │    │ • Vendor neutral    │    │
 │  │ • JIT compilation   │    │ • Direct execution  │    │ • Multiple targets  │    │
 │  └─────────────────────┘    └─────────────────────┘    └─────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────────────────────────────┘
                                         │
                                         ▼
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                               DRIVER LAYER                                         │
-├─────────────────────────────────────────────────────────────────────────────────────┤
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│                               DRIVER LAYER                                        │
+├───────────────────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐    │
 │  │    CUDA Driver      │    │     ROCm Driver     │    │   OpenCL Driver     │    │
 │  │                     │    │                     │    │                     │    │
@@ -105,12 +105,12 @@ Understanding how GPU programming works from high-level code to hardware executi
 │  │ • Kernel launch     │    │ • Kernel launch     │    │ • Kernel launch     │    │
 │  │ • Context mgmt      │    │ • Context mgmt      │    │ • Context mgmt      │    │
 │  └─────────────────────┘    └─────────────────────┘    └─────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────────────────────────────┘
                                         │
                                         ▼
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                              HARDWARE LAYER                                        │
-├─────────────────────────────────────────────────────────────────────────────────────┤
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│                              HARDWARE LAYER                                       │
+├───────────────────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────┐    ┌─────────────────────┐                               │
 │  │    NVIDIA GPU       │    │      AMD GPU        │                               │
 │  │                     │    │                     │                               │
@@ -131,7 +131,7 @@ Understanding how GPU programming works from high-level code to hardware executi
 │  │ • Constant Memory   │    │   Store)            │    • Constant Memory          │
 │  │ • Texture Memory    │    │ • Constant Memory   │                               │
 │  └─────────────────────┘    └─────────────────────┘                               │
-└─────────────────────────────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Compilation Pipeline Deep Dive
@@ -225,7 +225,7 @@ cd modules/module1 && make && ./build/01_vector_addition_cuda
 For direct system installation:
 
 ```bash
-# Prerequisites: CUDA 12.0+ or ROCm 7.0+, GCC 9+, Make
+# Prerequisites: CUDA 13.0+ or ROCm 7.0+, GCC 9+, Make
 
 # Clone and build
 git clone https://github.com/AIComputing101/gpu-programming-101.git
@@ -321,8 +321,8 @@ Module 5: Performance Tuning
 #### GPU Computing Platforms
 - **CUDA Toolkit**: 13.0+ recommended (Docker uses CUDA 13.0.1)
   - **Driver Requirements**: 
-    - Linux: 550.54.14+ for CUDA 12.4+
-    - Windows: 551.61+ for CUDA 12.4+
+    - Linux: 580+ for CUDA 13.0+
+    - Windows: 580+ for CUDA 13.0+
 - **ROCm Platform**: 7.0+ (Docker uses ROCm 7.0)
   - **Driver Requirements**: Latest AMDGPU-PRO or open-source AMDGPU drivers
   - **Kernel Support**: Linux kernel 5.4+ recommended
@@ -331,7 +331,7 @@ Module 5: Performance Tuning
 - **Compilers**:
   - **GCC**: 9.0+ (GCC 11+ recommended for C++17 features)
   - **Clang**: 10.0+ (Clang 14+ recommended)
-  - **MSVC**: 2019+ (2022 17.10+ for CUDA 12.4+ support)
+  - **MSVC**: 2019+ (2022 17.10+ for CUDA 13.0+ support)
 - **Build Tools**: Make 4.0+, CMake 3.18+ (optional)
 - **Docker**: 20.10+ with GPU runtime support (nvidia-container-toolkit or ROCm containers)
 
@@ -529,5 +529,9 @@ Stephen Shao, "GPU Programming 101: A Comprehensive Educational Project for CUDA
 ---
 
 **⭐ Star this project • 🍴 Fork and contribute • 📢 Share with others**
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=AIComputing101/gpu-programming-101&type=date&legend=top-left)](https://www.star-history.com/#AIComputing101/gpu-programming-101&type=date&legend=top-left)
 
 *Built with ❤️ for the AI Computing 101*

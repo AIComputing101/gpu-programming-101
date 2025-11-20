@@ -586,7 +586,7 @@ deployment_docs: production
 	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
 	@echo "## Prerequisites" >> $(DEPLOY_DIR)/DEPLOYMENT.md
 	@echo "" >> $(DEPLOY_DIR)/DEPLOYMENT.md
-	@echo "- CUDA Toolkit 11.8+ or ROCm 5.4+" >> $(DEPLOY_DIR)/DEPLOYMENT.md
+	@echo "- CUDA Toolkit 13.0+ or ROCm 7.0+" >> $(DEPLOY_DIR)/DEPLOYMENT.md
 	@echo "- Docker with GPU runtime support" >> $(DEPLOY_DIR)/DEPLOYMENT.md
 	@echo "- Kubernetes cluster with GPU nodes" >> $(DEPLOY_DIR)/DEPLOYMENT.md
 	@echo "- Monitoring stack (Prometheus + Grafana)" >> $(DEPLOY_DIR)/DEPLOYMENT.md

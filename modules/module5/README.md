@@ -191,7 +191,7 @@ rocprof --version  # AMD ROCm Profiler
 ```
 
 **Minimum Requirements:**
-- CUDA Toolkit 12.0+ or HIP/ROCm 6.0+
+- CUDA Toolkit 13.0+ or HIP/ROCm 7.0+
 - Compute Capability 6.0+ (recommended for full feature support)
 - Profiling tools installed and properly configured
 - Sufficient GPU memory for performance testing (4GB+ recommended)

@@ -194,7 +194,7 @@ ls /opt/rocm/lib/lib*  # ROCm libraries
 ```
 
 **Recommended Configuration:**
-- CUDA Toolkit 12.0+ or ROCm 6.0+
+- CUDA Toolkit 13.0+ or ROCm 7.0+
 - Compute Capability 7.5+ (for Tensor Core applications)
 - 32GB+ GPU memory for large-scale applications
 - High-speed storage for data-intensive applications

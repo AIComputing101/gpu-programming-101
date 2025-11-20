@@ -43,13 +43,13 @@ This directory contains practical examples that accompany Module 1 of the GPU Pr
 
 ### For CUDA Examples
 - NVIDIA GPU with compute capability 5.0+
-- NVIDIA drivers 550+ recommended
-- CUDA Toolkit 12.0+ (Docker uses CUDA 12.9.1)
+- NVIDIA drivers 580+ recommended
+- CUDA Toolkit 13.0+ (Docker uses CUDA 13.0.1)
 - GCC/Clang compiler
 
 ### For HIP Examples
 - AMD GPU with ROCm support OR NVIDIA GPU
-- ROCm 6.0+ (for AMD) or CUDA 12.0+ (for NVIDIA backend)
+- ROCm 7.0+ (for AMD) or CUDA 13.0+ (for NVIDIA backend)
 - HIP compiler (hipcc)
 
 ## Quick Start

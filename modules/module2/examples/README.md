@@ -61,8 +61,8 @@ Comprehensive memory bandwidth optimization techniques:
 ## Building and Running Examples
 
 ### Prerequisites
-- CUDA Toolkit 12.0+ (for CUDA examples)
-- ROCm 6.0+ (for HIP examples)
+- CUDA Toolkit 13.0+ (for CUDA examples)
+- ROCm 7.0+ (for HIP examples)
 - Compatible GPU (NVIDIA or AMD)
 - C++17 compatible compiler
 
@@ -108,4 +108,4 @@ rocprof --stats ./build/02_memory_coalescing_hip
 
 ## Notes
 
-These examples are designed to be educational and performance-oriented. Use the provided Docker environment for consistent toolchains (CUDA 12.9.1, ROCm latest). Binaries are emitted to the `build/` directory by the Makefile.
+These examples are designed to be educational and performance-oriented. Use the provided Docker environment for consistent toolchains (CUDA 13.0.1, ROCm 7.0). Binaries are emitted to the `build/` directory by the Makefile.

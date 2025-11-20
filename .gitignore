@@ -163,3 +163,6 @@ pmc_perf_*
 
 # Memory dumps
 *.dmp
+
+.cursor/
+AGENTS.md

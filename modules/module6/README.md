@@ -17,7 +17,7 @@ By completing this module, you will:
 ## Prerequisites
 
 **Recommended Requirements:**
-- CUDA Toolkit 12.0+ or ROCm 6.0+
+- CUDA Toolkit 13.0+ or ROCm 7.0+
 
 ### Core Content
 - **content.md** - Comprehensive guide covering all fundamental parallel algorithm patterns
@@ -169,7 +169,7 @@ make system_info
 ```
 
 **Minimum Requirements:**
-- CUDA Toolkit 11.0+ or ROCm 5.0+
+- CUDA Toolkit 13.0+ or ROCm 7.0+
 - Compute Capability 6.0+ recommended
 - 8GB+ GPU memory for large dataset examples
 - C++14 compatible compiler

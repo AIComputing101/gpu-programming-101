@@ -529,7 +529,7 @@ help_extended:
 	@echo ""
 	@echo "Requirements:"
 	@echo "  - CUDA Toolkit 10.0+ (for CUDA examples)"
-	@echo "  - HIP/ROCm 4.0+ (for HIP examples)" 
+	@echo "  - HIP/ROCm 7.0+ (for HIP examples)" 
 	@echo "  - Compute Capability 5.0+ (3.5+ for dynamic parallelism)"
 	@echo "  - Multi-GPU system recommended for full testing"
 	@echo "  - OpenMP support for parallel host code"
